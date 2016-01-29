@@ -57,11 +57,16 @@ public class MainGameLoop {
         TerrainTexturePack texturePack = new TerrainTexturePack(backgroundTexture,
                 rTexture, gTexture, bTexture);
         TerrainTexture blendMap = new TerrainTexture(loader.loadTexture("blendMapTest1"));
+<<<<<<< Updated upstream:src/main/MainGameLoop.java
         
         logger.trace("loading models");
         //LOAD MODELS & TEXTURES
         TexturedModel person = loader.loadtoVAO("person", "playerTexture");
                         
+=======
+                
+        //LOAD MODELS & TEXTURES                     
+>>>>>>> Stashed changes:src/engineTester/MainGameLoop.java
         TexturedModel tree = loader.loadtoVAO("tree", "tree");
                         
         TexturedModel fern = loader.loadtoVAO("fern", "fern");
@@ -73,18 +78,18 @@ public class MainGameLoop {
         logger.trace("creating entities");
         //Create Entities
         Random random = new Random();
-        Terrain terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "heightMap");
+        Terrain terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "heightMap2");
 
         List<Entity> allentities = new ArrayList<>();
         
         List<GuiTexture> guis = new ArrayList<GuiTexture>();
-        GuiTexture gui = new GuiTexture(loader.loadTexture("socuwan"), 
+        GuiTexture gui = new GuiTexture(loader.loadTexture("fern"), 
                 new Vector2f(0.5f, 0.5f), new Vector2f(0.25f, 0.25f));
         guis.add(gui);
         
         GuiRenderer guiRenderer = new GuiRenderer(loader);
         
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 20000; i++) {
             float x = random.nextFloat() * 300 - 150;
             float z = random.nextFloat() * -300;
             float y = terrain.getHeightOfTerrain(x, z);
@@ -117,8 +122,12 @@ public class MainGameLoop {
         Entity start = new Entity(bunny, new Vector3f(185, 10, -293), 0, 0, 0, 0.5f);
         Camera camera = new Camera(start);        
         
+<<<<<<< Updated upstream:src/main/MainGameLoop.java
         logger.trace("entering renderer");
         //RENDERING
+=======
+        //RENDERING 
+>>>>>>> Stashed changes:src/engineTester/MainGameLoop.java
         MasterRenderer renderer = new MasterRenderer();
         
         while(!Display.isCloseRequested()){
