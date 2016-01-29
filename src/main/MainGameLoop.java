@@ -50,8 +50,6 @@ public class MainGameLoop {
 		checkLoggingConf();
 		logger.info("User {}", VERSION);
 
-		registerExitFunction();
-
 		DisplayManager.createDisplay();
 		loader = new Loader();
 
@@ -77,7 +75,6 @@ public class MainGameLoop {
 
 		logger.trace("creating entities");
 		// Create Entities
-		Random random = new Random();
 		Terrain terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "heightMap");
 
 		List<Entity> allentities = new ArrayList<>();
@@ -89,25 +86,9 @@ public class MainGameLoop {
 
 		guiRenderer = new GuiRenderer(loader);
 
-		for (int i = 0; i < 20000; i++) {
-			float x = random.nextFloat() * 300 - 150;
-			float z = random.nextFloat() * -300;
-			float y = terrain.getHeightOfTerrain(x, z);
-			allentities.add(new Entity(tree, new Vector3f(x, y, z), 0f, 0f, 0f, 4));
-		}
-		for (int i = 0; i < 100; i++) {
-			float x = random.nextFloat() * 300 - 150;
-			float z = random.nextFloat() * -300;
-			float y = terrain.getHeightOfTerrain(x, z);
-			allentities.add(new Entity(fern, random.nextInt(4), new Vector3f(x, y, z), 0f, random.nextFloat() * 360, 0f,
-					0.9f));
-		}
-		for (int i = 0; i < 1; i++) {
-			float x = random.nextFloat() * 300 - 150;
-			float z = random.nextFloat() * -300;
-			float y = terrain.getHeightOfTerrain(x, z);
-			allentities.add(new Entity(bunny, new Vector3f(x, y, z), 0f, 0f, 0f, 0.1f));
-		}
+		createRandomEntities(allentities,terrain, tree, 100, 300-150, -300,0f,0f,0f,4);
+		createRandomEntities(allentities,terrain, fern, 100, 300-150, -300,0f,360,0f,0.9f);
+		
 
 		Light sun = new Light(new Vector3f(0, 10000, -7000), new Vector3f(0.4f, 0.4f, 0.4f));
 		List<Light> lights = new ArrayList<>();
@@ -122,7 +103,7 @@ public class MainGameLoop {
 
 		Entity start = new Entity(bunny, new Vector3f(185, 10, -293), 0, 0, 0, 0.5f);
 		Camera camera = new Camera(start);
-
+		
 		logger.trace("entering renderer");
 		renderer = new MasterRenderer();
 
@@ -141,14 +122,17 @@ public class MainGameLoop {
 		}
 		exit();
 	}
-
-	private static void registerExitFunction() {
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			@Override
-			public void run() {
-				exit();
-			}
-		});
+	
+	private static void createRandomEntities(List<Entity> allentities, Terrain terrain, TexturedModel model, int amount, int r_x, int r_z, float rotX, float rotY, float rotZ, float scale){
+		logger.entry();
+		Random random = new Random();
+		for (int i = 0; i < amount; i++) {
+			float x = random.nextFloat() * r_x;
+			float z = random.nextFloat() * r_z;
+			float y = terrain.getHeightOfTerrain(x, z);
+			allentities.add(new Entity(model, random.nextInt(4), new Vector3f(x, y, z), rotX, random.nextFloat() * rotY, rotZ,
+					scale));
+		}
 	}
 
 	/**
