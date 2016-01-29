@@ -8,12 +8,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
 public class OBJFileLoader {
 	
 	private static final String RES_LOC = "res/";
+	private static final Logger logger = LogManager.getLogger();
 
 	public static ModelData loadOBJ(String objFileName) {
 		FileReader isr = null;
@@ -21,7 +24,7 @@ public class OBJFileLoader {
 		try {
 			isr = new FileReader(objFile);
 		} catch (FileNotFoundException e) {
-			System.err.println("File not found in res; don't use any extention");
+			logger.error("File not found in res: {}.obj",objFileName);
 		}
 		BufferedReader reader = new BufferedReader(isr);
 		String line;
@@ -67,7 +70,7 @@ public class OBJFileLoader {
 			}
 			reader.close();
 		} catch (IOException e) {
-			System.err.println("Error reading the file");
+			logger.error("Error reading obj file! {}",e);
 		}
 		removeUnusedVertices(vertices);
 		float[] verticesArray = new float[vertices.size() * 3];

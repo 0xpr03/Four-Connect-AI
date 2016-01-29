@@ -9,6 +9,9 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.FloatBuffer;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
@@ -25,6 +28,8 @@ public abstract class ShaderProgram {
     private int programID;
     private int vertexShaderID;
     private int fragmentShaderID;
+    
+    private static final Logger logger = LogManager.getLogger();
     
     private static FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
     
@@ -109,16 +114,14 @@ public abstract class ShaderProgram {
             }
             reader.close();
         }catch(IOException e) {
-            System.err.println("Could not read file!");
-            e.printStackTrace();
+        	logger.error("Could not read shader file! \n{}\nTerminating!",e);
             System.exit(-1);
         }
         int shaderID = GL20.glCreateShader(type);
         GL20.glShaderSource(shaderID, shaderSource);
         GL20.glCompileShader(shaderID);
         if(GL20.glGetShaderi(shaderID, GL20.GL_COMPILE_STATUS)==GL11.GL_FALSE) {
-            System.out.println(GL20.glGetShaderInfoLog(shaderID, 500));
-            System.err.println("Could not compile shader.");
+        	logger.error("Could not compile shader {}!\n{}\nTerminating!",file,GL20.glGetShaderInfoLog(shaderID, 500));
             System.exit(-1);
         }
         return shaderID;

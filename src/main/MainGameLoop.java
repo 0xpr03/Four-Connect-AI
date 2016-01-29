@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package engineTester;
+package main;
 
 import entities.Camera;
 import entities.Entity;
@@ -13,6 +13,10 @@ import guis.GuiTexture;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.lwjgl.opengl.Display;
 import renderEngine.DisplayManager;
 import renderEngine.Loader;
@@ -29,15 +33,21 @@ import textures.TerrainTexturePack;
  * @author Trist
  */
 public class MainGameLoop {
-
+	
+	private static final Logger logger = LogManager.getLogger(MainGameLoop.class);
+	private static String VERSION = "0.1";
+	
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        
+    	checkLoggingConf();
+    	logger.info("User {}",VERSION);
+    	
         DisplayManager.createDisplay();
         Loader loader = new Loader();
-                    
+        
+        logger.trace("loading textures");
         //LOAD TERRAIN STUFF
         TerrainTexture backgroundTexture = new TerrainTexture(loader.loadTexture("NeuGrass"));
         TerrainTexture rTexture = new TerrainTexture(loader.loadTexture("Dreck"));
@@ -47,7 +57,8 @@ public class MainGameLoop {
         TerrainTexturePack texturePack = new TerrainTexturePack(backgroundTexture,
                 rTexture, gTexture, bTexture);
         TerrainTexture blendMap = new TerrainTexture(loader.loadTexture("blendMapTest1"));
-                
+        
+        logger.trace("loading models");
         //LOAD MODELS & TEXTURES
         TexturedModel person = loader.loadtoVAO("person", "playerTexture");
                         
@@ -59,6 +70,7 @@ public class MainGameLoop {
         
         TexturedModel lamp = loader.loadtoVAO("lamp", "lamp");
         
+        logger.trace("creating entities");
         //Create Entities
         Random random = new Random();
         Terrain terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "heightMap");
@@ -105,6 +117,7 @@ public class MainGameLoop {
         Entity start = new Entity(bunny, new Vector3f(185, 10, -293), 0, 0, 0, 0.5f);
         Camera camera = new Camera(start);        
         
+        logger.trace("entering renderer");
         //RENDERING
         MasterRenderer renderer = new MasterRenderer();
         
@@ -121,11 +134,24 @@ public class MainGameLoop {
             guiRenderer.render(guis);
             DisplayManager.updateDisplay();            
         }
-        
+        logger.trace("exiting");
         guiRenderer.cleanUp();
         renderer.cleanUp();
         loader.cleanUp();
         DisplayManager.closeDisplay();
+        logger.exit();
     }
+    
+	/**
+	 * Checks if a new config is existing, to overwrite the internal logging conf
+	 */
+	private static void checkLoggingConf() {
+		java.io.File f = new java.io.File( ClassLoader.getSystemClassLoader().getResource(".").getPath()+"/log.xml");
+		if (f.exists() && f.isFile()){
+			if (Configurator.initialize(null, f.getAbsolutePath()) == null) {
+				System.err.println("Faulty log config!");
+			}
+		}
+	}
     
 }
