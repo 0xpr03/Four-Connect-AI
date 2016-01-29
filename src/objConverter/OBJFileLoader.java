@@ -33,8 +33,6 @@ public class OBJFileLoader {
 		List<Vertex> vertices = new ArrayList<Vertex>();
 		List<Vector2f> textures = new ArrayList<Vector2f>();
 		List<Vector3f> normals = new ArrayList<Vector3f>();
-		Vector3f vec3f = new Vector3f();
-		Vertex vex = new Vertex(0, vec3f);
 		List<Integer> indices = new ArrayList<Integer>();
 		try {
 			while (true) {
