@@ -24,7 +24,7 @@ public class Camera {
 	private static float RUN_SPEED_STRAFE;
     private static float UP_DOWN_SPEED;
     	
-	private Vector3f position = new Vector3f(100, 15, 0);
+	private Vector3f position;
     private Logger logger = LogManager.getLogger();
     private float pitch;
     private float rotY = 90;
@@ -52,11 +52,10 @@ public class Camera {
         increasePosition(0, UP_DOWN_SPEED * DisplayManager.getFrameTimeSeconds(), 0);
         float terrainHeight = terrain.getHeightOfTerrain(position.x, position.z);
         
-        if(position.y < terrainHeight) {
+        if(position.y < terrainHeight + 5) {
         	UP_DOWN_SPEED = 0;
-            position.y = terrainHeight;
+            position.y = terrainHeight + 5;
         }
-        logger.debug("pitch:{}", pitch);
     }
     
     public Vector3f getPosition() {
@@ -68,20 +67,37 @@ public class Camera {
     }
           
     private void checkInputs() {
-        if(Keyboard.isKeyDown(Keyboard.KEY_W)) {
-            RUN_SPEED_FORWARD = 20;
-        }else if(Keyboard.isKeyDown(Keyboard.KEY_S)) {
-            RUN_SPEED_FORWARD = -20;
-        }else {
-        	RUN_SPEED_FORWARD = 0;
-        }        
-        if(Keyboard.isKeyDown(Keyboard.KEY_D)) {
-            RUN_SPEED_STRAFE = 20;
-        }else if(Keyboard.isKeyDown(Keyboard.KEY_A)) {
-        	RUN_SPEED_STRAFE = -20;
-        }else {
-            RUN_SPEED_STRAFE = 0;
-        }        
+        if(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
+        	if(Keyboard.isKeyDown(Keyboard.KEY_W)) {
+        		RUN_SPEED_FORWARD = 200;
+        	}else if(Keyboard.isKeyDown(Keyboard.KEY_S)) {
+        		RUN_SPEED_FORWARD = -200;
+        	}else {
+        		RUN_SPEED_FORWARD = 0;
+        	}        
+        	if(Keyboard.isKeyDown(Keyboard.KEY_D)) {
+        		RUN_SPEED_STRAFE = 200;
+        	}else if(Keyboard.isKeyDown(Keyboard.KEY_A)) {
+        		RUN_SPEED_STRAFE = -200;
+        	}else {
+        		RUN_SPEED_STRAFE = 0;
+        	}                
+        }else{
+        	if(Keyboard.isKeyDown(Keyboard.KEY_W)) {
+        		RUN_SPEED_FORWARD = 20;
+        	}else if(Keyboard.isKeyDown(Keyboard.KEY_S)) {
+        		RUN_SPEED_FORWARD = -20;
+        	}else {
+        		RUN_SPEED_FORWARD = 0;
+        	}        
+        	if(Keyboard.isKeyDown(Keyboard.KEY_D)) {
+        		RUN_SPEED_STRAFE = 20;
+        	}else if(Keyboard.isKeyDown(Keyboard.KEY_A)) {
+        		RUN_SPEED_STRAFE = -20;
+        	}else {
+        		RUN_SPEED_STRAFE = 0;
+        	}        
+        }
         if(Keyboard.isKeyDown(Keyboard.KEY_SPACE)) {
         	UP_DOWN_SPEED = 30;
         }else if(Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {

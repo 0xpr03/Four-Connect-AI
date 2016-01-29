@@ -55,16 +55,18 @@ public class MainGameLoop {
 
 		logger.trace("loading textures");
 		// LOAD TERRAIN STUFF
-		TerrainTexture backgroundTexture = new TerrainTexture(loader.loadTexture("NeuGrass"));
-		TerrainTexture rTexture = new TerrainTexture(loader.loadTexture("Dreck"));
+		TerrainTexture backgroundTexture = new TerrainTexture(loader.loadTexture("chess"));
+		TerrainTexture rTexture = new TerrainTexture(loader.loadTexture("Road"));
 		TerrainTexture gTexture = new TerrainTexture(loader.loadTexture("Stein"));
-		TerrainTexture bTexture = new TerrainTexture(loader.loadTexture("Strasse"));
+		TerrainTexture bTexture = new TerrainTexture(loader.loadTexture("160"));
 
 		TerrainTexturePack texturePack = new TerrainTexturePack(backgroundTexture, rTexture, gTexture, bTexture);
-		TerrainTexture blendMap = new TerrainTexture(loader.loadTexture("blendMapTest1"));
+		TerrainTexture blendMap = new TerrainTexture(loader.loadTexture("black"));
 
 		logger.trace("loading models");
 		// LOAD MODELS & TEXTURES
+		TexturedModel cube = loader.loadtoVAO("flachercube", "chess");
+		
 		TexturedModel tree = loader.loadtoVAO("tree", "tree");
 
 		TexturedModel fern = loader.loadtoVAO("fern", "fern");
@@ -75,7 +77,7 @@ public class MainGameLoop {
 
 		logger.trace("creating entities");
 		// Create Entities
-		Terrain terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "heightMap");
+		Terrain terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "black");
 
 		List<Entity> allentities = new ArrayList<>();
 
@@ -86,31 +88,25 @@ public class MainGameLoop {
 
 		guiRenderer = new GuiRenderer(loader);
 
-		createRandomEntities(allentities,terrain, tree, 100, 300-150, -300,0f,0f,0f,4);
-		createRandomEntities(allentities,terrain, fern, 100, 300-150, -300,0f,360,0f,0.9f);
+//		createRandomEntities(allentities,terrain, tree, 100, 300-150, -300,0f,0f,0f,4);
+//		createRandomEntities(allentities,terrain, fern, 100, 300-150, -300,0f,360,0f,0.9f);
 		
 
 		Light sun = new Light(new Vector3f(0, 10000, -7000), new Vector3f(0.4f, 0.4f, 0.4f));
 		List<Light> lights = new ArrayList<>();
 		lights.add(sun);
-		lights.add(new Light(new Vector3f(185, 24, -293), new Vector3f(5, 0, 0), new Vector3f(1, 0.01f, 0.002f)));
-		lights.add(new Light(new Vector3f(370, 17, -300), new Vector3f(0, 2, 2), new Vector3f(1, 0.01f, 0.002f)));
-		lights.add(new Light(new Vector3f(293, 7, -305), new Vector3f(2, 2, 0), new Vector3f(1, 0.01f, 0.002f)));
+//		lights.add(new Light(new Vector3f(10, terrain.getHeightOfTerrain(10, 10) + 20, 10), new Vector3f(5, 0, 0), new Vector3f(1, 0.01f, 0.002f)));
+	
+//		allentities.add(new Entity(lamp, new Vector3f(10, terrain.getHeightOfTerrain(10, 10), 10), 0, 0, 0, 1));
+		allentities.add(new Entity(cube, new Vector3f(0, 0, 0), 0, 0, 0, 1));
 
-		allentities.add(new Entity(lamp, new Vector3f(185, 10, -293), 0, 0, 0, 1));
-		allentities.add(new Entity(lamp, new Vector3f(370, 17, -300), 0, 0, 0, 1));
-		allentities.add(new Entity(lamp, new Vector3f(293, 7, -305), 0, 0, 0, 1));
-
-		Entity start = new Entity(bunny, new Vector3f(185, 10, -293), 0, 0, 0, 0.5f);
-		Camera camera = new Camera(start);
+		Camera camera = new Camera(new Vector3f(0, 10, 0));
 		
 		logger.trace("entering renderer");
 		renderer = new MasterRenderer();
 
 		while (!Display.isCloseRequested()) {
-			// player.move(terrain);
-			camera.move();
-			// renderer.processEntity(player);
+			camera.move(terrain);
 			renderer.processTerrain(terrain);
 			for (Entity entity : allentities) {
 				renderer.processEntity(entity);
