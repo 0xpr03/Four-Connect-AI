@@ -96,6 +96,7 @@ public class OBJFileLoader {
 	 * @param verticies
 	 */
 	private static boxVerticies calculatePhysicsBoxLimits(List<Vertex> verticies){
+		logger.entry();
 		float min_x = 0;
 		float min_y = 0;
 		float min_z = 0;
