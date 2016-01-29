@@ -5,8 +5,14 @@
  */
 package entities;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.vector.Vector3f;
+
+import renderEngine.DisplayManager;
+import terrain.Terrain;
 
 /**
  *
@@ -14,28 +20,43 @@ import org.lwjgl.util.vector.Vector3f;
  */
 public class Camera {
     
-    private float distanceFromEntity = 30;
-    private float angleAroundEntity = 0;
-    
-    private Vector3f position = new Vector3f(100, 15, 0);
-    private float pitch = 15f;
-    private float yaw;
-    private float roll;
-    
-    private Entity entity;
-        
-    public Camera(Entity entity) {
-        this.entity = entity;
+	private static float RUN_SPEED_FORWARD;
+	private static float RUN_SPEED_STRAFE;
+    private static float UP_DOWN_SPEED;
+    	
+	private Vector3f position = new Vector3f(100, 15, 0);
+    private Logger logger = LogManager.getLogger();
+    private float pitch;
+    private float rotY = 90;
+                  
+    public Camera(Vector3f position) {
+    	this.position = position;
     }
 
-    public void move() {
-        calculateZoom();
-        calculatePitch();
-        calculateAngleAroundEntity();
-        float horizontalDistance = calculateHorizontalDistance();
-        float verticalDistance = calculateVerticalDistance();
-        calculateCameraPosition(horizontalDistance, verticalDistance);
-        this.yaw = 180 - (entity.getRotY() + angleAroundEntity);
+    public float getRotY() {
+		return rotY;
+	}
+
+	public void move(Terrain terrain) {
+        checkInputs();        
+        
+        float dx = (RUN_SPEED_FORWARD * (float) Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        float dz = (-RUN_SPEED_FORWARD * (float) Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        dx += (RUN_SPEED_STRAFE * (float)Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        dz += (RUN_SPEED_STRAFE * (float)Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        position.x += dx;
+        position.z += dz;    
+        
+        
+        position.y += UP_DOWN_SPEED * DisplayManager.getFrameTimeSeconds();
+        increasePosition(0, UP_DOWN_SPEED * DisplayManager.getFrameTimeSeconds(), 0);
+        float terrainHeight = terrain.getHeightOfTerrain(position.x, position.z);
+        
+        if(position.y < terrainHeight) {
+        	UP_DOWN_SPEED = 0;
+            position.y = terrainHeight;
+        }
+        logger.debug("pitch:{}", pitch);
     }
     
     public Vector3f getPosition() {
@@ -45,49 +66,51 @@ public class Camera {
     public float getPitch() {
         return pitch;
     }
-
-    public float getYaw() {
-        return yaw;
-    }
-
-    public float getRoll() {
-        return roll;
-    }
-    
-    private void calculateCameraPosition(float horizDistance, float verticDistance) {
-        float theta = entity.getRotY() + angleAroundEntity;
-        float offsetX = (float) (horizDistance * Math.sin(Math.toRadians(theta)));
-        float offsetZ = (float) (horizDistance * Math.cos(Math.toRadians(theta)));
-        position.x = entity.getPosition().x - offsetX;
-        position.z = entity.getPosition().z - offsetZ;
-        position.y = entity.getPosition().y + verticDistance;
-    }
-    
-    private float calculateHorizontalDistance() {
-        return (float) (distanceFromEntity * Math.cos(Math.toRadians(pitch)));
-    }
-    
-    private float calculateVerticalDistance() {
-        return (float) (distanceFromEntity * Math.sin(Math.toRadians(pitch)));
-    }
-    
-    private void calculateZoom() {
-        float zoomLevel = Mouse.getDWheel() * 0.1f;
-        distanceFromEntity -= zoomLevel;
-    }
-
-    private void calculatePitch() {
+          
+    private void checkInputs() {
+        if(Keyboard.isKeyDown(Keyboard.KEY_W)) {
+            RUN_SPEED_FORWARD = 20;
+        }else if(Keyboard.isKeyDown(Keyboard.KEY_S)) {
+            RUN_SPEED_FORWARD = -20;
+        }else {
+        	RUN_SPEED_FORWARD = 0;
+        }        
+        if(Keyboard.isKeyDown(Keyboard.KEY_D)) {
+            RUN_SPEED_STRAFE = 20;
+        }else if(Keyboard.isKeyDown(Keyboard.KEY_A)) {
+        	RUN_SPEED_STRAFE = -20;
+        }else {
+            RUN_SPEED_STRAFE = 0;
+        }        
+        if(Keyboard.isKeyDown(Keyboard.KEY_SPACE)) {
+        	UP_DOWN_SPEED = 30;
+        }else if(Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
+        	UP_DOWN_SPEED = -30;
+        }else {
+        	UP_DOWN_SPEED = 0;
+        }
         if(Mouse.isButtonDown(1)) {
             float pitchChange = Mouse.getDY() * 0.1f;
-            pitch -= pitchChange;
-        }
+            pitch += pitchChange;
+            if(pitch <= -90) {
+            	pitch = -90;
+            }else if(pitch >= 90) {
+            	pitch = 90;
+            }
+            float dy = Mouse.getDX() * 0.1f;
+            rotY -= dy;
+        }       
+    }  
+    
+    public void increasePosition(float dx, float dy, float dz) {
+        this.position.x += dx;
+        this.position.y += dy;
+        this.position.z += dz;
     }
     
-    private void calculateAngleAroundEntity() {
-        if(Mouse.isButtonDown(0)) {
-            float angleChange = Mouse.getDX() * 0.3f;
-            angleAroundEntity -= angleChange;
-        }
+    public void increaseRotation(float dy, float pitch) {
+        this.rotY += dy;
+        this.pitch = pitch;
     }
 }
 
