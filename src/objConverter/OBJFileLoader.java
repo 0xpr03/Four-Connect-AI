@@ -13,6 +13,8 @@ import org.apache.logging.log4j.Logger;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
+import models.boxVerticies;
+
 public class OBJFileLoader {
 	
 	private static final String RES_LOC = "res/";
@@ -31,6 +33,8 @@ public class OBJFileLoader {
 		List<Vertex> vertices = new ArrayList<Vertex>();
 		List<Vector2f> textures = new ArrayList<Vector2f>();
 		List<Vector3f> normals = new ArrayList<Vector3f>();
+		Vector3f vec3f = new Vector3f();
+		Vertex vex = new Vertex(0, vec3f);
 		List<Integer> indices = new ArrayList<Integer>();
 		try {
 			while (true) {
@@ -72,6 +76,9 @@ public class OBJFileLoader {
 		} catch (IOException e) {
 			logger.error("Error reading obj file! {}",e);
 		}
+		
+		boxVerticies boxverts = calculatePhysicsBoxLimits(vertices);
+		
 		removeUnusedVertices(vertices);
 		float[] verticesArray = new float[vertices.size() * 3];
 		float[] texturesArray = new float[vertices.size() * 2];
@@ -80,8 +87,38 @@ public class OBJFileLoader {
 				texturesArray, normalsArray);
 		int[] indicesArray = convertIndicesListToArray(indices);
 		ModelData data = new ModelData(verticesArray, texturesArray, normalsArray, indicesArray,
-				furthest);
+				furthest,boxverts);
 		return data;
+	}
+	
+	/**
+	 * Calculate the farthest points to create a physics box.
+	 * @param verticies
+	 */
+	private static boxVerticies calculatePhysicsBoxLimits(List<Vertex> verticies){
+		float min_x = 0;
+		float min_y = 0;
+		float min_z = 0;
+		float max_x = 0;
+		float max_y = 0;
+		float max_z = 0;
+		for (Vertex vec : verticies){
+			if ( vec.getPosition().x < min_x )
+				min_x = vec.getPosition().x;
+			if ( vec.getPosition().x > max_x )
+				max_x = vec.getPosition().x;
+			if ( vec.getPosition().y < min_y )
+				min_y = vec.getPosition().y;
+			if ( vec.getPosition().y > max_y )
+				max_y = vec.getPosition().y;
+			if ( vec.getPosition().z < min_z )
+				min_z = vec.getPosition().z;
+			if ( vec.getPosition().z > max_z )
+				max_z = vec.getPosition().z;
+		}
+		Vector3f max = new Vector3f(max_x, max_y, max_z);
+		Vector3f min = new Vector3f(min_x, min_y, min_z);
+		return new boxVerticies(min, max);
 	}
 
 	private static void processVertex(String[] vertex, List<Vertex> vertices, List<Integer> indices) {

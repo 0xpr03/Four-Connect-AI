@@ -1,5 +1,7 @@
 package objConverter;
 
+import models.boxVerticies;
+
 public class ModelData {
 
 	private float[] vertices;
@@ -7,14 +9,20 @@ public class ModelData {
 	private float[] normals;
 	private int[] indices;
 	private float furthestPoint;
+	private boxVerticies boxvert;
 
 	public ModelData(float[] vertices, float[] textureCoords, float[] normals, int[] indices,
-			float furthestPoint) {
+			float furthestPoint, boxVerticies boxvert) {
 		this.vertices = vertices;
 		this.textureCoords = textureCoords;
 		this.normals = normals;
 		this.indices = indices;
 		this.furthestPoint = furthestPoint;
+		this.boxvert = boxvert;
+	}
+	
+	public boxVerticies getboxVerticies(){
+		return boxvert;
 	}
 
 	public float[] getVertices() {
