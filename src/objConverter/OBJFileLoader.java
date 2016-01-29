@@ -21,6 +21,10 @@ public class OBJFileLoader {
 	private static final Logger logger = LogManager.getLogger();
 
 	public static ModelData loadOBJ(String objFileName) {
+	/**
+	 * Reads the lines of the .obj file (well duh) and puts the data into lists that will later on be processed 
+	 * into arrays which go into the ModelData
+	 */
 		FileReader isr = null;
 		File objFile = new File(RES_LOC + objFileName + ".obj");
 		try {
@@ -120,6 +124,13 @@ public class OBJFileLoader {
 		return new boxVerticies(min, max);
 	}
 
+	/**
+	 * "Processes" the vertices, sorts the lists that .obj are, 2 bring the position, texture and normal coordinates
+	 * of the vertices together and so allowing us 2 actually render them.
+	 * @param vertex
+	 * @param vertices
+	 * @param indices
+	 */
 	private static void processVertex(String[] vertex, List<Vertex> vertices, List<Integer> indices) {
 		int index = Integer.parseInt(vertex[0]) - 1;
 		Vertex currentVertex = vertices.get(index);
@@ -134,7 +145,12 @@ public class OBJFileLoader {
 					vertices);
 		}
 	}
-
+	
+	/**
+	 * Same as convertDataToArrays but with the indices list. Was needed because the indices are ints.
+	 * @param indices
+	 * @return
+	 */
 	private static int[] convertIndicesListToArray(List<Integer> indices) {
 		int[] indicesArray = new int[indices.size()];
 		for (int i = 0; i < indicesArray.length; i++) {
@@ -143,6 +159,16 @@ public class OBJFileLoader {
 		return indicesArray;
 	}
 
+	/**
+	 * Puts all the Vertex Data from the Lists into float arrays. Also returns the furthest Vertex of the model
+	 * @param vertices
+	 * @param textures
+	 * @param normals
+	 * @param verticesArray
+	 * @param texturesArray
+	 * @param normalsArray
+	 * @return
+	 */
 	private static float convertDataToArrays(List<Vertex> vertices, List<Vector2f> textures,
 			List<Vector3f> normals, float[] verticesArray, float[] texturesArray,
 			float[] normalsArray) {
@@ -166,7 +192,15 @@ public class OBJFileLoader {
 		}
 		return furthestPoint;
 	}
-
+	/**
+	 * Indexes the vertices so that they don't get rendered for every triangle
+	 * => dedublication of Vertex-Rendering
+	 * @param previousVertex
+	 * @param newTextureIndex
+	 * @param newNormalIndex
+	 * @param indices
+	 * @param vertices
+	 */
 	private static void dealWithAlreadyProcessedVertex(Vertex previousVertex, int newTextureIndex,
 			int newNormalIndex, List<Integer> indices, List<Vertex> vertices) {
 		if (previousVertex.hasSameTextureAndNormal(newTextureIndex, newNormalIndex)) {
@@ -187,7 +221,11 @@ public class OBJFileLoader {
 
 		}
 	}
-	
+	/**
+	 * Removes the earlier indexed (hence saved in the list multiple times) vertices from the list in order
+	 * 2 have every Vertex only saved once in the list.
+	 * @param vertices
+	 */
 	private static void removeUnusedVertices(List<Vertex> vertices){
 		for(Vertex vertex:vertices){
 			if(!vertex.isSet()){

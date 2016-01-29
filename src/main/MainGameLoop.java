@@ -21,8 +21,10 @@ import org.lwjgl.opengl.Display;
 import renderEngine.DisplayManager;
 import renderEngine.Loader;
 import models.TexturedModel;
+
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
+
 import renderEngine.MasterRenderer;
 import terrain.Terrain;
 import textures.TerrainTexture;
@@ -35,7 +37,7 @@ import textures.TerrainTexturePack;
 public class MainGameLoop {
 	
 	private static final Logger logger = LogManager.getLogger(MainGameLoop.class);
-	private static String VERSION = "0.1";
+	private static String VERSION = "0.1";	
 	
     /**
      * @param args the command line arguments
@@ -61,7 +63,7 @@ public class MainGameLoop {
         logger.trace("loading models");
         //LOAD MODELS & TEXTURES
         TexturedModel tree = loader.loadtoVAO("tree", "tree");
-                        
+                 
         TexturedModel fern = loader.loadtoVAO("fern", "fern");
                         
         TexturedModel bunny = loader.loadtoVAO("bunny", "white");
@@ -71,7 +73,7 @@ public class MainGameLoop {
         logger.trace("creating entities");
         //Create Entities
         Random random = new Random();
-        Terrain terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "heightMap2");
+        Terrain terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "heightMap");
 
         List<Entity> allentities = new ArrayList<>();
         
@@ -149,6 +151,6 @@ public class MainGameLoop {
 				System.err.println("Faulty log config!");
 			}
 		}
-	}
+	}	
     
 }

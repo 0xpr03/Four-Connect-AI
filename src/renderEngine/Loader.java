@@ -47,6 +47,11 @@ public class Loader {
         return new RawModel(vaoID, indices.length);        
     }
     
+    /**
+     * Saves a RawModel into a VAO
+     * @param positions
+     * @return
+     */
     public RawModel loadtoVAO(float[] positions) {
         int vaoID = createVAO();
         this.storeDataInAttributeList(0, 2, positions);
@@ -54,6 +59,12 @@ public class Loader {
         return new RawModel(vaoID, positions.length / 2);
     }
     
+    /**
+     * Saves a TexturedModel into a VAO
+     * @param model
+     * @param texture
+     * @return
+     */
     public TexturedModel loadtoVAO(String model, String texture) {
         ModelData modelData = OBJFileLoader.loadOBJ(model);
         
@@ -66,7 +77,7 @@ public class Loader {
                 loadTexture(texture)));
         return texturedModel;
     }
-     
+    
     public int loadTexture(String fileName) {
         Texture texture = null;
         try {
@@ -84,6 +95,9 @@ public class Loader {
         return textureID;    
     }
     
+    /**
+     * Because you need 2 cleanUp everything in openGL, Buffer cleaning and stuff
+     */
     public void cleanUp() {
         for(int vao:vaos) {
             GL30.glDeleteVertexArrays(vao);
@@ -96,6 +110,11 @@ public class Loader {
         }
     }
     
+    /**
+     * Creates VAOs(duh) which represent an Object and they get filled with VBOs so you get normals and positions and
+     * that stuff, giving you a full set of ModelData in the end.
+     * @return
+     */
     private int createVAO() {
         int vaoID = GL30.glGenVertexArrays();
         vaos.add(vaoID);
@@ -103,6 +122,13 @@ public class Loader {
         return vaoID;
     }
     
+    /**
+     * Stores data in VBOs. VBOs are a part of the modelData and they represent the instances of data in a model
+     * for example all the normal vectors get stored in a VBO. All the VBOs then get stored in a VAO.
+     * @param attributeNumber
+     * @param coordinateSize
+     * @param data
+     */
     private void storeDataInAttributeList(int attributeNumber, int coordinateSize, float[] data) {
         int vboID = GL15.glGenBuffers();
         vbos.add(vboID);
@@ -113,6 +139,9 @@ public class Loader {
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
     }
     
+    /**
+     * cleanUp stuff
+     */
     private void unbindVAO() { 
         GL30.glBindVertexArray(0);
     }

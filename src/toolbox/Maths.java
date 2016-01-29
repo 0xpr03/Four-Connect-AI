@@ -16,6 +16,15 @@ import org.lwjgl.util.vector.Vector3f;
  */
 public class Maths {
     
+	/**
+	 * Calculates the height of points on the Triangles, in case the collision algorythm isn't asking for the 
+	 * height at a certain Vertex but the height at a certain pixel.
+	 * @param p1
+	 * @param p2
+	 * @param p3
+	 * @param pos
+	 * @return
+	 */
     public static float barryCentric(Vector3f p1, Vector3f p2, Vector3f p3, Vector2f pos) {
         float det = (p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z);
 		float l1 = ((p2.z - p3.z) * (pos.x - p3.x) + (p3.x - p2.x) * (pos.y - p3.z)) / det;
