@@ -37,5 +37,6 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/Q4Projekt/log4j-api-2.5-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

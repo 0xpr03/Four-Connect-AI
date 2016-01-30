@@ -1,0 +1,5 @@
+objekt:
+https://en.wikipedia.org/wiki/Wavefront_.obj_file
+-texture coordinates:
+edit mode: U->smart uv project
+http://gamedev.stackexchange.com/a/16139
