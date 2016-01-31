@@ -1,7 +1,5 @@
 package gamelogic;
 
-import org.apache.logging.log4j.LogManager;
-
 import gamelogic.Controller.E_GAME_STATE;
 
 /**
