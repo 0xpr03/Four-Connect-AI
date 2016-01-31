@@ -203,22 +203,35 @@ public final class Controller {
 			// check for edges (1down, 1left/right)
 			if(x > 1 && y < XY_MAX){
 				if(FIELD[x-1][y] != E_FIELD_STATE.NONE){ // left of space = stone
-					if (!checkDrawPos(x-1,y-1, true)){ // check 1left,1down for diag. wins
+					if (!checkDrawPos(x-1,y-1, true,false)){ // check 1left,1down for diag. wins
+						return false;
+					}
+					if (!checkDrawPos(x-1,y, false,true)){ // check 1left for horiz/vert wins
 						return false;
 					}
 				}
 			}
 			if(x < (XY_MAX-1)  && y < XY_MAX){
 				if(FIELD[x+1][y] != E_FIELD_STATE.NONE){ // right of space = stone
-					if (!checkDrawPos(x+1,y-1, true)){ // check 1right,1down for diag. wins
+					if (!checkDrawPos(x+1,y-1, true,false)){ // check 1right,1down for diag. wins
+						return false;
+					}
+					if (!checkDrawPos(x+1,y, false,true)){ // check 1right for horiz/vert wins
 						return false;
 					}
 				}
 			}
 			
 			// check for topmost stone:
-			if (!checkDrawPos(x,y-1,false)){
+			if (!checkDrawPos(x,y-1,false,false)){
 				return false;
+			}
+			
+			for(int y2 = y; y2 < XY_MAX; y2++){
+			// check for 4-space free
+				if(!checkDrawPos(x,y2,false,true)){
+					return false;
+				}
 			}
 		}
 		return true;
@@ -232,7 +245,7 @@ public final class Controller {
 	 * @return true if no possible win for pos is found
 	 * @author Aron Heinecke
 	 */
-	private static boolean checkDrawPos(int x, int y, boolean test_diag_only){
+	private static boolean checkDrawPos(int x, int y, boolean test_diag_only, boolean test_horiz_vert_only){
 		E_FIELD_STATE wstate = FIELD[x][y];
 		{
 			if(!test_diag_only){
@@ -253,17 +266,21 @@ public final class Controller {
 			}
 		}
 		{
-			Point a = getXmaxYmax(wstate, x, y,true);
-			Point b = getXminYmin(wstate,x,y,true);
-			if(a.getX() - b.getX() > NEEDED_WIN_DIFFERENCE){
-				return false;
+			if(!test_horiz_vert_only){
+				Point a = getXmaxYmax(wstate, x, y,true);
+				Point b = getXminYmin(wstate,x,y,true);
+				if(a.getX() - b.getX() > NEEDED_WIN_DIFFERENCE){
+					return false;
+				}
 			}
 		}
 		{
-			Point a = getXmaxYmin(wstate, x, y,true);
-			Point b = getXminYmax(wstate,x,y,true);
-			if(a.getX() - b.getX() > NEEDED_WIN_DIFFERENCE){
-				return false;
+			if(!test_horiz_vert_only){
+				Point a = getXmaxYmin(wstate, x, y,true);
+				Point b = getXminYmax(wstate,x,y,true);
+				if(a.getX() - b.getX() > NEEDED_WIN_DIFFERENCE){
+					return false;
+				}
 			}
 		}
 		return true;

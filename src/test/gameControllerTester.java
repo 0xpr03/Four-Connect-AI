@@ -145,22 +145,39 @@ public class gameControllerTester {
 		Controller.D_setField(Controller.D_parseField(input));
 		assertEquals("no draw check",false,Controller.D_analyzeField());
 		}
+		{
+		String input = "OX--OX-\nOO--OO-\nXXXOXXX\nOOOXXOO\nXXXOOOX\nXOOOXXX\nXOXOOOX";
+		Controller.initGame(E_GAME_MODE.TESTING, Level.TRACE);
+		Controller.startGame();
+		Controller.D_setField(Controller.D_parseField(input));
+		assertEquals("no draw check",false,Controller.D_analyzeField());
+		}
+		{
+		String input = "-------\n--OXO-X\nXXOOOXX\nOOXXXOO\nXOOOXXX\nOXXXOXX\nOOXOXOO";
+		Controller.initGame(E_GAME_MODE.TESTING, Level.TRACE);
+		Controller.startGame();
+		Controller.D_setField(Controller.D_parseField(input));
+		assertEquals("no draw check",false,Controller.D_analyzeField());
+		}
 	}
 	
 	@Test
 	public void test_fuzzer(){
-		long time = System.currentTimeMillis();
 		int games = 100000000;
 		long moves = 0;
 		int win_a = 0;
 		int win_b = 0;
 		int draw = 0;
 		int lowest_moves_draw = 44;
-		int lowest = 49;
+		int lowest_draw = 49;
+		int lowest_moves_win = 44;
+		int lowest_win = 44;
 		E_GAME_MODE gamemode = E_GAME_MODE.FUZZING;
 		StringBuilder sb = new StringBuilder();
-		String lowest_field = "";
+		String lowest_field_draw = "";
+		String lowest_field_win = "";
 		logger.info("Starting fuzzing test, this will take some time..");
+		long time = System.currentTimeMillis();
 		for(int x = 0; x < games; x++){
 			Controller.initGame(gamemode, Level.WARN);
 			Controller.startGame();
@@ -172,15 +189,23 @@ public class gameControllerTester {
 			}
 			if (Controller.getGameState() == E_GAME_STATE.WIN_A ){
 				win_a++;
+				if(Controller.getMoves() < lowest_win){
+					lowest_win = Controller.getMoves();
+					lowest_field_win = Controller.getprintedGameState();
+				}
 			}else if (Controller.getGameState() == E_GAME_STATE.WIN_B ){
 				win_b++;
+				if(Controller.getMoves() < lowest_win){
+					lowest_win = Controller.getMoves();
+					lowest_field_win = Controller.getprintedGameState();
+				}
 			}else if(Controller.getGameState() == E_GAME_STATE.DRAW){
 				if(Controller.getMoves() < lowest_moves_draw){
 					sb.append(Controller.getprintedGameState());
 					sb.append("\n");
-					if(Controller.getMoves() < lowest){
-						lowest = Controller.getMoves();
-						lowest_field = Controller.getprintedGameState();
+					if(Controller.getMoves() < lowest_draw){
+						lowest_draw = Controller.getMoves();
+						lowest_field_draw = Controller.getprintedGameState();
 					}
 				}
 				draw++;
@@ -192,7 +217,8 @@ public class gameControllerTester {
 		logger.info("Computed {} games, in {} ms, {} moves",games,System.currentTimeMillis()-time, moves);
 		logger.info("Gamemode simulated: {}",gamemode);
 		logger.info("Wins A:{} B:{} Draws:{}",win_a,win_b,draw);
-		logger.info("Lowest move count for a draw: {}",lowest);
 		logger.info("Drawgames with moves < {}: \n{}",lowest_moves_draw,sb.toString());
+		logger.info("Lowest move count for a draw: {}\n{}",lowest_draw,lowest_field_draw);
+		logger.info("Lowest move count for a win: {}\n{}",lowest_win,lowest_field_win);
 	}
 }
