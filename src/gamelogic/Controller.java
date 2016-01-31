@@ -1,11 +1,13 @@
 package gamelogic;
 
+import java.lang.reflect.Array;
 import java.util.Random;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.newdawn.slick.util.Log;
 
 /**
  * Main controller for the game
@@ -14,7 +16,7 @@ import org.apache.logging.log4j.core.config.Configurator;
  */
 public final class Controller {
 	public enum E_GAME_MODE {
-		NONE, SINGLE_PLAYER, MULTIPLAYER, KI_INTERNAL, FUZZING
+		NONE, SINGLE_PLAYER, MULTIPLAYER, KI_INTERNAL, FUZZING, TESTING
 	}
 	
 	public enum E_GAME_STATE {
@@ -38,10 +40,11 @@ public final class Controller {
 	/**
 	 * Initialize a new Game
 	 * @param gamemode on multiplayer / singleplayer the starting player will be selected randomly
+	 * @param loglevel define a loglevel used for this game
 	 * everthing else it'll be player a
 	 */
-	public static void initGame(E_GAME_MODE gamemode) {
-		Configurator.setLevel(logger.getName(), Level.WARN);
+	public static void initGame(E_GAME_MODE gamemode, Level loglevel) {
+		Configurator.setLevel(logger.getName(), loglevel);
 		if (gamemode == E_GAME_MODE.NONE){
 			logger.error("Wrong game mode! {}",gamemode);
 		}
@@ -53,15 +56,30 @@ public final class Controller {
 			}
 		}
 		GAMEMODE = gamemode;
+		if (GAMEMODE == E_GAME_MODE.TESTING){
+			logger.warn("Gamemode set to TESTING. All manipulations are enabled in this mode!");
+		}
 		MOVES = 0;
+	}
+	
+	/**
+	 * Initialize a new game
+	 * @param gamemode
+	 */
+	public static void initGame(E_GAME_MODE gamemode){
+		initGame(gamemode, LogManager.getRootLogger().getLevel());
 	}
 	
 	/**
 	 * Start a initialized game
 	 */
 	public static void startGame() {
+		if(GAMEMODE == E_GAME_MODE.NONE){
+			logger.error("Uninitialized game start!");
+			return;
+		}
 		STATE = E_GAME_STATE.START;
-		if (GAMEMODE == E_GAME_MODE.MULTIPLAYER || GAMEMODE == E_GAME_MODE.SINGLE_PLAYER) {
+		if (GAMEMODE == E_GAME_MODE.MULTIPLAYER || GAMEMODE == E_GAME_MODE.SINGLE_PLAYER || GAMEMODE == E_GAME_MODE.FUZZING) {
 			STATE = getRandomBoolean() ? E_GAME_STATE.PLAYER_A : E_GAME_STATE.PLAYER_B;
 		}else{
 			STATE = E_GAME_STATE.PLAYER_A;
@@ -165,51 +183,87 @@ public final class Controller {
 	/**
 	 * Checks for a draw
 	 * @param wstate
-	 * @return
+	 * @return true if it's a draw
+	 * @author Aron Heinecke
 	 */
 	private static boolean checkDraw(){
-		if (MOVES == 49){
-			return true;
-		}
-		
-		int y = 1;
+		int y;
 		for(int x = 0; x < XY_MAX; x++){
-			y = 1;
+			if(FIELD[x][0] == E_FIELD_STATE.NONE){ // empty column
+				return false;
+			}
+			y = 0;
 			while(y < XY_MAX){
-				if (FIELD[x][y] == E_FIELD_STATE.NONE)
+				if (FIELD[x][y] == E_FIELD_STATE.NONE){
 					break;
+				}
 				y++;
 			}
-			y--;
-			logger.debug("Y: {}",y);
-			E_FIELD_STATE wstate = FIELD[x][y];
-			{
+			logger.debug("XY: {}|{}",x,y);
+			// check for edges (1down, 1left/right)
+			if(x > 1 && y < XY_MAX){
+				if(FIELD[x-1][y] != E_FIELD_STATE.NONE){ // left of space = stone
+					if (!checkDrawPos(x-1,y-1, true)){ // check 1left,1down for diag. wins
+						return false;
+					}
+				}
+			}
+			if(x < (XY_MAX-1)  && y < XY_MAX){
+				if(FIELD[x+1][y] != E_FIELD_STATE.NONE){ // right of space = stone
+					if (!checkDrawPos(x+1,y-1, true)){ // check 1right,1down for diag. wins
+						return false;
+					}
+				}
+			}
+			
+			// check for topmost stone:
+			if (!checkDrawPos(x,y-1,false)){
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * Returns false if one possible win for posxy is found.
+	 * @param x
+	 * @param y
+	 * @param test_diag_only if set to true, x/y coord. wins won't be checked
+	 * @return true if no possible win for pos is found
+	 * @author Aron Heinecke
+	 */
+	private static boolean checkDrawPos(int x, int y, boolean test_diag_only){
+		E_FIELD_STATE wstate = FIELD[x][y];
+		{
+			if(!test_diag_only){
 				Point a = getXmax(wstate, x, y,true);
 				Point b = getXmin(wstate,x,y,true);
 				if(a.getX() - b.getX() > NEEDED_WIN_DIFFERENCE){
 					return false;
 				}
 			}
-			{
+		}
+		{
+			if(!test_diag_only){
 				Point a = getYmax(wstate, x, y,true);
 				Point b = getYmin(wstate,x,y,true);
 				if(a.getY() - b.getY() > NEEDED_WIN_DIFFERENCE){
 					return false;
 				}
 			}
-			{
-				Point a = getXmaxYmax(wstate, x, y,true);
-				Point b = getXminYmin(wstate,x,y,true);
-				if(a.getX() - b.getX() > NEEDED_WIN_DIFFERENCE){
-					return false;
-				}
+		}
+		{
+			Point a = getXmaxYmax(wstate, x, y,true);
+			Point b = getXminYmin(wstate,x,y,true);
+			if(a.getX() - b.getX() > NEEDED_WIN_DIFFERENCE){
+				return false;
 			}
-			{
-				Point a = getXmaxYmin(wstate, x, y,true);
-				Point b = getXminYmax(wstate,x,y,true);
-				if(a.getX() - b.getX() > NEEDED_WIN_DIFFERENCE){
-					return false;
-				}
+		}
+		{
+			Point a = getXmaxYmin(wstate, x, y,true);
+			Point b = getXminYmax(wstate,x,y,true);
+			if(a.getX() - b.getX() > NEEDED_WIN_DIFFERENCE){
+				return false;
 			}
 		}
 		return true;
@@ -463,6 +517,93 @@ public final class Controller {
 			}
 		}
 		return new Point(min_x,max_y);
+	}
+	
+	public static boolean D_setField(E_FIELD_STATE[][] field){
+		if(GAMEMODE == E_GAME_MODE.TESTING){
+			FIELD = field;
+			return true;
+		}else{
+			logger.error("Game field changes are not allowed in this gamemode!");
+			return false;
+		}
+	}
+	
+	public static boolean D_analyzeField(){
+		if(GAMEMODE == E_GAME_MODE.TESTING){
+			printGameState();
+			return checkDraw();
+		}else{
+			logger.error("Not allowed in this gamemode!");
+			return false;
+		}
+	}
+	
+	public static boolean setState(E_GAME_STATE state){
+		if(GAMEMODE == E_GAME_MODE.TESTING){
+			STATE = state;
+			return true;
+		}else{
+			logger.error("Not allowed in this gamemode!");
+			return false;
+		}
+	}
+	
+	/**
+	 * Parse an string of AB-BA... (2d) into a FIELD
+	 * @param input
+	 * @return null on invalid input
+	 */
+	public static E_FIELD_STATE[][] D_parseField(String input){
+		String[] args = input.split("\n");
+		logger.debug("Input: {}",args);
+		logger.debug("0 column: {}",args[0]);
+		E_FIELD_STATE[][] data = new E_FIELD_STATE[XY_MAX][XY_MAX];
+		for(int i = 0; i < XY_MAX; i++){
+			for (int j = 0; j < XY_MAX; j++){
+				FIELD[i][j] = E_FIELD_STATE.NONE;
+			}
+		}
+		
+		if(Array.getLength(args) != XY_MAX){
+			logger.error("INvalid parse input size! {}",Array.getLength(args));
+			return null;
+		}
+		
+		int y_col = (XY_MAX-1);
+		for(int y = 0; y < XY_MAX; y++){
+			String s = args[y];
+			if(s.length() != XY_MAX){
+				logger.error("Invalid row input size! {}",s.length());
+				return null;
+			}
+			for(int x = (XY_MAX-1); x >= 0; x--){
+				data[x][y_col] = parseChar(s.charAt(x));
+			}
+			y_col--;
+		}
+		return data;
+	}
+	
+	private static E_FIELD_STATE parseChar(char s){
+		E_FIELD_STATE state;
+		switch(s){
+		case 'A':
+		case 'a':
+		case 'X':
+			state = E_FIELD_STATE.STONE_A;
+			break;
+		case 'B':
+		case 'b':
+		case 'O':
+			state = E_FIELD_STATE.STONE_B;
+			break;
+		case '-':
+		case ' ':
+		default:
+			state = E_FIELD_STATE.NONE;
+		}
+		return state;
 	}
 	
 	/**
