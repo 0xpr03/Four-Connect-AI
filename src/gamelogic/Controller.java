@@ -41,7 +41,7 @@ public final class Controller {
 	 * @param loglevel define a loglevel used for this game
 	 * everthing else it'll be player a
 	 */
-	public static void initGame(E_GAME_MODE gamemode, Level loglevel) {
+	public static synchronized void initGame(E_GAME_MODE gamemode, Level loglevel) {
 		Configurator.setLevel(logger.getName(), loglevel);
 		if (gamemode == E_GAME_MODE.NONE){
 			logger.error("Wrong game mode! {}",gamemode);
@@ -71,7 +71,7 @@ public final class Controller {
 	/**
 	 * Start a initialized game
 	 */
-	public static void startGame() {
+	public static synchronized void startGame() {
 		if(GAMEMODE == E_GAME_MODE.NONE){
 			logger.error("Uninitialized game start!");
 			return;
