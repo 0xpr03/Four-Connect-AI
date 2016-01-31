@@ -163,19 +163,22 @@ public class gameControllerTester {
 	
 	@Test
 	public void test_fuzzer(){
-		int games = 100000000;
+		final int games = 100000000;
+		final int amount_samples = 100;
 		long moves = 0;
 		int win_a = 0;
 		int win_b = 0;
 		int draw = 0;
-		int lowest_moves_draw = 44;
-		int lowest_draw = 49;
+		int lowest_moves_draw = 41;
+		int lowest_draw = 41;
 		int lowest_moves_win = 44;
 		int lowest_win = 44;
-		E_GAME_MODE gamemode = E_GAME_MODE.FUZZING;
+		final E_GAME_MODE gamemode = E_GAME_MODE.FUZZING;
 		StringBuilder sb = new StringBuilder();
+		StringBuilder spot_samples = new StringBuilder();
 		String lowest_field_draw = "";
 		String lowest_field_win = "";
+		final int spotdivider = games/amount_samples;
 		logger.info("Starting fuzzing test, this will take some time..");
 		long time = System.currentTimeMillis();
 		for(int x = 0; x < games; x++){
@@ -187,6 +190,11 @@ public class gameControllerTester {
 				Controller.insertStone(rand.nextInt(7));
 				moves++;
 			}
+			if (x % spotdivider == 0){
+				spot_samples.append(Controller.getprintedGameState());
+				spot_samples.append("\n");
+			}
+			
 			if (Controller.getGameState() == E_GAME_STATE.WIN_A ){
 				win_a++;
 				if(Controller.getMoves() < lowest_win){
@@ -220,5 +228,6 @@ public class gameControllerTester {
 		logger.info("Drawgames with moves < {}: \n{}",lowest_moves_draw,sb.toString());
 		logger.info("Lowest move count for a draw: {}\n{}",lowest_draw,lowest_field_draw);
 		logger.info("Lowest move count for a win: {}\n{}",lowest_win,lowest_field_win);
+		logger.info("Spot samples: \n{}",spot_samples.toString());
 	}
 }

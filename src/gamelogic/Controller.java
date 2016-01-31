@@ -7,7 +7,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
-import org.newdawn.slick.util.Log;
 
 /**
  * Main controller for the game
@@ -30,7 +29,6 @@ public final class Controller {
 	private static Logger logger = LogManager.getLogger();
 	private static E_GAME_MODE GAMEMODE = E_GAME_MODE.NONE;
 	private static E_GAME_STATE STATE = E_GAME_STATE.NONE;
-	private static final int MAX_ROUNDS = 49;
 	private static int MOVES;
 	private static WinStore LASTWIN;
 	private static E_FIELD_STATE[][] FIELD; // X Y
@@ -86,6 +84,10 @@ public final class Controller {
 		}
 	}
 	
+	/**
+	 * Get random true/false
+	 * @return
+	 */
 	public static boolean getRandomBoolean() {
 	    Random random = new Random();
 	    return random.nextBoolean();
@@ -107,6 +109,10 @@ public final class Controller {
 		return STATE;
 	}
 	
+	/**
+	 * Return the amount of done moves for this game
+	 * @return
+	 */
 	public static int getMoves(){
 		return MOVES;
 	}
@@ -116,7 +122,9 @@ public final class Controller {
 	 */
 	public static String getprintedGameState() {
 		StringBuffer sb = new StringBuffer();
-		sb.append("Current gamestate:\n");
+		sb.append("Current gamestate: ");
+		sb.append(STATE);
+		sb.append("\n");
 		for (int i = 6; i >= 0; i--){
 			sb.append(i+"\t");
 			for (int x = 0; x < XY_MAX; x++){
@@ -131,6 +139,9 @@ public final class Controller {
 		return sb.toString();
 	}
 	
+	/**
+	 * Print the current game field and state to the console
+	 */
 	public static void printGameState(){
 		logger.debug(getprintedGameState());
 	}
@@ -286,6 +297,11 @@ public final class Controller {
 		return true;
 	}
 	
+	/**
+	 * Handle wins, calling animation functions etc
+	 * @param ws
+	 * @author Aron Heinecke
+	 */
 	private synchronized static void handleWin(WinStore ws){
 		logger.debug("Point A:{}|{} B:{}|{}",ws.getPoint_a().getX(),ws.getPoint_a().getY(),ws.getPoint_b().getX(),ws.getPoint_b().getY());
 		logger.debug("State: {}",ws.getState());
@@ -300,6 +316,7 @@ public final class Controller {
 	 * @param posy
 	 * @param wstate
 	 * @return
+	 * @author Aron Heinecke
 	 */
 	private static WinStore checkWin_Y(final int posx,final int posy,final E_FIELD_STATE wstate) {
 		logger.debug("posx:{} posy:{} wstate:{}",posx,posy,wstate);
@@ -325,6 +342,7 @@ public final class Controller {
 	 * Get most y+ point from the starting point
 	 * @param wstate
 	 * @return
+	 * @author Aron Heinecke
 	 */
 	private static Point getYmax(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
 		int max_y = posy;
@@ -342,6 +360,7 @@ public final class Controller {
 	 * Get most y- point from the starting point
 	 * @param wstate
 	 * @return
+	 * @author Aron Heinecke
 	 */
 	private static Point getYmin(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
 		int min_y = posy;
@@ -361,6 +380,7 @@ public final class Controller {
 	 * @param posy
 	 * @param wstate
 	 * @return
+	 * @author Aron Heinecke
 	 */
 	private static WinStore checkWin_X(final int posx,final int posy,final E_FIELD_STATE wstate) {
 		Point a = getXmax(wstate,posx, posy,false);
@@ -379,6 +399,7 @@ public final class Controller {
 	 * Get most x+ point from the starting point
 	 * @param wstate
 	 * @return
+	 * @author Aron Heinecke
 	 */
 	private static Point getXmax(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
 		int max_x = posx;
@@ -396,6 +417,7 @@ public final class Controller {
 	 * Get most x- point from the starting point
 	 * @param wstate
 	 * @return
+	 * @author Aron Heinecke
 	 */
 	private static Point getXmin(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
 		int min_x = posx;
@@ -416,6 +438,7 @@ public final class Controller {
 	 * @param posy
 	 * @param wstate
 	 * @return
+	 * @author Aron Heinecke
 	 */
 	private static WinStore checkWin_XYP(final int posx,final int posy,final E_FIELD_STATE wstate) {
 		Point a = getXmaxYmax(wstate,posx,posy,false);
@@ -434,6 +457,7 @@ public final class Controller {
 	 * Get most x+ y+ point from the starting point
 	 * @param wstate
 	 * @return
+	 * @author Aron Heinecke
 	 */
 	private static Point getXmaxYmax(final E_FIELD_STATE wstate,final int posx,final int posy,boolean ignore_none){
 		int max_x = posx;
@@ -453,6 +477,7 @@ public final class Controller {
 	 * Get most x- y- point from the starting point
 	 * @param wstate
 	 * @return
+	 * @author Aron Heinecke
 	 */
 	private static Point getXminYmin(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
 		int min_x = posx;
@@ -477,6 +502,7 @@ public final class Controller {
 	 * @param posy
 	 * @param wstate
 	 * @return
+	 * @author Aron Heinecke
 	 */
 	private static WinStore checkWin_XYM(final int posx,final int posy,final E_FIELD_STATE wstate) {
 		
@@ -502,6 +528,7 @@ public final class Controller {
 	 * @param posx
 	 * @param posy
 	 * @return
+	 * @author Aron Heinecke
 	 */
 	private static Point getXmaxYmin(final E_FIELD_STATE wstate,final int posx,final int posy,boolean ignore_none){
 		int max_x = posx;
@@ -521,6 +548,7 @@ public final class Controller {
 	 * Get most x- y+ point from the starting point
 	 * @param wstate
 	 * @return
+	 * @author Aron Heinecke
 	 */
 	private static Point getXminYmax(final E_FIELD_STATE wstate,final int posx,final int posy,boolean ignore_none){
 		int min_x = posx;
@@ -536,6 +564,13 @@ public final class Controller {
 		return new Point(min_x,max_y);
 	}
 	
+	/**
+	 * Set game field
+	 * Only for debugging
+	 * @param field
+	 * @return true on success
+	 * @author Aron Heinecke
+	 */
 	public static boolean D_setField(E_FIELD_STATE[][] field){
 		if(GAMEMODE == E_GAME_MODE.TESTING){
 			FIELD = field;
@@ -546,6 +581,12 @@ public final class Controller {
 		}
 	}
 	
+	/**
+	 * Analyze game
+	 * Only for debugging
+	 * @return true on draw
+	 * @author Aron Heinecke
+	 */
 	public static boolean D_analyzeField(){
 		if(GAMEMODE == E_GAME_MODE.TESTING){
 			printGameState();
@@ -556,6 +597,11 @@ public final class Controller {
 		}
 	}
 	
+	/**
+	 * Set state of game
+	 * @param state
+	 * @return true on success
+	 */
 	public static boolean setState(E_GAME_STATE state){
 		if(GAMEMODE == E_GAME_MODE.TESTING){
 			STATE = state;
@@ -570,6 +616,7 @@ public final class Controller {
 	 * Parse an string of AB-BA... (2d) into a FIELD
 	 * @param input
 	 * @return null on invalid input
+	 * @author Aron Heinecke
 	 */
 	public static E_FIELD_STATE[][] D_parseField(String input){
 		String[] args = input.split("\n");
@@ -627,6 +674,7 @@ public final class Controller {
 	 * Insert stone
 	 * @param column value between 0-6
 	 * @return returns false on failure
+	 * @author Aron Heinecke
 	 */
 	public synchronized static boolean insertStone(final int column){
 		if (STATE != E_GAME_STATE.PLAYER_A && STATE != E_GAME_STATE.PLAYER_B){
