@@ -135,35 +135,35 @@ public class gameControllerTester {
 	@Test
 	public void test_draw(){
 		{
-		String input = "OXO-XXO\nXXX-OOO\nOOO-XXX\nXXX-OXO\nOXO-OOX\nXOO-XXX\nXOO-OOX";
+		String input = "XXX-OOO\nOOO-XXX\nXXX-OXO\nOXO-OOX\nXOO-XXX\nXOO-OOX";
 		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
 		GController.startGame();
 		GController.D_setField(GController.D_parseField(input));
 		assertEquals("no draw check",false,GController.D_analyzeField());
 		}
 		{
-		String input = "X-OOX--\nXXXOX--\nOOOXOOO\nOXOOOXX\nOXOXXOO\nXXXOXXX\nOOOXXOX";
+		String input = "X-OOX--\nXXXOX--\nOOOXOOO\nOXOOOXX\nOXOXXOO\nXXXOXXX";
 		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
 		GController.startGame();
 		GController.D_setField(GController.D_parseField(input));
 		assertEquals("no draw check",false,GController.D_analyzeField());
 		}
 		{
-		String input = "--OOX--\nX-XOXX-\nOOXXOOO\nOXOXOXX\nOXOXXOO\nXXXOXXX\nOOOXXOX";
+		String input = "--OOX--\nX-XOXX-\nOOXXOOO\nOXOXOXX\nOXOXXOO\nXXXOXXX";
 		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
 		GController.startGame();
 		GController.D_setField(GController.D_parseField(input));
 		assertEquals("no draw check",false,GController.D_analyzeField());
 		}
 		{
-		String input = "OX--OX-\nOO--OO-\nXXXOXXX\nOOOXXOO\nXXXOOOX\nXOOOXXX\nXOXOOOX";
+		String input = "OX--OX-\nOO--OO-\nXXXOXXX\nOOOXXOO\nXXXOOOX\nXOOOXXX";
 		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
 		GController.startGame();
 		GController.D_setField(GController.D_parseField(input));
 		assertEquals("no draw check",false,GController.D_analyzeField());
 		}
 		{
-		String input = "-------\n--OXO-X\nXXOOOXX\nOOXXXOO\nXOOOXXX\nOXXXOXX\nOOXOXOO";
+		String input = "-------\n--OXO-X\nXXOOOXX\nOOXXXOO\nXOOOXXX\nOXXXOXX";
 		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
 		GController.startGame();
 		GController.D_setField(GController.D_parseField(input));
@@ -194,14 +194,14 @@ public class gameControllerTester {
 			}
 		}
 		try{
-		final int games = 1000000000;
-		final int amount_samples = 300;
+		final long games = 1000;
+		final long amount_samples = 300;
 		final int lowest_moves_draw = 42; // border, everything below will be logged
 		
 		final E_GAME_MODE gamemode = E_GAME_MODE.FUZZING;
-		final int spotdivider = games/amount_samples;
+		final long spotdivider = games/amount_samples;
 		int processors = Runtime.getRuntime().availableProcessors();
-		final int games_per_thread = games / processors;
+		final long games_per_thread = games / processors;
 		
 		logger.info("Starting fuzzing test, this will take some time..");
 		logger.info("Using {} threads, {} games per thread. ( ={} Games) ",processors,games_per_thread,games_per_thread*processors);
@@ -232,10 +232,6 @@ public class gameControllerTester {
 						//controller.printGameState();
 						controller.insertStone(rand.nextInt(7));
 						moves++;
-					}
-					if (x % spotdivider == 0){
-						spot_samples.append(controller.getprintedGameState());
-						spot_samples.append("\n");
 					}
 					
 					if (controller.getGameState() == E_GAME_STATE.WIN_A ){

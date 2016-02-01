@@ -35,7 +35,8 @@ public final class Controller {
 	private WinStore LASTWIN;
 	private E_FIELD_STATE[][] FIELD; // X Y
 	private final int NEEDED_WIN_DIFFERENCE = 2; //declaration: > x = win
-	private final int XY_MAX = 7; //declaration: max + 1
+	private int X_MAX = 7;
+	private int Y_MAX = 6;
 	
 	/**
 	 * Initialize a new Game
@@ -49,9 +50,9 @@ public final class Controller {
 			logger.error("Wrong game mode! {}",gamemode);
 		}
 		STATE = E_GAME_STATE.NONE;
-		FIELD = new E_FIELD_STATE[XY_MAX][XY_MAX];
-		for(int i = 0; i < XY_MAX; i++){
-			for (int j = 0; j < XY_MAX; j++){
+		FIELD = new E_FIELD_STATE[X_MAX][Y_MAX];
+		for(int i = 0; i < X_MAX; i++){
+			for (int j = 0; j < Y_MAX; j++){
 				FIELD[i][j] = E_FIELD_STATE.NONE;
 			}
 		}
@@ -127,16 +128,16 @@ public final class Controller {
 		sb.append("Current gamestate: ");
 		sb.append(STATE);
 		sb.append("\n");
-		for (int i = 6; i >= 0; i--){
-			sb.append(i+"\t");
-			for (int x = 0; x < XY_MAX; x++){
-				sb.append("|"+printConvGamest(FIELD[x][i]));
+		for (int Y = (Y_MAX-1); Y >= 0; Y--){
+			sb.append(Y+"\t");
+			for (int x = 0; x < X_MAX; x++){
+				sb.append("|"+printConvGamest(FIELD[x][Y]));
 			}
 			sb.append("|\n");
 		}
 		sb.append("\t ");
-		for (int i = 0; i < XY_MAX; i++){
-			sb.append(i+" ");
+		for (int X = 0; X < X_MAX; X++){
+			sb.append(X+" ");
 		}
 		return sb.toString();
 	}
@@ -201,12 +202,12 @@ public final class Controller {
 	 */
 	private boolean checkDraw(){
 		int y;
-		for(int x = 0; x < XY_MAX; x++){
+		for(int x = 0; x < X_MAX; x++){
 			if(FIELD[x][0] == E_FIELD_STATE.NONE){ // empty column
 				return false;
 			}
 			y = 0;
-			while(y < XY_MAX){
+			while(y < Y_MAX){
 				if (FIELD[x][y] == E_FIELD_STATE.NONE){
 					break;
 				}
@@ -214,7 +215,7 @@ public final class Controller {
 			}
 			logger.debug("XY: {}|{}",x,y);
 			// check for edges (1down, 1left/right)
-			if(x > 1 && y < XY_MAX){
+			if(x > 1 && y < Y_MAX){
 				if(FIELD[x-1][y] != E_FIELD_STATE.NONE){ // left of space = stone
 					if (!checkDrawPos(x-1,y-1, true,false)){ // check 1left,1down for diag. wins
 						return false;
@@ -224,7 +225,7 @@ public final class Controller {
 					}
 				}
 			}
-			if(x < (XY_MAX-1)  && y < XY_MAX){
+			if(x < (X_MAX-1)  && y < Y_MAX){
 				if(FIELD[x+1][y] != E_FIELD_STATE.NONE){ // right of space = stone
 					if (!checkDrawPos(x+1,y-1, true,false)){ // check 1right,1down for diag. wins
 						return false;
@@ -240,7 +241,7 @@ public final class Controller {
 				return false;
 			}
 			
-			for(int y2 = y; y2 < XY_MAX; y2++){
+			for(int y2 = y; y2 < Y_MAX; y2++){
 			// check for 4-space free
 				if(!checkDrawPos(x,y2,false,true)){
 					return false;
@@ -348,7 +349,7 @@ public final class Controller {
 	 */
 	private Point getYmax(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
 		int max_y = posy;
-		for(int y = posy; y < XY_MAX; y++){
+		for(int y = posy; y < Y_MAX; y++){
 			if ( matchField(FIELD[posx][y],wstate,ignore_none) ) {
 				max_y = y;
 			}else {
@@ -405,7 +406,7 @@ public final class Controller {
 	 */
 	private Point getXmax(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
 		int max_x = posx;
-		for(int x = posx; x < XY_MAX; x++){
+		for(int x = posx; x < X_MAX; x++){
 			if ( matchField(FIELD[x][posy],wstate,ignore_none) ) {
 				max_x = x;
 			}else {
@@ -464,7 +465,7 @@ public final class Controller {
 	private Point getXmaxYmax(final E_FIELD_STATE wstate,final int posx,final int posy,boolean ignore_none){
 		int max_x = posx;
 		int max_y = posy;
-		while (max_x+1 < XY_MAX && max_y+1 < XY_MAX){
+		while (max_x+1 < X_MAX && max_y+1 < Y_MAX){
 			if (matchField(FIELD[max_x+1][max_y+1],wstate,ignore_none)){
 				max_x++;
 				max_y++;
@@ -535,7 +536,7 @@ public final class Controller {
 	private Point getXmaxYmin(final E_FIELD_STATE wstate,final int posx,final int posy,boolean ignore_none){
 		int max_x = posx;
 		int min_y = posy;
-		while (max_x+1 < XY_MAX && min_y-1 >= 0){
+		while (max_x+1 < X_MAX && min_y-1 >= 0){
 			if (matchField(FIELD[max_x+1][min_y-1],wstate,ignore_none)){
 				max_x++;
 				min_y--;
@@ -555,7 +556,7 @@ public final class Controller {
 	private Point getXminYmax(final E_FIELD_STATE wstate,final int posx,final int posy,boolean ignore_none){
 		int min_x = posx;
 		int max_y = posy;
-		while (max_y+1 < XY_MAX && min_x-1 >= 0){
+		while (max_y+1 < Y_MAX && min_x-1 >= 0){
 			if (matchField(FIELD[min_x-1][max_y+1],wstate,ignore_none)){
 				min_x--;
 				max_y++;
@@ -624,26 +625,26 @@ public final class Controller {
 		String[] args = input.split("\n");
 		logger.debug("Input: {}",args);
 		logger.debug("0 column: {}",args[0]);
-		E_FIELD_STATE[][] data = new E_FIELD_STATE[XY_MAX][XY_MAX];
-		for(int i = 0; i < XY_MAX; i++){
-			for (int j = 0; j < XY_MAX; j++){
+		E_FIELD_STATE[][] data = new E_FIELD_STATE[X_MAX][Y_MAX];
+		for(int i = 0; i < X_MAX; i++){
+			for (int j = 0; j < Y_MAX; j++){
 				FIELD[i][j] = E_FIELD_STATE.NONE;
 			}
 		}
 		
-		if(Array.getLength(args) != XY_MAX){
-			logger.error("INvalid parse input size! {}",Array.getLength(args));
+		if(Array.getLength(args) != Y_MAX){
+			logger.error("Invalid parse input size! {}",Array.getLength(args));
 			return null;
 		}
 		
-		int y_col = (XY_MAX-1);
-		for(int y = 0; y < XY_MAX; y++){
+		int y_col = (Y_MAX-1);
+		for(int y = 0; y < Y_MAX; y++){
 			String s = args[y];
-			if(s.length() != XY_MAX){
+			if(s.length() != X_MAX){
 				logger.error("Invalid row input size! {}",s.length());
 				return null;
 			}
-			for(int x = (XY_MAX-1); x >= 0; x--){
+			for(int x = (X_MAX-1); x >= 0; x--){
 				data[x][y_col] = parseChar(s.charAt(x));
 			}
 			y_col--;
@@ -687,7 +688,7 @@ public final class Controller {
 		
 		int found_place = -1;
 		
-		for(int i = 0; i < XY_MAX; i++){
+		for(int i = 0; i < Y_MAX; i++){
 			if ( FIELD[column][i] == E_FIELD_STATE.NONE ) {
 				FIELD[column][i] = new_field_state;
 				found_place = i;
