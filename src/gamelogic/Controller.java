@@ -206,7 +206,7 @@ public final class Controller<E extends AI> {
 		if(LASTWIN != null){
 			Point a = LASTWIN.getPoint_a();
 			Point b = LASTWIN.getPoint_b();
-			sb.append("Last win from ");
+			sb.append("\nLast win from ");
 			sb.append(LASTWIN.getState());
 			sb.append(" at ");
 			sb.append(a.getX());

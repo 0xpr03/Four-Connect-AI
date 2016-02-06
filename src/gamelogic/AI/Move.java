@@ -22,6 +22,23 @@ public class Move {
 		this(field, move, false, false, false);
 	}
 	
+	@Override
+	public String toString(){
+		return bytesToHex(this.field)+" m:"+this.move+" d:"+draw+" l:"+loose+" u:"+used;
+	}
+	
+	/**
+	 * Bytes to hex for sha ASCII representation
+	 * @param bytes
+	 * @return
+	 */
+	public String bytesToHex(byte[] bytes) {
+		StringBuffer result = new StringBuffer();
+		for (byte byt : bytes)
+			result.append(Integer.toString((byt & 0xff) + 0x100, 16).substring(1));
+		return result.toString();
+	}
+	
 	/**
 	 * @return the draw
 	 */

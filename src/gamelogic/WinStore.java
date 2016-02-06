@@ -40,7 +40,7 @@ public class WinStore {
 		this.capitulation = true;
 		this.state = state == E_GAME_STATE.PLAYER_A ? E_GAME_STATE.WIN_B : E_GAME_STATE.WIN_A;
 	}
-
+	
 	public Point getPoint_a() {
 		return point_a;
 	}

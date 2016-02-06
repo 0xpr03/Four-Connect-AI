@@ -22,7 +22,8 @@ public class AITest {
 		logger.entry();
 		registerExitFunction();
 		Configurator.setLevel("DB", Level.WARN);
-		for(int x = 0; x <= 50; x++){
+		Configurator.setLevel("AI", Level.TRACE);
+		for(int x = 0; x <= 500; x++){
 			GController.initGame(E_GAME_MODE.KI_INTERNAL,Level.WARN);
 			GController.startGame();
 			while(gameRunning()){
