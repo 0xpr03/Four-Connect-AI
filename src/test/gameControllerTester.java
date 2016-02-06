@@ -194,17 +194,14 @@ public class gameControllerTester {
 		}
 		try{
 		final long games = 1000000000;
-		final long amount_samples = 300;
 		final int lowest_moves_draw = 35; // border, everything below will be logged
 		
 		final E_GAME_MODE gamemode = E_GAME_MODE.FUZZING;
-		final long spotdivider = games/amount_samples;
 		int processors = Runtime.getRuntime().availableProcessors();
 		final long games_per_thread = games / processors;
 		
 		logger.info("Starting fuzzing test, this will take some time..");
 		logger.info("Using {} threads, {} games per thread. ( ={} Games) ",processors,games_per_thread,games_per_thread*processors);
-		long time = System.currentTimeMillis();
 		ExecutorService workers = Executors.newCachedThreadPool();
 		Collection<Callable<tResult>> tasks = new ArrayList<Callable<tResult>>();
 		long time_real = System.currentTimeMillis();
@@ -219,16 +216,15 @@ public class gameControllerTester {
 				int draws = 0;
 				int lowest_draw = 42;
 				StringBuilder draws_string = new StringBuilder();
-				StringBuilder spot_samples = new StringBuilder();
 				String lowest_field_draw = "";
 				long time = System.currentTimeMillis();
 				for(int x = 0; x < games_per_thread; x++){
+					@SuppressWarnings("rawtypes")
 					Controller controller = new Controller();
 					controller.initGame(gamemode, Level.WARN);
 					controller.startGame();
 					Random rand = new Random(System.nanoTime());
 					while(controller.getGameState() == E_GAME_STATE.PLAYER_A || controller.getGameState() == E_GAME_STATE.PLAYER_B){
-						//controller.printGameState();
 						controller.insertStone(rand.nextInt(7));
 						moves++;
 					}

@@ -1,15 +1,10 @@
 package gamelogic.AI;
 
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import gamelogic.Controller.E_FIELD_STATE;
 import gamelogic.Controller.E_GAME_STATE;
 import gamelogic.Controller.E_PLAYER;
 import gamelogic.GController;
@@ -41,11 +36,23 @@ public class KBS<E extends DB> implements AI {
 			for(int x = 0; x < moves.size(); x++){
 				move = moves.get(x);
 				if(move.isUsed()){
-					
+					if(move.isDraw())
+						draw = move;
+					if(!move.isLoose())
+						win = move;
 				}else if(learning){
 					useMove(move);
 					return;
 				}
+			}
+			
+			if(win != null){
+				useMove(win);
+			}else if(draw != null){
+				useMove(draw);
+			}else{
+				logger.debug("Draw state for AI {}",player);
+				
 			}
 		}
 		// TODO Auto-generated method stub

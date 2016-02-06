@@ -8,14 +8,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 
+import gamelogic.AI.AI;
+
 /**
  * Main controller for the game four connect
  * This class is NOT supposed to be created and used object.
  * Use GController as main instance!!
  * @author Aron Heinecke
+ * @param <E>
  *
  */
-public final class Controller {
+public final class Controller<E extends AI> {
 	public enum E_GAME_MODE {
 		NONE, SINGLE_PLAYER, MULTIPLAYER, KI_INTERNAL, FUZZING, TESTING
 	}
@@ -39,22 +42,18 @@ public final class Controller {
 	private WinStore LASTWIN;
 	private E_FIELD_STATE[][] FIELD; // X Y
 	private final int NEEDED_WIN_DIFFERENCE = 2; //declaration: > x = win
+	private E AI_a; // primary AI
+	private E AI_b; // secondary for KI internal
 	private int X_MAX = 7;
-	/**
-	 * @return the x_MAX
-	 */
-	public int getX_MAX() {
-		return X_MAX;
-	}
-
 	private int Y_MAX = 6;
 	
-	/**
-	 * @return the y_MAX
-	 */
-	public int getY_MAX() {
-		return Y_MAX;
+	public Controller(E ai_a, E ai_b){
+		if(AI_a != null)
+			AI_a = ai_a;
+		if(AI_b != null)
+			AI_b = ai_b;
 	}
+	public Controller(){}
 
 	/**
 	 * Initialize a new Game
@@ -102,6 +101,24 @@ public final class Controller {
 			STATE = getRandomBoolean() ? E_GAME_STATE.PLAYER_A : E_GAME_STATE.PLAYER_B;
 		}else{
 			STATE = E_GAME_STATE.PLAYER_A;
+		}
+		run_KI();
+	}
+	
+	/**
+	 * Let KI start a move, if gamemode & current player matches
+	 */
+	private void run_KI(){
+		if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
+			if(STATE == E_GAME_STATE.PLAYER_B){
+				AI_a.getMove();
+			}
+		}else if(GAMEMODE == E_GAME_MODE.KI_INTERNAL){
+			if(STATE == E_GAME_STATE.PLAYER_A){
+				AI_a.getMove();
+			}else{
+				AI_b.getMove();
+			}
 		}
 	}
 	
@@ -328,6 +345,12 @@ public final class Controller {
 		logger.debug("State: {}",ws.getState());
 		STATE = ws.getState();
 		LASTWIN = ws;
+		if(GAMEMODE == E_GAME_MODE.KI_INTERNAL){
+			AI_a.gameEvent();
+			AI_b.gameEvent();
+		}else if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
+			AI_a.gameEvent();
+		}
 		//TODO: run handle code for winner display etc
 	}
 	
@@ -691,6 +714,14 @@ public final class Controller {
 		return state;
 	}
 	
+	public synchronized void capitulate(E_PLAYER player){
+		if( player == E_PLAYER.PLAYER_A){
+			STATE = E_GAME_STATE.WIN_B;
+		}else{
+			STATE = E_GAME_STATE.WIN_A;
+		}
+	}
+	
 	/**
 	 * Insert stone
 	 * @param column value between 0-6
@@ -721,12 +752,37 @@ public final class Controller {
 					STATE = E_GAME_STATE.DRAW;
 				}else{
 					STATE = STATE == E_GAME_STATE.PLAYER_A ? E_GAME_STATE.PLAYER_B : E_GAME_STATE.PLAYER_A;
+					new Thread() {
+					    public void run() {
+					        try {
+					            run_KI();
+					        } catch(Error e) {
+					            logger.error(e);
+					        }
+					    }  
+					}.start();
 				}
 			}
 		}else{
 			logger.info("No more column space to insert any stones!");
 		}
 		
+		//TODO: call graphics && let it callback the next run
+		
 		return found_place != -1;
+	}
+	
+	/**
+	 * @return the x_MAX
+	 */
+	public int getX_MAX() {
+		return X_MAX;
+	}
+
+	/**
+	 * @return the y_MAX
+	 */
+	public int getY_MAX() {
+		return Y_MAX;
 	}
 }

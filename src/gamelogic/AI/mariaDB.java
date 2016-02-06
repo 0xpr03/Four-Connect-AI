@@ -1,7 +1,5 @@
 package gamelogic.AI;
 
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -21,7 +19,6 @@ public class mariaDB implements DB {
 	private String user;
 	private String pw;
 	private String db;
-	private int SIZE_FIELD;
 	private lib lib = new lib();
 	int port;
 	private Connection connection;
@@ -33,7 +30,6 @@ public class mariaDB implements DB {
 		this.pw = pw;
 		this.db = db;
 		connect();
-		SIZE_FIELD = GController.getX_MAX() * GController.getY_MAX();
 	}
 	
 	private void connect(){

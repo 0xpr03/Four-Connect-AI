@@ -5,6 +5,8 @@ import org.apache.logging.log4j.Level;
 import gamelogic.Controller.E_FIELD_STATE;
 import gamelogic.Controller.E_GAME_MODE;
 import gamelogic.Controller.E_GAME_STATE;
+import gamelogic.AI.KBS;
+import gamelogic.AI.mariaDB;
 
 /**
  * The MAIN controller of the game four connect
@@ -13,7 +15,7 @@ import gamelogic.Controller.E_GAME_STATE;
  *
  */
 public class GController {
-	private final static Controller controller = new Controller();
+	private final static Controller<KBS<mariaDB>> controller = new Controller<KBS<mariaDB>>(new KBS<mariaDB>(new mariaDB("localhost",3306,"ai","ai","ai"),true), new KBS<mariaDB>(new mariaDB("localhost",3306,"ai","ai","ai"),true));
 
 	/**
 	 * @param gamemode
