@@ -42,16 +42,18 @@ public final class Controller<E extends AI> {
 	private WinStore LASTWIN;
 	private E_FIELD_STATE[][] FIELD; // X Y
 	private final int NEEDED_WIN_DIFFERENCE = 2; //declaration: > x = win
-	private E AI_a; // primary AI
-	private E AI_b; // secondary for KI internal
+	private E AI_a = null; // primary AI
+	private E AI_b = null; // secondary for KI internal
 	private int X_MAX = 7;
 	private int Y_MAX = 6;
 	
 	public Controller(E ai_a, E ai_b){
-		if(AI_a != null)
+		logger.entry();
+		if(AI_a == null)
 			AI_a = ai_a;
-		if(AI_b != null)
+		if(AI_b == null)
 			AI_b = ai_b;
+		logger.debug("Init AI's: A:{} B:{}",AI_a != null, AI_b != null);
 	}
 	public Controller(){}
 
@@ -78,6 +80,8 @@ public final class Controller<E extends AI> {
 			logger.warn("Gamemode set to TESTING. All manipulations are enabled in this mode!");
 		}
 		MOVES = 0;
+		
+		
 	}
 	
 	/**
@@ -102,10 +106,11 @@ public final class Controller<E extends AI> {
 		}else{
 			STATE = E_GAME_STATE.PLAYER_A;
 		}
+		start_AI();
 		new Thread() {
 		    public void run() {
 		        try {
-		            run_KI();
+		            run_AI();
 		        } catch(Error e) {
 		            logger.error(e);
 		        }
@@ -116,7 +121,7 @@ public final class Controller<E extends AI> {
 	/**
 	 * Let KI start a move, if gamemode & current player matches
 	 */
-	private void run_KI(){
+	private void run_AI(){
 		if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
 			if(STATE == E_GAME_STATE.PLAYER_B){
 				AI_a.getMove();
@@ -127,6 +132,20 @@ public final class Controller<E extends AI> {
 			}else{
 				AI_b.getMove();
 			}
+		}
+	}
+	
+	/**
+	 * Called on game start with AIs
+	 * AI_a is Player B on singleplayer
+	 * AI_a is player A on KI internal
+	 */
+	private void start_AI(){
+		if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
+			AI_a.start(E_PLAYER.PLAYER_B);
+		}else if(GAMEMODE == E_GAME_MODE.KI_INTERNAL){
+			AI_a.start(E_PLAYER.PLAYER_A);
+			AI_b.start(E_PLAYER.PLAYER_B);
 		}
 	}
 	
@@ -143,7 +162,7 @@ public final class Controller<E extends AI> {
 	 * Returns the current game field state.
 	 * @return FIELD_STATE[XY_MAX][XY_MAX]
 	 */
-	public E_FIELD_STATE[][] getFieldState(){
+	public synchronized E_FIELD_STATE[][] getFieldState(){
 		return FIELD;
 	}
 	
@@ -151,7 +170,7 @@ public final class Controller<E extends AI> {
 	 * Returns the current state of the game
 	 * @return GAME_STATE
 	 */
-	public E_GAME_STATE getGameState() {
+	public synchronized E_GAME_STATE getGameState() {
 		return STATE;
 	}
 	
@@ -642,6 +661,7 @@ public final class Controller<E extends AI> {
 	public boolean D_analyzeField(){
 		if(GAMEMODE == E_GAME_MODE.TESTING){
 			printGameState();
+			checkWin(1, 5);
 			return checkDraw();
 		}else{
 			logger.error("Not allowed in this gamemode!");
@@ -763,7 +783,7 @@ public final class Controller<E extends AI> {
 					new Thread() {
 					    public void run() {
 					        try {
-					            run_KI();
+					            run_AI();
 					        } catch(Error e) {
 					            logger.error(e);
 					        }
@@ -778,6 +798,15 @@ public final class Controller<E extends AI> {
 		//TODO: call graphics && let it callback the next run
 		
 		return found_place != -1;
+	}
+	
+	public void shutdown(){
+		STATE = E_GAME_STATE.NONE;
+		GAMEMODE = E_GAME_MODE.NONE;
+		if(AI_a != null)
+			AI_a.shutdown();
+		if(AI_b != null)
+			AI_b.shutdown();
 	}
 	
 	/**

@@ -13,7 +13,7 @@ import gamelogic.GController;
 
 public class KBS<E extends DB> implements AI {
 	
-	private Logger logger = LogManager.getLogger();
+	private Logger logger = LogManager.getLogger("AI");
 	private E db;
 	private Move MOVE_LAST;
 	private Move MOVE_CURRENT;
@@ -28,10 +28,18 @@ public class KBS<E extends DB> implements AI {
 	
 	@Override
 	public void getMove() {
+		logger.entry(player);
+		if(GController.getGameState() != E_GAME_STATE.PLAYER_A && GController.getGameState() != E_GAME_STATE.PLAYER_B){
+			logger.entry("Game already ended");
+			return;
+		}
 		List<Move> moves = db.getMoves(GController.getFieldState());
 		if(moves.isEmpty()){
-			db.insertMoves(GController.getFieldState(), getPossibilities());
-			//TODO: generate all possibilities
+			List<Integer> possibilities = getPossibilities();
+			Move move = db.insertMoves(GController.getFieldState(), possibilities);
+			if(move == null)
+				return;
+			useMove(move);
 		}else{
 			Move move;
 			Move win = null;
@@ -61,8 +69,7 @@ public class KBS<E extends DB> implements AI {
 				MOVE_CURRENT = moves.get(0);
 			}
 		}
-		// TODO Auto-generated method stub
-
+		logger.exit();
 	}
 	
 	/**
@@ -71,16 +78,26 @@ public class KBS<E extends DB> implements AI {
 	 * @param move
 	 */
 	private void useMove(Move move){
+		logger.entry(player);
+		move.setUsed(true);
+		logger.info("{}",move.getMove());
 		if(MOVE_CURRENT != null){
 			MOVE_CURRENT.setUsed(true);
 			MOVE_LAST = MOVE_CURRENT;
 			MOVE_CURRENT = move;
 			db.setMove(MOVE_LAST);
+		}else{
+			MOVE_CURRENT = move;
 		}
+		if(!GController.insertStone(MOVE_CURRENT.getMove())){
+			logger.error("Couldn't insert stone! Wrong move!");
+		}
+		logger.exit();
 	}
 	
 	@Override
 	public void gameEvent() {
+		logger.entry(player);
 		E_GAME_STATE state = GController.getGameState();
 		switch(state){
 		case DRAW:
@@ -104,6 +121,7 @@ public class KBS<E extends DB> implements AI {
 		
 		MOVE_CURRENT = null;
 		MOVE_LAST = null;
+		logger.exit();
 	}
 
 	@Override
@@ -113,6 +131,7 @@ public class KBS<E extends DB> implements AI {
 
 	@Override
 	public void start(E_PLAYER player) {
+		logger.entry(player);
 		MOVE_LAST = null;
 		MOVE_CURRENT = null;
 		this.player = player;

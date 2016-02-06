@@ -132,6 +132,15 @@ public class gameControllerTester {
 	}
 	
 	@Test
+	public void test_win(){
+		String input = "-OOXXOO\n-XXOOXX\n-OOXXOO\n-XXOOXX\n-OOOXOO\n-XXOXXX";
+		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
+		GController.startGame();
+		GController.D_setField(GController.D_parseField(input));
+		assertEquals("no draw check",false,GController.D_analyzeField());
+	}
+	
+	@Test
 	public void test_draw(){
 		{
 		String input = "XXX-OOO\nOOO-XXX\nXXX-OXO\nOXO-OOX\nXOO-XXX\nXOO-OOX";

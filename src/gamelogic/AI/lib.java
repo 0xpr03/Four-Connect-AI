@@ -35,7 +35,7 @@ public class lib {
 	 * @param field
 	 * @return
 	 */
-	private byte[] field2sha(E_FIELD_STATE[][] field){
+	public byte[] field2sha(E_FIELD_STATE[][] field){
 		return md.digest(field2bytes(field));
 	}
 	
@@ -61,12 +61,16 @@ public class lib {
 	 */
 	public byte[] field2bytes(E_FIELD_STATE[][] field){
 		int[][] data = field2ints(field);
-		bytebuffer.clear();
-		intbuffer.clear();
-		if(bytebuffer == null)
-			bytebuffer = ByteBuffer.allocate(data.length * 4);
-		if(intbuffer == null)
+		if(bytebuffer == null){
+			bytebuffer = ByteBuffer.allocate(GController.getX_MAX() * GController.getY_MAX() * 4);
+		}else{
+			bytebuffer.clear();
+		}
+		if(intbuffer == null){
 			intbuffer = bytebuffer.asIntBuffer();
+		}else{
+			intbuffer.clear();
+		}
         for(int[] row : data){
         	intbuffer.put(row);
         }

@@ -19,6 +19,14 @@ public class GController {
 	private final static Controller<KBS<mariaDB>> controller = new Controller<KBS<mariaDB>>(new KBS<mariaDB>(new mariaDB("localhost",3306,"ai","ai","ai"),true), new KBS<mariaDB>(new mariaDB("localhost",3306,"ai","ai","ai"),true));
 
 	/**
+	 * 
+	 * @see gamelogic.Controller#shutdown()
+	 */
+	public static void shutdown() {
+		controller.shutdown();
+	}
+
+	/**
 	 * @param player
 	 * @see gamelogic.Controller#capitulate(gamelogic.Controller.E_PLAYER)
 	 */
