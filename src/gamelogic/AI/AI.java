@@ -26,4 +26,9 @@ public interface AI {
 	 * @param player set to the user the AI is playing
 	 */
 	public abstract void start(E_PLAYER player);
+	
+	/**
+	 * Called so the AI can calculate it's next step while the animation is still running.
+	 */
+	public abstract void preProcessing();
 }

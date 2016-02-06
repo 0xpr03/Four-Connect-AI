@@ -140,5 +140,11 @@ public class KBS<E extends DB> implements AI {
 		}
 		return possibilities;
 	}
+
+	@Override
+	public void preProcessing() {
+		// TODO Auto-generated method stub
+		
+	}
 	
 }
