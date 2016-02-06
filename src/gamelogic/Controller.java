@@ -20,6 +20,10 @@ public final class Controller {
 		NONE, SINGLE_PLAYER, MULTIPLAYER, KI_INTERNAL, FUZZING, TESTING
 	}
 	
+	public enum E_PLAYER {
+		PLAYER_A, PLAYER_B
+	}
+	
 	public enum E_GAME_STATE {
 		NONE, START, PLAYER_A, PLAYER_B, WIN_A, WIN_B, DRAW
 	}
@@ -36,8 +40,22 @@ public final class Controller {
 	private E_FIELD_STATE[][] FIELD; // X Y
 	private final int NEEDED_WIN_DIFFERENCE = 2; //declaration: > x = win
 	private int X_MAX = 7;
+	/**
+	 * @return the x_MAX
+	 */
+	public int getX_MAX() {
+		return X_MAX;
+	}
+
 	private int Y_MAX = 6;
 	
+	/**
+	 * @return the y_MAX
+	 */
+	public int getY_MAX() {
+		return Y_MAX;
+	}
+
 	/**
 	 * Initialize a new Game
 	 * @param gamemode on multiplayer / singleplayer the starting player will be selected randomly
@@ -166,7 +184,7 @@ public final class Controller {
 	 * Check for win based on the current stone
 	 * @return
 	 */
-	public synchronized boolean checkWin(final int posx, final int posy){
+	private synchronized boolean checkWin(final int posx, final int posy){
 		logger.debug("Player: {}",STATE);
 		E_FIELD_STATE wstate = STATE == E_GAME_STATE.PLAYER_A ?  E_FIELD_STATE.STONE_A : E_FIELD_STATE.STONE_B;
 		logger.debug("wished state: {}",wstate);

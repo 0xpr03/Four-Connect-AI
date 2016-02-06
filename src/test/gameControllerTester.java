@@ -193,9 +193,9 @@ public class gameControllerTester {
 			}
 		}
 		try{
-		final long games = 1000;
+		final long games = 1000000000;
 		final long amount_samples = 300;
-		final int lowest_moves_draw = 42; // border, everything below will be logged
+		final int lowest_moves_draw = 35; // border, everything below will be logged
 		
 		final E_GAME_MODE gamemode = E_GAME_MODE.FUZZING;
 		final long spotdivider = games/amount_samples;

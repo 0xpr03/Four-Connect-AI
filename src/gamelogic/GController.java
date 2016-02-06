@@ -89,16 +89,6 @@ public class GController {
 	}
 
 	/**
-	 * @param posx
-	 * @param posy
-	 * @return
-	 * @see gamelogic.Controller#checkWin(int, int)
-	 */
-	public static boolean checkWin(int posx, int posy) {
-		return controller.checkWin(posx, posy);
-	}
-
-	/**
 	 * @param field
 	 * @return
 	 * @see gamelogic.Controller#D_setField(gamelogic.Controller.E_FIELD_STATE[][])
@@ -140,5 +130,21 @@ public class GController {
 	 */
 	public static boolean insertStone(int column) {
 		return controller.insertStone(column);
+	}
+	
+	/**
+	 * @return
+	 * @see gamelogic.Controller#getX_MAX()
+	 */
+	public static int getX_MAX() {
+		return controller.getX_MAX();
+	}
+
+	/**
+	 * @return
+	 * @see gamelogic.Controller#getY_MAX()
+	 */
+	public static int getY_MAX() {
+		return controller.getY_MAX();
 	}
 }
