@@ -9,6 +9,11 @@ import gamelogic.Controller.E_GAME_MODE;
 
 import gamelogic.GController;
 
+/**
+ * AI tester & trainer
+ * @author Aron Heinecke
+ *
+ */
 public class AITest {
 	
 	private static Logger logger = LogManager.getLogger();
@@ -17,7 +22,7 @@ public class AITest {
 		logger.entry();
 		registerExitFunction();
 		Configurator.setLevel("DB", Level.WARN);
-		for(int x = 0; x <= 10000; x++){
+		for(int x = 0; x <= 50; x++){
 			GController.initGame(E_GAME_MODE.KI_INTERNAL,Level.WARN);
 			GController.startGame();
 			while(gameRunning()){

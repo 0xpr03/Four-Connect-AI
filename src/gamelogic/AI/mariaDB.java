@@ -15,6 +15,11 @@ import org.apache.logging.log4j.Logger;
 
 import gamelogic.Controller.E_FIELD_STATE;
 
+/**
+ * MariaDB DB handler for KBS
+ * @author Aron Heinecke
+ *
+ */
 public class mariaDB implements DB {
 	
 	private Logger logger = LogManager.getLogger("DB");

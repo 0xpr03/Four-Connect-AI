@@ -11,6 +11,12 @@ import gamelogic.Controller.E_GAME_STATE;
 import gamelogic.Controller.E_PLAYER;
 import gamelogic.GController;
 
+/**
+ * Knowledge based AI system
+ * @author Aron Heinecke
+ * 
+ * @param <E> needs a DB handler
+ */
 public class KBS<E extends DB> implements AI {
 	
 	private Logger logger = LogManager.getLogger("AI");
@@ -142,8 +148,9 @@ public class KBS<E extends DB> implements AI {
 			return true;
 		}else if(this.player == E_PLAYER.PLAYER_B && state == E_GAME_STATE.PLAYER_B){
 			return true;
+		}else{
+			return false;
 		}
-		return false;
 	}
 	
 	private List<Integer> getPossibilities(){
