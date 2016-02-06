@@ -16,6 +16,7 @@ import java.util.concurrent.Future;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -133,6 +134,8 @@ public class gameControllerTester {
 	
 	@Test
 	public void test_win(){
+		Configurator.setLevel("DB", Level.WARN);
+		Configurator.setLevel("AI", Level.WARN);
 		String input = "-OOXXOO\n-XXOOXX\n-OOXXOO\n-XXOOXX\n-OOOXOO\n-XXOXXX";
 		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
 		GController.startGame();

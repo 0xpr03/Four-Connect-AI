@@ -68,6 +68,7 @@ public final class Controller<E extends AI> {
 		if (gamemode == E_GAME_MODE.NONE){
 			logger.error("Wrong game mode! {}",gamemode);
 		}
+		LASTWIN = null;
 		STATE = E_GAME_STATE.NONE;
 		FIELD = new E_FIELD_STATE[X_MAX][Y_MAX];
 		for(int i = 0; i < X_MAX; i++){
@@ -201,6 +202,22 @@ public final class Controller<E extends AI> {
 		for (int X = 0; X < X_MAX; X++){
 			sb.append(X+" ");
 		}
+		
+		if(LASTWIN != null){
+			Point a = LASTWIN.getPoint_a();
+			Point b = LASTWIN.getPoint_b();
+			sb.append("Last win from ");
+			sb.append(LASTWIN.getState());
+			sb.append(" at ");
+			sb.append(a.getX());
+			sb.append("|");
+			sb.append(a.getY());
+			sb.append(" ");
+			sb.append(b.getX());
+			sb.append("|");
+			sb.append(b.getY());
+		}
+		
 		return sb.toString();
 	}
 	
@@ -368,17 +385,25 @@ public final class Controller<E extends AI> {
 	 * @author Aron Heinecke
 	 */
 	private synchronized void handleWin(WinStore ws){
-		logger.debug("Point A:{}|{} B:{}|{}",ws.getPoint_a().getX(),ws.getPoint_a().getY(),ws.getPoint_b().getX(),ws.getPoint_b().getY());
+		if(ws.isCapitulation()){
+			logger.debug("Capitulation");
+		}else{
+			logger.debug("Point A:{}|{} B:{}|{}",ws.getPoint_a().getX(),ws.getPoint_a().getY(),ws.getPoint_b().getX(),ws.getPoint_b().getY());
+		}
 		logger.debug("State: {}",ws.getState());
 		STATE = ws.getState();
 		LASTWIN = ws;
+		informAIs();
+		//TODO: run handle code for winner display etc
+	}
+	
+	private synchronized void informAIs(){
 		if(GAMEMODE == E_GAME_MODE.KI_INTERNAL){
 			AI_a.gameEvent();
 			AI_b.gameEvent();
 		}else if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
 			AI_a.gameEvent();
 		}
-		//TODO: run handle code for winner display etc
 	}
 	
 	/**
@@ -661,7 +686,14 @@ public final class Controller<E extends AI> {
 	public boolean D_analyzeField(){
 		if(GAMEMODE == E_GAME_MODE.TESTING){
 			printGameState();
-			checkWin(1, 5);
+			for(int x = 0; x < X_MAX; x++){
+				for(int y = 0; y < Y_MAX; y++){
+					if(checkWin(x, y)){
+						logger.info("Found win at {}|{}",y,x);
+						break;
+					}
+				}
+			}
 			return checkDraw();
 		}else{
 			logger.error("Not allowed in this gamemode!");
@@ -743,11 +775,8 @@ public final class Controller<E extends AI> {
 	}
 	
 	public synchronized void capitulate(E_PLAYER player){
-		if( player == E_PLAYER.PLAYER_A){
-			STATE = E_GAME_STATE.WIN_B;
-		}else{
-			STATE = E_GAME_STATE.WIN_A;
-		}
+		WinStore ws = new WinStore(STATE);
+		handleWin(ws);
 	}
 	
 	/**
@@ -778,6 +807,7 @@ public final class Controller<E extends AI> {
 			if ( !checkWin(column,found_place) ) {
 				if (checkDraw()){
 					STATE = E_GAME_STATE.DRAW;
+					informAIs();
 				}else{
 					STATE = STATE == E_GAME_STATE.PLAYER_A ? E_GAME_STATE.PLAYER_B : E_GAME_STATE.PLAYER_A;
 					new Thread() {
