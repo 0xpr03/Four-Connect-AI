@@ -204,18 +204,23 @@ public final class Controller<E extends AI> {
 		}
 		
 		if(LASTWIN != null){
-			Point a = LASTWIN.getPoint_a();
-			Point b = LASTWIN.getPoint_b();
 			sb.append("\nLast win from ");
 			sb.append(LASTWIN.getState());
-			sb.append(" at ");
-			sb.append(a.getX());
-			sb.append("|");
-			sb.append(a.getY());
-			sb.append(" ");
-			sb.append(b.getX());
-			sb.append("|");
-			sb.append(b.getY());
+			if(LASTWIN.isCapitulation()){
+				sb.append("By capitulation");
+			}else{
+				Point a = LASTWIN.getPoint_a();
+				Point b = LASTWIN.getPoint_b();
+				sb.append(" at ");
+				sb.append(a.getX());
+				sb.append("|");
+				sb.append(a.getY());
+				sb.append(" ");
+				sb.append(b.getX());
+				sb.append("|");
+				sb.append(b.getY());
+			}
+			
 		}
 		
 		return sb.toString();

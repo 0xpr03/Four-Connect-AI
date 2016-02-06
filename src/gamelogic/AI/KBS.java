@@ -132,6 +132,7 @@ public class KBS<E extends DB> implements AI {
 		case DRAW:
 			if(LOOSING){ // only for logic tests
 				logger.error("Loosing:{} state but drawing!",LOOSING);
+				GController.printGameState();
 			}
 			if(!DRAWING){
 				this.MOVE_CURRENT.setDraw(true);
@@ -145,6 +146,7 @@ public class KBS<E extends DB> implements AI {
 			if(checkWinnerMatcH(state)){
 				if(LOOSING || DRAWING){ // only for logic tests
 					logger.error("Loosing:{} Drawing:{} state but winning!",LOOSING,DRAWING);
+					GController.printGameState();
 				}
 				this.MOVE_CURRENT.setLoose(false);
 				logger.debug("{}",MOVE_CURRENT.toString());
@@ -152,6 +154,7 @@ public class KBS<E extends DB> implements AI {
 			}else{
 				if(DRAWING){ // only for logic tests
 					logger.error("Drawing:{} state but loosing!",DRAWING);
+					GController.printGameState();
 				}
 				if(!LOOSING){
 					this.MOVE_CURRENT.setLoose(true);
