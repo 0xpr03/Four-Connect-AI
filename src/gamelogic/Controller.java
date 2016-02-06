@@ -102,7 +102,15 @@ public final class Controller<E extends AI> {
 		}else{
 			STATE = E_GAME_STATE.PLAYER_A;
 		}
-		run_KI();
+		new Thread() {
+		    public void run() {
+		        try {
+		            run_KI();
+		        } catch(Error e) {
+		            logger.error(e);
+		        }
+		    }  
+		}.start();
 	}
 	
 	/**

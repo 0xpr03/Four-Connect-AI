@@ -10,7 +10,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import gamelogic.Controller.E_FIELD_STATE;
-import gamelogic.GController;
 
 public class mariaDB implements DB {
 	
@@ -59,7 +58,7 @@ public class mariaDB implements DB {
 	}
 
 	@Override
-	public void insertMoves(E_FIELD_STATE field, List<Integer> moves) {
+	public void insertMoves(E_FIELD_STATE[][] field, List<Integer> moves) {
 		// TODO Auto-generated method stub
 
 	}

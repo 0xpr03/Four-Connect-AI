@@ -1,10 +1,12 @@
 package gamelogic.AI;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import gamelogic.Controller.E_FIELD_STATE;
 import gamelogic.Controller.E_GAME_STATE;
 import gamelogic.Controller.E_PLAYER;
 import gamelogic.GController;
@@ -28,6 +30,7 @@ public class KBS<E extends DB> implements AI {
 	public void getMove() {
 		List<Move> moves = db.getMoves(GController.getFieldState());
 		if(moves.isEmpty()){
+			db.insertMoves(GController.getFieldState(), getPossibilities());
 			//TODO: generate all possibilities
 		}else{
 			Move move;
@@ -49,10 +52,13 @@ public class KBS<E extends DB> implements AI {
 			if(win != null){
 				useMove(win);
 			}else if(draw != null){
+				logger.debug("Using draw move! {}",player);
 				useMove(draw);
 			}else{
-				logger.debug("Draw state for AI {}",player);
-				
+				logger.debug("Capitulation state for AI {}",player);
+				GController.capitulate(player);
+				MOVE_LAST = MOVE_CURRENT;
+				MOVE_CURRENT = moves.get(0);
 			}
 		}
 		// TODO Auto-generated method stub
@@ -119,6 +125,20 @@ public class KBS<E extends DB> implements AI {
 			return true;
 		}
 		return false;
+	}
+	
+	private List<Integer> getPossibilities(){
+		List<Integer> possibilities = new ArrayList<Integer>();
+		E_FIELD_STATE[][] field = GController.getFieldState();
+		for(int x = 0; x < GController.getX_MAX(); x++){
+			for(E_FIELD_STATE state : field[x]){
+				if(state == E_FIELD_STATE.NONE){
+					possibilities.add(x);
+					break;
+				}
+			}
+		}
+		return possibilities;
 	}
 	
 }

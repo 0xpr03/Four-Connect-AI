@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Level;
 import gamelogic.Controller.E_FIELD_STATE;
 import gamelogic.Controller.E_GAME_MODE;
 import gamelogic.Controller.E_GAME_STATE;
+import gamelogic.Controller.E_PLAYER;
 import gamelogic.AI.KBS;
 import gamelogic.AI.mariaDB;
 
@@ -16,6 +17,14 @@ import gamelogic.AI.mariaDB;
  */
 public class GController {
 	private final static Controller<KBS<mariaDB>> controller = new Controller<KBS<mariaDB>>(new KBS<mariaDB>(new mariaDB("localhost",3306,"ai","ai","ai"),true), new KBS<mariaDB>(new mariaDB("localhost",3306,"ai","ai","ai"),true));
+
+	/**
+	 * @param player
+	 * @see gamelogic.Controller#capitulate(gamelogic.Controller.E_PLAYER)
+	 */
+	public static void capitulate(E_PLAYER player) {
+		controller.capitulate(player);
+	}
 
 	/**
 	 * @param gamemode
