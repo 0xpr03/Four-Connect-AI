@@ -19,19 +19,23 @@ public class AITest {
 	private static Logger logger = LogManager.getLogger();
 	
 	public static void main(String[] args){
+		Level level_db = Level.WARN;
+		Level level_ai = Level.TRACE;
+		int games = 100000000;
+		
 		logger.entry();
 		registerExitFunction();
-		Configurator.setLevel("DB", Level.WARN);
-		Configurator.setLevel("AI", Level.TRACE);
-		for(int x = 0; x <= 1000; x++){
-			GController.initGame(E_GAME_MODE.KI_INTERNAL,Level.WARN);
+		if(games > 1000){
+			level_db = Level.WARN;
+			level_ai = Level.WARN;
+		}
+		Configurator.setLevel("DB", level_db);
+		Configurator.setLevel("AI", level_ai);
+		for(int x = 0; x <= 100000000; x++){
+			GController.initGame(E_GAME_MODE.KI_INTERNAL,Level.INFO);
 			GController.startGame();
 			while(gameRunning()){
-				try {
-					Thread.sleep(1);
-				} catch (InterruptedException e) {
-					logger.error(e);
-				}
+
 			}
 			//logger.info(GController.getprintedGameState());
 		}

@@ -220,7 +220,6 @@ public final class Controller<E extends AI> {
 				sb.append("|");
 				sb.append(b.getY());
 			}
-			
 		}
 		
 		return sb.toString();
@@ -230,7 +229,7 @@ public final class Controller<E extends AI> {
 	 * Print the current game field and state to the console
 	 */
 	public void printGameState(){
-		logger.debug(getprintedGameState());
+		logger.info(()->getprintedGameState());
 	}
 	
 	private String printConvGamest(E_FIELD_STATE input){

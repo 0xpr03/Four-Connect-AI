@@ -57,10 +57,10 @@ public class KBS<E extends DB> implements AI {
 			for(int x = 0; x < moves.size(); x++){
 				move = moves.get(x);
 				if(move.isUsed()){
-					if(move.isDraw()){
-						draw = move;
-					}else if(!move.isLoose()){
+					if(!move.isLoose()){
 						win = move;
+					}else if(move.isDraw()){
+						draw = move;
 					}
 				}else if(learning){
 					useMove(move);
@@ -148,12 +148,16 @@ public class KBS<E extends DB> implements AI {
 					logger.error("Loosing:{} Drawing:{} state but winning!",LOOSING,DRAWING);
 					GController.printGameState();
 				}
-				this.MOVE_CURRENT.setLoose(false);
-				logger.debug("{}",MOVE_CURRENT.toString());
-				db.setMove(MOVE_CURRENT);
+				if(this.MOVE_CURRENT.isLoose()){
+					logger.warn("Ignoring possible win-loose");
+				}else{
+					this.MOVE_CURRENT.setLoose(false);
+					logger.debug("{}",MOVE_CURRENT.toString());
+					db.setMove(MOVE_CURRENT);
+				}
 			}else{
 				if(DRAWING){ // only for logic tests
-					logger.error("Drawing:{} state but loosing!",DRAWING);
+					logger.warn("Drawing:{} state but loosing!",DRAWING);
 					GController.printGameState();
 				}
 				if(!LOOSING){
