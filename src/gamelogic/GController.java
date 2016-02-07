@@ -20,6 +20,30 @@ public class GController {
 	private static Controller<KBS<mariaDB>> controller = null;
 	
 	/**
+	 * 
+	 * @see gamelogic.Controller#restart()
+	 */
+	public static void restart() {
+		controller.restart();
+	}
+
+	/**
+	 * 
+	 * @see gamelogic.Controller#moveAI_A()
+	 */
+	public static void moveAI_A() {
+		controller.moveAI_A();
+	}
+
+	/**
+	 * 
+	 * @see gamelogic.Controller#moveAI_B()
+	 */
+	public static void moveAI_B() {
+		controller.moveAI_B();
+	}
+
+	/**
 	 * @return
 	 * @see gamelogic.Controller#getGamemode()
 	 */
@@ -28,7 +52,8 @@ public class GController {
 	}
 
 	public static void init(String address, int port, String user, String pw, String db){
-		controller = new Controller<KBS<mariaDB>>(new KBS<mariaDB>(new mariaDB(address,3306,user,pw,db),true), new KBS<mariaDB>(new mariaDB(address,3306,user,pw,db),true));
+		boolean learning = true;
+		controller = new Controller<KBS<mariaDB>>(new KBS<mariaDB>(new mariaDB(address,3306,user,pw,db),learning), new KBS<mariaDB>(new mariaDB(address,3306,user,pw,db),learning));
 	}
 
 	/**

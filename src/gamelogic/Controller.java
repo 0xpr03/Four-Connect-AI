@@ -28,7 +28,7 @@ public final class Controller<E extends AI> {
 	}
 	
 	public enum E_GAME_STATE {
-		NONE, START, PLAYER_A, PLAYER_B, WIN_A, WIN_B, DRAW
+		NONE, START, PLAYER_A, PLAYER_B, WIN_A, WIN_B, DRAW, RESTART
 	}
 	
 	public enum E_FIELD_STATE {
@@ -85,6 +85,22 @@ public final class Controller<E extends AI> {
 		
 	}
 	
+	public void moveAI_A(){
+		AI_a.getMove();
+	}
+	
+	public void moveAI_B(){
+		AI_b.getMove();
+	}
+	
+	/**
+	 * Sets the current game to restart mode
+	 * This is used only for KI internals where dataraces are comming
+	 */
+	public void restart(){
+		STATE = E_GAME_STATE.RESTART;
+	}
+	
 	/**
 	 * Initialize a new game
 	 * @param gamemode
@@ -126,12 +142,6 @@ public final class Controller<E extends AI> {
 		if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
 			if(STATE == E_GAME_STATE.PLAYER_B){
 				AI_a.getMove();
-			}
-		}else if(GAMEMODE == E_GAME_MODE.KI_INTERNAL){
-			if(STATE == E_GAME_STATE.PLAYER_A){
-				AI_a.getMove();
-			}else{
-				AI_b.getMove();
 			}
 		}
 	}
@@ -822,16 +832,18 @@ public final class Controller<E extends AI> {
 					informAIs();
 				}else{
 					STATE = STATE == E_GAME_STATE.PLAYER_A ? E_GAME_STATE.PLAYER_B : E_GAME_STATE.PLAYER_A;
-					if(GAMEMODE == E_GAME_MODE.KI_INTERNAL || (GAMEMODE == E_GAME_MODE.SINGLE_PLAYER && STATE == E_GAME_STATE.PLAYER_B)){
-						new Thread() {
-						    public void run() {
-						        try {
-						            run_AI();
-						        } catch(Error e) {
-						            logger.error(e);
-						        }
-						    }  
-						}.start();
+					if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
+						if(STATE == E_GAME_STATE.PLAYER_B){
+							new Thread() {
+							    public void run() {
+							        try {
+							            run_AI();
+							        } catch(Error e) {
+							            logger.error(e);
+							        }
+							    }  
+							}.start();
+						}
 					}
 				}
 			}
