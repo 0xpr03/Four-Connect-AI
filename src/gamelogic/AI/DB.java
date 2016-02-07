@@ -4,6 +4,11 @@ import java.util.List;
 
 import gamelogic.Controller.E_FIELD_STATE;
 
+/**
+ * DB Interface for AIs
+ * @author Aron Heinecke
+ *
+ */
 public interface DB {
 	/**
 	 * Get all moves for field
@@ -22,7 +27,19 @@ public interface DB {
 	 * Set/Update move
 	 * @param move
 	 */
-	public abstract void setMove(Move move);
+	public abstract boolean setMove(Move move);
+//	public abstract void getLink(byte[] parent);
+	/**
+	 * Delete all loose moves of child
+	 * @param parentHash
+	 * @param childHash
+	 */
+	public abstract boolean deleteLooses(byte[] childHash);
+	/**
+	 * Delete all moves for this field
+	 * @param field
+	 */
+	public abstract boolean deleteMoves(byte[] fieldHash);
 	/**
 	 * Shutdown
 	 */

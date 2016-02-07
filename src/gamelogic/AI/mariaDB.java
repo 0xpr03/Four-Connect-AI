@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.SQLNonTransientConnectionException;
+import java.sql.SQLTransactionRollbackException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -37,6 +38,8 @@ public class mariaDB implements DB {
 	PreparedStatement stmInsert;
 	PreparedStatement stmSelect;
 	PreparedStatement stmUpdate;
+	PreparedStatement stmDelAll;
+	PreparedStatement stmDelLooses;
 	
 	public mariaDB(String address, int port, String user, String pw, String db){
 		this.address = address;
@@ -70,7 +73,9 @@ public class mariaDB implements DB {
 		try {
 			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`field`,`move`,`used`,`draw`,`loose`) VALUES (?,?,?,?,?);");
 			stmSelect = connection.prepareStatement("SELECT `move`,`draw`,`loose`,`used` FROM `moves` USE INDEX (field) WHERE `field` = ?;");
-			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ?, `draw` = ?, `loose`= ? WHERE `field` = ? AND `move` = ?");
+			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ?, `draw` = ?, `loose`= ? WHERE `field` = ? AND `move` = ?;");
+			stmDelAll = connection.prepareStatement("DELETE FROM `moves` WHERE `field` = ?;");
+			stmDelLooses = connection.prepareStatement("DELETE FROM `moves` WHERE `field` = ? AND `loose` = 1;");
 		} catch (SQLException e) {
 			logger.error("Statement preparation {}",e);
 		}
@@ -83,10 +88,11 @@ public class mariaDB implements DB {
 			byte[] field = lib.field2sha(field_in);
 			stmSelect.setBytes(1, field);
 			ResultSet rs = stmSelect.executeQuery();
-			List<Move> moves = new ArrayList<Move>();
+			List<Move> moves = new ArrayList<Move>(7);
 			while(rs.next()){
 				moves.add(new Move(field,rs.getInt(1),rs.getBoolean(2),rs.getBoolean(3),rs.getBoolean(4)));
 			}
+			rs.close();
 			return moves;
 		} catch (SQLException e) {
 			logger.error("getMoves {}",e);
@@ -107,6 +113,7 @@ public class mariaDB implements DB {
 				stmInsert.setInt(2, move);
 				stmInsert.executeUpdate();
 			}
+			//stmInsert.clearParameters();
 			return new Move(sha,moves.get(rand.nextInt(moves.size())),false,false,false);
 		} catch (SQLException e) {
 			if(e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class)){
@@ -119,7 +126,7 @@ public class mariaDB implements DB {
 	}
 
 	@Override
-	public void setMove(Move move) {
+	public boolean setMove(Move move) {
 		logger.entry();
 		try {
 			stmUpdate.setBoolean(1, move.isUsed());
@@ -128,8 +135,15 @@ public class mariaDB implements DB {
 			stmUpdate.setBytes(4, move.getField());
 			stmUpdate.setInt(5, move.getMove());
 			stmUpdate.executeUpdate();
+			//stmUpdate.clearParameters();
+			return true;
 		} catch (SQLException e) {
-			logger.error("updateMove {}",e);
+			if(e.getCause().getClass() == SQLTransactionRollbackException.class){
+				logger.info("Ignoring datarace exception");
+			}else{
+				logger.error("updateMove {}",e);
+			}
+			return false;
 		}
 	}
 
@@ -160,10 +174,52 @@ public class mariaDB implements DB {
 			logger.error("stmUpdate shutdown {}",e);
 		}
 		}
+		{
+		try {
+			stmDelAll.cancel();
+			stmDelAll.close();
+		} catch (SQLException e) {
+			logger.error("stmDelAll shutdown {}",e);
+		}
+		}
+		{
+		try {
+			stmDelLooses.cancel();
+			stmDelLooses.close();
+		} catch (SQLException e) {
+			logger.error("stmDelLooses shutdown {}",e);
+		}
+		}
 		try {
 			connection.close();
 		} catch (SQLException e) {
 			logger.error("mariaDB shutdown {}",e);
+		}
+	}
+
+	@Override
+	public boolean deleteMoves(byte[] fieldHash) {
+		logger.entry();
+		try {
+			stmDelAll.setBytes(1, fieldHash);
+			stmDelAll.executeUpdate();
+			return true;
+		} catch (SQLException e) {
+			logger.error("stmDelAll {}",e);
+			return false;
+		}
+	}
+
+	@Override
+	public boolean deleteLooses(byte[] childHash) {
+		logger.entry();
+		try {
+			stmDelLooses.setBytes(1, childHash);
+			stmDelLooses.executeUpdate();
+			return true;
+		} catch (SQLException e) {
+			logger.error("stmDelLooses {}",e);
+			return false;
 		}
 	}
 
