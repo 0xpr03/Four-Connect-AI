@@ -69,7 +69,7 @@ public class mariaDB implements DB {
 		
 		try {
 			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`field`,`move`,`used`,`draw`,`loose`) VALUES (?,?,?,?,?);");
-			stmSelect = connection.prepareStatement("SELECT `move`,`draw`,`loose`,`used` FROM `moves` WHERE `field` = ?;");
+			stmSelect = connection.prepareStatement("SELECT `move`,`draw`,`loose`,`used` FROM `moves` USE INDEX (field) WHERE `field` = ?;");
 			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ?, `draw` = ?, `loose`= ? WHERE `field` = ? AND `move` = ?");
 		} catch (SQLException e) {
 			logger.error("Statement preparation {}",e);
