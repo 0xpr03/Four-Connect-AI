@@ -168,6 +168,14 @@ public final class Controller<E extends AI> {
 	}
 	
 	/**
+	 * Get current gamemode
+	 * @return
+	 */
+	public synchronized E_GAME_MODE getGamemode(){
+		return GAMEMODE;
+	}
+	
+	/**
 	 * Returns the current state of the game
 	 * @return GAME_STATE
 	 */
@@ -814,15 +822,17 @@ public final class Controller<E extends AI> {
 					informAIs();
 				}else{
 					STATE = STATE == E_GAME_STATE.PLAYER_A ? E_GAME_STATE.PLAYER_B : E_GAME_STATE.PLAYER_A;
-					new Thread() {
-					    public void run() {
-					        try {
-					            run_AI();
-					        } catch(Error e) {
-					            logger.error(e);
-					        }
-					    }  
-					}.start();
+					if(GAMEMODE == E_GAME_MODE.KI_INTERNAL || (GAMEMODE == E_GAME_MODE.SINGLE_PLAYER && STATE == E_GAME_STATE.PLAYER_B)){
+						new Thread() {
+						    public void run() {
+						        try {
+						            run_AI();
+						        } catch(Error e) {
+						            logger.error(e);
+						        }
+						    }  
+						}.start();
+					}
 				}
 			}
 		}else{

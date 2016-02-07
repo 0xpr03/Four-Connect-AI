@@ -47,6 +47,7 @@ public class KBS<E extends DB> implements AI {
 			Move move = db.insertMoves(GController.getFieldState(), possibilities);
 			if(move == null){
 				logger.error("No moves!");
+				getMove(); // can happen on concurrency
 				return;
 			}
 			useMove(move);
@@ -57,7 +58,7 @@ public class KBS<E extends DB> implements AI {
 			for(int x = 0; x < moves.size(); x++){
 				move = moves.get(x);
 				if(move.isUsed()){
-					if(!move.isLoose()){
+					if(!move.isLoose() && !move.isDraw()){
 						win = move;
 					}else if(move.isDraw()){
 						draw = move;

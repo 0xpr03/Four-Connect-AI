@@ -16,7 +16,20 @@ import gamelogic.AI.mariaDB;
  *
  */
 public class GController {
-	private final static Controller<KBS<mariaDB>> controller = new Controller<KBS<mariaDB>>(new KBS<mariaDB>(new mariaDB("localhost",3306,"ai","ai","ai"),true), new KBS<mariaDB>(new mariaDB("localhost",3306,"ai","ai","ai"),true));
+	
+	private static Controller<KBS<mariaDB>> controller = null;
+	
+	/**
+	 * @return
+	 * @see gamelogic.Controller#getGamemode()
+	 */
+	public static E_GAME_MODE getGamemode() {
+		return controller.getGamemode();
+	}
+
+	public static void init(String address, int port, String user, String pw, String db){
+		controller = new Controller<KBS<mariaDB>>(new KBS<mariaDB>(new mariaDB(address,3306,user,pw,db),true), new KBS<mariaDB>(new mariaDB(address,3306,user,pw,db),true));
+	}
 
 	/**
 	 * 
