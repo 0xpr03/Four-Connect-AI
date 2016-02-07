@@ -31,7 +31,7 @@ public class AITest {
 		
 		Level level_db = Level.WARN;
 		Level level_ai = Level.TRACE;
-		int games = 1;
+		int games = 10000;
 		if(args.length > 1){
 			games = Integer.parseInt(args[1]);
 		}
@@ -49,6 +49,9 @@ public class AITest {
 		Configurator.setLevel("DB", level_db);
 		Configurator.setLevel("AI", level_ai);
 		for(int x = 0; x < games; x++){
+			if(x % 1000 == 0){
+				logger.info(x);
+			}
 			GController.initGame(E_GAME_MODE.KI_INTERNAL,Level.INFO);
 			GController.startGame();
 			while(gameRunning()){

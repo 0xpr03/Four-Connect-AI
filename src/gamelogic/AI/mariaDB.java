@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.SQLNonTransientConnectionException;
 import java.util.ArrayList;
 import java.util.List;
@@ -108,7 +109,11 @@ public class mariaDB implements DB {
 			}
 			return new Move(sha,moves.get(rand.nextInt(moves.size())),false,false,false);
 		} catch (SQLException e) {
-			logger.error("insertMoves {}",e);
+			if(e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class)){
+				logger.info("Ignoring duplicate insertion exception");
+			}else{
+				logger.error("insertMoves {}",e);
+			}
 			return null;
 		}
 	}

@@ -45,9 +45,14 @@ public class KBS<E extends DB> implements AI {
 		if(moves.isEmpty()){
 			List<Integer> possibilities = getPossibilities();
 			Move move = db.insertMoves(GController.getFieldState(), possibilities);
-			if(move == null){
+			if(move == null){// can happen on concurrency
 				logger.error("No moves!");
-				getMove(); // can happen on concurrency
+				try {
+					Thread.sleep(10);
+				} catch (InterruptedException e) {
+					logger.warn(e);
+				}
+				getMove();
 				return;
 			}
 			useMove(move);
@@ -152,14 +157,14 @@ public class KBS<E extends DB> implements AI {
 				if(this.MOVE_CURRENT.isLoose()){
 					logger.warn("Ignoring possible win-loose");
 				}else{
-					this.MOVE_CURRENT.setLoose(false);
 					logger.debug("{}",MOVE_CURRENT.toString());
 					db.setMove(MOVE_CURRENT);
 				}
 			}else{
 				if(DRAWING){ // only for logic tests
-					logger.warn("Drawing:{} state but loosing!",DRAWING);
-					GController.printGameState();
+					logger.debug("Drawing:{} state but loosing!",DRAWING);
+					if(logger.isDebugEnabled())
+						GController.printGameState();
 				}
 				if(!LOOSING){
 					this.MOVE_CURRENT.setLoose(true);
