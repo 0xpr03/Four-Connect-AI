@@ -160,12 +160,12 @@ public class KBS<E extends DB> implements AI {
 				LOOSING = true;
 			}
 			
-			if(db.deleteDrawAndLooses(moves.get(0).getField())){
-				logger.debug("Capitulation state for AI {}",player);
-				GController.capitulate(player);
-			}else{ // datarace, table locking
-				GController.restart();
-			}
+//			if(db.deleteDrawAndLooses(moves.get(0).getField())){
+//				logger.debug("Capitulation state for AI {}",player);
+//				GController.capitulate(player);
+//			}else{ // datarace, table locking
+//				GController.restart();
+//			}
 			
 //				MOVE_LAST = MOVE_CURRENT;
 //				MOVE_CURRENT = moves.get(0);

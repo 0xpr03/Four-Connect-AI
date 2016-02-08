@@ -15,7 +15,7 @@ public class AITest_Interact {
 	
 	private static void init(){
 		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
-		Level level_db = Level.WARN;
+		Level level_db = Level.TRACE;
 		Level level_ai = Level.TRACE;
 		Configurator.setLevel("DB", level_db);
 		Configurator.setLevel("AI", level_ai);
@@ -32,6 +32,7 @@ public class AITest_Interact {
 			System.exit(1);
 		}
 		while(gameRunning()){
+			logger.info("game running");
 			if(GController.getGameState() == E_GAME_STATE.PLAYER_A){
 				System.out.println(GController.getprintedGameState());
 				System.out.println("Please select a column, 0-6");
@@ -58,6 +59,7 @@ public class AITest_Interact {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
+				logger.info("{}",GController.getGameState());
 				GController.shutdown();
 			}
 		});
