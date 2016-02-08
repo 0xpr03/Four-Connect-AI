@@ -56,72 +56,120 @@ public class KBS<E extends DB> implements AI {
 			}
 			useMove(move);
 		}else{
-			Move win = null;
-			Move draw = null;
-			for(Move move : moves){
-				if(move.isUsed()){
-					if(!move.isLoose() && !move.isDraw()){
-						win = move;
-						//break;
-					}else if(move.isDraw()){
-						draw = move;
-						//break;
-					}
-				}else if(learning){
-					useMove(move);
-					logger.exit();
-					return;
+			moveWithDraws(moves);
+		}
+		
+		logger.exit();
+	}
+	
+	private void moveWithDraws(List<Move> moves){ // this function treats draws & looses different
+		Move win = null;
+		Move draw = null;
+		for(Move move : moves){
+			if(move.isUsed()){
+				if(!move.isLoose() && !move.isDraw()){
+					win = move;
+					//break;
+				}else if(move.isDraw()){
+					draw = move;
+					//break;
 				}
-			}
-			
-			if(win != null){ // win move
-				logger.debug("Found win move");
-				useMove(win);
-			}else if(draw != null){ // no winning, but draw move
-				logger.debug("Found draw move");
-				if(!DRAWING){
-					logger.debug("Going to draw");
-					if(MOVE_CURRENT != null){
-						MOVE_CURRENT.setDraw(true);
-						if(!db.setMove(MOVE_CURRENT)){  // datarace, table locking
-							GController.restart();
-							return;
-						}
-					}
-					DRAWING = true;
-				}
-				
-				if(db.deleteLooses(draw.getField())){
-					logger.debug("Using draw move! {}",player);
-					useMove(draw);
-				}else{ // datarace, table locking
-					GController.restart();
-				}
-			}else{ // no win or draw -> loose, if not already in loosing mode, set current (now last) move as loose
-				if(!LOOSING){
-					logger.debug("Going to loose");
-					if(MOVE_CURRENT != null){
-						MOVE_CURRENT.setLoose(true);
-						if(!db.setMove(MOVE_CURRENT)){  // datarace, table locking
-							GController.restart();
-							return;
-						}
-					}
-					LOOSING = true;
-				}
-				
-				if(db.deleteMoves(moves.get(0).getField())){
-					logger.debug("Capitulation state for AI {}",player);
-					GController.capitulate(player);
-				}else{ // datarace, table locking
-					GController.restart();
-				}
-				
-//				MOVE_LAST = MOVE_CURRENT;
-//				MOVE_CURRENT = moves.get(0);
+			}else if(learning){
+				useMove(move);
+				logger.exit();
+				return;
 			}
 		}
-		logger.exit();
+		
+		if(win != null){ // win move (or not played till now)
+			logger.debug("Found win move");
+			useMove(win);
+		}else if(draw != null){ // no winning, but draw move
+			logger.debug("Found draw move");
+			if(!DRAWING){
+				logger.debug("Going to draw");
+				if(MOVE_CURRENT != null){
+					MOVE_CURRENT.setDraw(true);
+					if(!db.setMove(MOVE_CURRENT)){  // datarace, table locking
+						GController.restart();
+						return;
+					}
+				}
+				DRAWING = true;
+			}
+			
+			if(db.deleteLooses(draw.getField())){
+				logger.debug("Using draw move! {}",player);
+				useMove(draw);
+			}else{ // datarace, table locking
+				GController.restart();
+			}
+		}else{ // no win or draw -> loose, if not already in loosing mode, set current (now last) move as loose
+			if(!LOOSING){
+				logger.debug("Going to loose");
+				if(MOVE_CURRENT != null){
+					MOVE_CURRENT.setLoose(true);
+					if(!db.setMove(MOVE_CURRENT)){  // datarace, table locking
+						GController.restart();
+						return;
+					}
+				}
+				LOOSING = true;
+			}
+			
+			if(db.deleteMoves(moves.get(0).getField())){
+				logger.debug("Capitulation state for AI {}",player);
+				GController.capitulate(player);
+			}else{ // datarace, table locking
+				GController.restart();
+			}
+			
+//				MOVE_LAST = MOVE_CURRENT;
+//				MOVE_CURRENT = moves.get(0);
+		}
+	}
+	
+	@SuppressWarnings("unused")
+	private void moveWithoutDraws(List<Move> moves){ // this function deletes also draws, treating them as looses
+		Move win = null;
+		for(Move move : moves){
+			if(move.isUsed()){
+				if(!move.isLoose() && !move.isDraw()){
+					win = move;
+				}
+			}else if(learning){
+				useMove(move);
+				logger.exit();
+				return;
+			}
+		}
+		
+		if(win != null){ // win move
+			logger.debug("Found win move");
+			useMove(win);
+		}else{ // no win or draw -> loose, if not already in loosing mode, set current (now last) move as loose
+			if(!LOOSING){
+				logger.debug("Going to loose");
+				if(MOVE_CURRENT != null){
+					MOVE_CURRENT.setLoose(true);
+					if(!db.setMove(MOVE_CURRENT)){  // datarace, table locking
+						GController.restart();
+						return;
+					}
+				}
+				LOOSING = true;
+			}
+			
+			if(db.deleteDrawAndLooses(moves.get(0).getField())){
+				logger.debug("Capitulation state for AI {}",player);
+				GController.capitulate(player);
+			}else{ // datarace, table locking
+				GController.restart();
+			}
+			
+//				MOVE_LAST = MOVE_CURRENT;
+//				MOVE_CURRENT = moves.get(0);
+		}
 	}
 	
 	/**
@@ -203,9 +251,10 @@ public class KBS<E extends DB> implements AI {
 	}
 	
 	private boolean checkWinnerMatcH(E_GAME_STATE state){
-		if(this.player == E_PLAYER.PLAYER_A && state == E_GAME_STATE.PLAYER_A){
+		logger.info("Player {} winner={}",this.player);
+		if(this.player == E_PLAYER.PLAYER_A && state == E_GAME_STATE.WIN_A){
 			return true;
-		}else if(this.player == E_PLAYER.PLAYER_B && state == E_GAME_STATE.PLAYER_B){
+		}else if(this.player == E_PLAYER.PLAYER_B && state == E_GAME_STATE.WIN_B){
 			return true;
 		}else{
 			return false;

@@ -21,17 +21,19 @@ public class AITest {
 	private static Logger logger = LogManager.getLogger();
 	private static long lastmatch;
 	
-	public static void main(String[] args){
+	public static void main(String[] args){ // external logger, length
 		if(args.length > 0){
+			if(!args[0].equals("none")){
 			LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
 			File file = new File(args[0]);
 			context.setConfigLocation(file.toURI());
+			}
 		}
 		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
 		
 		Level level_db = Level.WARN;
 		Level level_ai = Level.WARN;
-		int games = 50;
+		int games = 60000;
 		
 		if(args.length > 1){
 			games = Integer.parseInt(args[1]);
