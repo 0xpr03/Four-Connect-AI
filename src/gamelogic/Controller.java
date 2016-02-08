@@ -189,7 +189,7 @@ public final class Controller<E extends AI> {
 	 * Returns the current state of the game
 	 * @return GAME_STATE
 	 */
-	public synchronized E_GAME_STATE getGameState() {
+	public E_GAME_STATE getGameState() {
 		return STATE;
 	}
 	

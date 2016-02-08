@@ -19,6 +19,7 @@ import gamelogic.GController;
 public class AITest {
 	
 	private static Logger logger = LogManager.getLogger();
+	private static long lastmatch;
 	
 	public static void main(String[] args){
 		if(args.length > 0){
@@ -31,7 +32,6 @@ public class AITest {
 		Level level_db = Level.WARN;
 		Level level_ai = Level.WARN;
 		int games = 50;
-		
 		
 		if(args.length > 1){
 			games = Integer.parseInt(args[1]);
@@ -85,6 +85,7 @@ public class AITest {
 			default:
 				break;
 			}
+			lastmatch = System.currentTimeMillis();
 			//logger.info(()->GController.getGameState());
 			//logger.info(()->GController.getprintedGameState());
 		}
@@ -96,7 +97,14 @@ public class AITest {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
+				logger.info("Last match {}ms ago",System.currentTimeMillis() - lastmatch);
+				try{
+				logger.info("Current state: {}",GController.getGameState());
+				}catch(Exception e){
+					logger.error("Trying to get state: {}",e);
+				}
 				GController.shutdown();
+				logger.exit();
 			}
 		});
 	}
@@ -111,6 +119,7 @@ public class AITest {
 		case DRAW:
 		case WIN_A:
 		case WIN_B:
+		case RESTART:
 			return false;
 		default:
 			return true;
