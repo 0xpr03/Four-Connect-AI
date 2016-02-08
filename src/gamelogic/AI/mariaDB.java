@@ -116,7 +116,7 @@ public class mariaDB implements DB {
 			//stmInsert.clearParameters();
 			return new Move(sha,moves.get(rand.nextInt(moves.size())),false,false,false);
 		} catch (SQLException e) {
-			if(e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class)){
+			if(e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class) || e.getCause().getClass().equals(SQLTransactionRollbackException.class)){
 				logger.info("Ignoring duplicate insertion exception");
 			}else{
 				logger.error("insertMoves {}",e);
