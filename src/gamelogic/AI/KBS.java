@@ -90,68 +90,75 @@ public class KBS<E extends DB> implements AI {
 			useMove(win);
 		}else if(draw != null){ // no winning, but draw move
 			logger.debug("Found draw move");
-			if(!DRAWING){
-				logger.debug("Going to draw");
-				if(MOVE_CURRENT != null){
-					MOVE_CURRENT.setDraw(true);
-					if(!db.setMove(MOVE_CURRENT)){  // datarace, table locking
-						GController.restart();
-						return;
-					}
-				}
-				DRAWING = true;
-			}
-			
-			if(db.deleteLooses(draw.getField())){
-				logger.debug("Using draw move! {}",player);
-				useMove(draw);
-			}else{ // datarace, table locking
-				GController.restart();
-			}
+			useMove(draw);
 		}else{ // no win or draw -> loose, if not already in loosing mode, set current (now last) move as loose
-			if(!LOOSING){
-				logger.debug("Going to loose");
-				if(MOVE_CURRENT != null){
-					MOVE_CURRENT.setLoose(true);
-					if(!db.setMove(MOVE_CURRENT)){  // datarace, table locking
-						GController.restart();
-						return;
-					}
-				}
-				LOOSING = true;
-			}
-			
-			if(db.deleteMoves(moves.get(0).getField())){
-				logger.debug("Capitulation state for AI {}",player);
-				GController.capitulate(player);
-			}else{ // datarace, table locking
-				GController.restart();
-			}
-			
-//				MOVE_LAST = MOVE_CURRENT;
-//				MOVE_CURRENT = moves.get(0);
+			useMove(moves.get(0));
 		}
 	}
 	
 	/**
-	 * Use move, set last to used
-	 * @param move
+	 * Uses a move
+	 * Handles Draw/Win/loose child moves
+	 * 
+	 * @param move Expects to get a draw or worse loose move only if there's no alternative.
+	 * Otherwise this algorithm will fail.
 	 */
 	private void useMove(Move move){
 		logger.entry(player);
 		logger.debug("Move: {}",()->move.toString());
+		// handle loose/draw marks
+		if(move.isLoose()){
+			if(!LOOSING){
+				logger.debug("Going to loose");
+				if(MOVE_CURRENT != null){
+					MOVE_CURRENT.setLoose(true);
+				}
+				LOOSING = true;
+			}
+		}else if(move.isDraw()){
+			if(!DRAWING){
+				logger.debug("Going to draw");
+				if(MOVE_CURRENT != null){
+					MOVE_CURRENT.setDraw(true);
+				}
+				DRAWING = true;
+			}
+		}
+		// set used
 		if(MOVE_CURRENT != null && move.isUsed()){ // only update parent if child also set
 			MOVE_CURRENT.setUsed(true);
-			if(!db.setMove(MOVE_CURRENT)){ // datarace, table locking
+			if(!db.setMove(MOVE_CURRENT)){ // data race, table locking
+				logger.warn("Restarting!");
+				GController.restart();
+				return;
+			}
+		}
+		// handle deletes after parent update (crash security)
+		if(move.isLoose()){
+			if(db.deleteMoves(move.getField())){
+				logger.debug("Capitulation state for AI {}",player);
+				GController.capitulate(player);
+			}else{ // datarace, table locking
+				logger.warn("Restarting!");
+				GController.restart();
+				return;
+			}
+		}else if(move.isDraw()){
+			if(db.deleteLooses(move.getField())){
+				logger.debug("Using draw move! {}",player);
+			}else{ // data race, table locking
 				logger.warn("Restarting!");
 				GController.restart();
 				return;
 			}
 		}
 		MOVE_CURRENT = move;
-		if(!GController.insertStone(MOVE_CURRENT.getMove())){
-			logger.error("Couldn't insert stone! Wrong move! {} \n{}",MOVE_CURRENT.getMove(),GController.getprintedGameState());
-			logger.error(move.toString());
+		// use move
+		if(!move.isLoose()){
+			if(!GController.insertStone(MOVE_CURRENT.getMove())){
+				logger.error("Couldn't insert stone! Wrong move! {} \n{}",MOVE_CURRENT.getMove(),GController.getprintedGameState());
+				logger.error(move.toString());
+			}
 		}
 		logger.exit();
 	}
