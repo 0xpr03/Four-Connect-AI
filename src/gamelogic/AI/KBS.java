@@ -1,12 +1,10 @@
 package gamelogic.AI;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import gamelogic.Controller.E_FIELD_STATE;
 import gamelogic.Controller.E_GAME_STATE;
 import gamelogic.Controller.E_PLAYER;
 import gamelogic.GController;
@@ -26,6 +24,7 @@ public class KBS<E extends DB> implements AI {
 	private boolean learning;
 	private boolean DRAWING; // true if knowingly drawing
 	private boolean LOOSING; // true if knowingly loosing
+	private boolean SHUTDOWN = false;
 	
 	public KBS(E db, boolean learning){
 		this.db = db;
@@ -36,13 +35,18 @@ public class KBS<E extends DB> implements AI {
 	@Override
 	public void getMove() {
 		logger.entry(player);
+		if(SHUTDOWN){
+			logger.debug("Shutdown set");
+			return;
+		}
 		if(GController.getGameState() != E_GAME_STATE.PLAYER_A && GController.getGameState() != E_GAME_STATE.PLAYER_B){
 			logger.info("Game already ended");
 			return;
 		}
 		List<Move> moves = db.getMoves(GController.getFieldState());
 		if(moves.isEmpty()){
-			List<Integer> possibilities = getPossibilities();
+			List<Integer> possibilities = GController.getPossibilities();
+			logger.debug("Possibilities: {}",possibilities);
 			Move move = db.insertMoves(GController.getFieldState(), possibilities);
 			if(move == null){// can happen on concurrency
 				logger.info("No moves!");
@@ -129,70 +133,25 @@ public class KBS<E extends DB> implements AI {
 		}
 	}
 	
-	@SuppressWarnings("unused")
-	private void moveWithoutDraws(List<Move> moves){ // this function deletes also draws, treating them as looses
-		Move win = null;
-		for(Move move : moves){
-			if(move.isUsed()){
-				if(!move.isLoose() && !move.isDraw()){
-					win = move;
-				}
-			}else if(learning){
-				useMove(move);
-				logger.exit();
-				return;
-			}
-		}
-		
-		if(win != null){ // win move
-			logger.debug("Found win move");
-			useMove(win);
-		}else{ // no win or draw -> loose, if not already in loosing mode, set current (now last) move as loose
-			if(!LOOSING){
-				logger.debug("Going to loose");
-				if(MOVE_CURRENT != null){
-					MOVE_CURRENT.setLoose(true);
-					if(!db.setMove(MOVE_CURRENT)){  // datarace, table locking
-						GController.restart();
-						return;
-					}
-				}
-				LOOSING = true;
-			}
-			
-//			if(db.deleteDrawAndLooses(moves.get(0).getField())){
-//				logger.debug("Capitulation state for AI {}",player);
-//				GController.capitulate(player);
-//			}else{ // datarace, table locking
-//				GController.restart();
-//			}
-			
-//				MOVE_LAST = MOVE_CURRENT;
-//				MOVE_CURRENT = moves.get(0);
-		}
-	}
-	
 	/**
 	 * Use move, set last to used
 	 * @param move
 	 */
 	private void useMove(Move move){
 		logger.entry(player);
-		move.setUsed(true);
-		logger.info("{}",move.getMove());
-		if(MOVE_CURRENT != null){
+		logger.debug("Move: {}",()->move.toString());
+		if(MOVE_CURRENT != null && move.isUsed()){ // only update parent if child also set
 			MOVE_CURRENT.setUsed(true);
-			if(db.setMove(MOVE_CURRENT)){
-				MOVE_CURRENT = move;
-			}else{ // datarace, table locking
+			if(!db.setMove(MOVE_CURRENT)){ // datarace, table locking
+				logger.warn("Restarting!");
 				GController.restart();
 				return;
 			}
-		}else{
-			MOVE_CURRENT = move;
 		}
+		MOVE_CURRENT = move;
 		if(!GController.insertStone(MOVE_CURRENT.getMove())){
-			logger.error("Couldn't insert stone! Wrong move!  \n{}",MOVE_CURRENT.getMove(),GController.getprintedGameState());
+			logger.error("Couldn't insert stone! Wrong move! {} \n{}",MOVE_CURRENT.getMove(),GController.getprintedGameState());
+			logger.error(move.toString());
 		}
 		logger.exit();
 	}
@@ -200,29 +159,41 @@ public class KBS<E extends DB> implements AI {
 	@Override
 	public void gameEvent() {
 		logger.entry(player);
+		if(SHUTDOWN){
+			logger.debug("Shutdown set");
+			return;
+		}
 		E_GAME_STATE state = GController.getGameState();
 		switch(state){
 		case DRAW:
 			if(!DRAWING){
+				this.MOVE_CURRENT.setUsed(true);
 				this.MOVE_CURRENT.setDraw(true);
-				logger.debug("{}",MOVE_CURRENT.toString());
-				db.setMove(MOVE_CURRENT);
+				logger.debug("{}",()->MOVE_CURRENT.toString());
+				if(!db.setMove(MOVE_CURRENT)){
+					GController.restart();
+				}
 			}
 			break;
 		case WIN_A:
 		case WIN_B:
-			if(checkWinnerMatcH(state)){
+			this.MOVE_CURRENT.setUsed(true);
+			if(checkWinnerMatch(state)){
 				if(this.MOVE_CURRENT.isLoose()){ // schlechter gegner, macht zug nicht valide
 					logger.warn("Ignoring possible win-loose");
 				}else{
-					logger.debug("{}",MOVE_CURRENT.toString());
-					db.setMove(MOVE_CURRENT);
+					logger.debug("{}",()->MOVE_CURRENT.toString());
+					if(!db.setMove(MOVE_CURRENT)){
+						GController.restart();
+					}
 				}
 			}else{
 				if(!LOOSING){
 					this.MOVE_CURRENT.setLoose(true);
-					logger.debug("{}",MOVE_CURRENT.toString());
-					db.setMove(MOVE_CURRENT);
+					logger.debug("{}",()->MOVE_CURRENT.toString());
+					if(!db.setMove(MOVE_CURRENT)){
+						GController.restart();
+					}
 				}
 			}
 			break;
@@ -238,6 +209,7 @@ public class KBS<E extends DB> implements AI {
 
 	@Override
 	public void shutdown() {
+		this.SHUTDOWN = true;
 		db.shutdown();
 	}
 
@@ -250,8 +222,7 @@ public class KBS<E extends DB> implements AI {
 		this.player = player;
 	}
 	
-	private boolean checkWinnerMatcH(E_GAME_STATE state){
-		logger.info("Player {} winner={}",this.player);
+	private boolean checkWinnerMatch(E_GAME_STATE state){
 		if(this.player == E_PLAYER.PLAYER_A && state == E_GAME_STATE.WIN_A){
 			return true;
 		}else if(this.player == E_PLAYER.PLAYER_B && state == E_GAME_STATE.WIN_B){
@@ -261,20 +232,6 @@ public class KBS<E extends DB> implements AI {
 		}
 	}
 	
-	private List<Integer> getPossibilities(){
-		List<Integer> possibilities = new ArrayList<Integer>();
-		E_FIELD_STATE[][] field = GController.getFieldState();
-		for(int x = 0; x < GController.getX_MAX(); x++){
-			for(E_FIELD_STATE state : field[x]){
-				if(state == E_FIELD_STATE.NONE){
-					possibilities.add(x);
-					break;
-				}
-			}
-		}
-		return possibilities;
-	}
-
 	@Override
 	public void preProcessing() {
 		// TODO Auto-generated method stub

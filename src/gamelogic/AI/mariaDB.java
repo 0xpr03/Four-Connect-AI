@@ -218,7 +218,11 @@ public class mariaDB implements DB {
 			stmDelLooses.executeUpdate();
 			return true;
 		} catch (SQLException e) {
-			logger.error("stmDelLooses {}",e);
+			if(e.getCause().getClass() == SQLTransactionRollbackException.class){
+				logger.info("Ignoring datarace exception");
+			}else{
+				logger.error("stmDelLooses {}",e);
+			}
 			return false;
 		}
 	}

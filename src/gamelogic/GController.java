@@ -1,5 +1,7 @@
 package gamelogic;
 
+import java.util.List;
+
 import org.apache.logging.log4j.Level;
 
 import gamelogic.Controller.E_FIELD_STATE;
@@ -19,12 +21,25 @@ public class GController {
 	
 	private static Controller<KBS<mariaDB>> controller = null;
 	
+	public static void init(String address, int port, String user, String pw, String db){
+		boolean learning = true;
+		controller = new Controller<KBS<mariaDB>>(new KBS<mariaDB>(new mariaDB(address,3306,user,pw,db),learning), new KBS<mariaDB>(new mariaDB(address,3306,user,pw,db),learning));
+	}
+	
 	/**
 	 * 
 	 * @see gamelogic.Controller#restart()
 	 */
 	public static void restart() {
 		controller.restart();
+	}
+
+	/**
+	 * @return
+	 * @see gamelogic.Controller#getPossibilities()
+	 */
+	public static List<Integer> getPossibilities() {
+		return controller.getPossibilities();
 	}
 
 	/**
@@ -49,11 +64,6 @@ public class GController {
 	 */
 	public static E_GAME_MODE getGamemode() {
 		return controller.getGamemode();
-	}
-
-	public static void init(String address, int port, String user, String pw, String db){
-		boolean learning = true;
-		controller = new Controller<KBS<mariaDB>>(new KBS<mariaDB>(new mariaDB(address,3306,user,pw,db),learning), new KBS<mariaDB>(new mariaDB(address,3306,user,pw,db),learning));
 	}
 
 	/**

@@ -1,6 +1,8 @@
 package gamelogic;
 
 import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import org.apache.logging.log4j.Level;
@@ -9,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 
 import gamelogic.AI.AI;
+import gamelogic.Controller.E_FIELD_STATE;
 
 /**
  * Main controller for the game four connect
@@ -42,10 +45,11 @@ public final class Controller<E extends AI> {
 	private WinStore LASTWIN;
 	private E_FIELD_STATE[][] FIELD; // X Y
 	private final int NEEDED_WIN_DIFFERENCE = 2; //declaration: > x = win
+	private final Object lock = new Object();
 	private E AI_a = null; // primary AI
 	private E AI_b = null; // secondary for KI internal
-	private int X_MAX = 7;
-	private int Y_MAX = 6;
+	private int X_MAX = 4;
+	private int Y_MAX = 4;
 	
 	public Controller(E ai_a, E ai_b){
 		logger.entry();
@@ -54,6 +58,17 @@ public final class Controller<E extends AI> {
 		if(AI_b == null)
 			AI_b = ai_b;
 		logger.debug("Init AI's: A:{} B:{}",AI_a != null, AI_b != null);
+		
+		if(X_MAX != 7)
+			logger.warn("X_MAX = {}",X_MAX);
+		if(Y_MAX != 6)
+			logger.warn("Y_MAX = {}",Y_MAX);
+		
+		if(E_FIELD_STATE.NONE.ordinal() != 0 || E_FIELD_STATE.STONE_A.ordinal() != 1 || E_FIELD_STATE.STONE_B.ordinal() != 2){
+			logger.fatal("Invalid field state ordinals! FIELD{NONE:{},STONE_A:{},STONE_B:{}}",E_FIELD_STATE.NONE.ordinal(),E_FIELD_STATE.STONE_A.ordinal(),E_FIELD_STATE.STONE_B.ordinal());
+			shutdown();
+		}
+		
 	}
 	public Controller(){}
 
@@ -64,25 +79,25 @@ public final class Controller<E extends AI> {
 	 * everthing else it'll be player a
 	 */
 	public synchronized void initGame(E_GAME_MODE gamemode, Level loglevel) {
-		Configurator.setLevel(logger.getName(), loglevel);
-		if (gamemode == E_GAME_MODE.NONE){
-			logger.error("Wrong game mode! {}",gamemode);
-		}
-		LASTWIN = null;
-		STATE = E_GAME_STATE.NONE;
-		FIELD = new E_FIELD_STATE[X_MAX][Y_MAX];
-		for(int i = 0; i < X_MAX; i++){
-			for (int j = 0; j < Y_MAX; j++){
-				FIELD[i][j] = E_FIELD_STATE.NONE;
+		synchronized(lock){
+			Configurator.setLevel(logger.getName(), loglevel);
+			if (gamemode == E_GAME_MODE.NONE){
+				logger.error("Wrong game mode! {}",gamemode);
 			}
+			LASTWIN = null;
+			STATE = E_GAME_STATE.NONE;
+			FIELD = new E_FIELD_STATE[X_MAX][Y_MAX];
+			for(int i = 0; i < X_MAX; i++){
+				for (int j = 0; j < Y_MAX; j++){
+					FIELD[i][j] = E_FIELD_STATE.NONE;
+				}
+			}
+			GAMEMODE = gamemode;
+			if (GAMEMODE == E_GAME_MODE.TESTING){
+				logger.warn("Gamemode set to TESTING. All manipulations are enabled in this mode!");
+			}
+			MOVES = 0;
 		}
-		GAMEMODE = gamemode;
-		if (GAMEMODE == E_GAME_MODE.TESTING){
-			logger.warn("Gamemode set to TESTING. All manipulations are enabled in this mode!");
-		}
-		MOVES = 0;
-		
-		
 	}
 	
 	public void moveAI_A(){
@@ -141,7 +156,7 @@ public final class Controller<E extends AI> {
 	private void run_AI(){
 		if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
 			if(STATE == E_GAME_STATE.PLAYER_B){
-				AI_a.getMove();
+//				AI_a.getMove();
 			}
 		}
 	}
@@ -808,61 +823,83 @@ public final class Controller<E extends AI> {
 	 * @author Aron Heinecke
 	 */
 	public synchronized boolean insertStone(final int column){
-		if (STATE != E_GAME_STATE.PLAYER_A && STATE != E_GAME_STATE.PLAYER_B){
-			logger.warn("Ignoring stone insert due to state {}!",STATE);
-			return false;
-		}
-		E_FIELD_STATE new_field_state = STATE == E_GAME_STATE.PLAYER_A ? E_FIELD_STATE.STONE_A : E_FIELD_STATE.STONE_B;
-		
+		logger.entry();
 		int found_place = -1;
-		
-		for(int i = 0; i < Y_MAX; i++){
-			if ( FIELD[column][i] == E_FIELD_STATE.NONE ) {
-				FIELD[column][i] = new_field_state;
-				found_place = i;
-				break;
+		//synchronized(lock){
+			if (STATE != E_GAME_STATE.PLAYER_A && STATE != E_GAME_STATE.PLAYER_B){
+				logger.warn("Ignoring stone insert due to state {}!",STATE);
+				return false;
 			}
-		}
-		
-		if(found_place != -1) {
-			MOVES++;
-			if ( !checkWin(column,found_place) ) {
-				if (checkDraw()){
-					STATE = E_GAME_STATE.DRAW;
-					informAIs();
-				}else{
-					STATE = STATE == E_GAME_STATE.PLAYER_A ? E_GAME_STATE.PLAYER_B : E_GAME_STATE.PLAYER_A;
-					if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
-						if(STATE == E_GAME_STATE.PLAYER_B){
-							new Thread() {
-							    public void run() {
-							        try {
-							            run_AI();
-							        } catch(Error e) {
-							            logger.error(e);
-							        }
-							    }  
-							}.start();
-						}
-					}
+			E_FIELD_STATE new_field_state = STATE == E_GAME_STATE.PLAYER_A ? E_FIELD_STATE.STONE_A : E_FIELD_STATE.STONE_B;
+			
+			for(int i = 0; i < Y_MAX; i++){
+				if ( FIELD[column][i] == E_FIELD_STATE.NONE ) {
+					FIELD[column][i] = new_field_state;
+					found_place = i;
+					break;
 				}
 			}
-		}else{
-			logger.info("No more column space to insert any stones!");
-		}
-		
-		//TODO: call graphics && let it callback the next run
-		
+			
+			if(found_place != -1) {
+				MOVES++;
+				if ( !checkWin(column,found_place) ) {
+					if (checkDraw()){
+						STATE = E_GAME_STATE.DRAW;
+						informAIs();
+					}else{
+						STATE = STATE == E_GAME_STATE.PLAYER_A ? E_GAME_STATE.PLAYER_B : E_GAME_STATE.PLAYER_A;
+//						if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
+//							if(STATE == E_GAME_STATE.PLAYER_B){
+//								new Thread() {
+//								    public void run() {
+//								        try {
+//								            run_AI();
+//								        } catch(Error e) {
+//								            logger.error(e);
+//								        }
+//								    }  
+//								}.start();
+//							}
+//						}
+					}
+				}
+			}else{
+				logger.info("No more column space to insert any stones!");
+			}
+			
+			//TODO: call graphics && let it callback the next run
+		//}
 		return found_place != -1;
 	}
 	
+	/**
+	 * Returns list of possible moves
+	 * @return
+	 */
+	public List<Integer> getPossibilities(){
+		logger.entry();
+		List<Integer> possibilities = new ArrayList<Integer>();
+		int ymax = GController.getY_MAX()-1;
+		synchronized (lock){
+			for(int x = 0; x < GController.getX_MAX(); x++){
+				logger.debug("State for {} {}",x,FIELD[x][ymax]);
+				if(FIELD[x][ymax] == E_FIELD_STATE.NONE){
+					possibilities.add(x);
+				}
+			}
+		}
+		return possibilities;
+	}
+	
 	public void shutdown(){
-		STATE = E_GAME_STATE.NONE;
-		GAMEMODE = E_GAME_MODE.NONE;
-		if(AI_a != null)
-			AI_a.shutdown();
-		if(AI_b != null)
-			AI_b.shutdown();
+		synchronized (lock){
+			STATE = E_GAME_STATE.NONE;
+			GAMEMODE = E_GAME_MODE.NONE;
+			if(AI_a != null)
+				AI_a.shutdown();
+			if(AI_b != null)
+				AI_b.shutdown();
+		}
 	}
 	
 	/**

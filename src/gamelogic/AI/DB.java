@@ -26,6 +26,7 @@ public interface DB {
 	/**
 	 * Set/Update move
 	 * @param move
+	 * @return false on error
 	 */
 	public abstract boolean setMove(Move move);
 //	public abstract void getLink(byte[] parent);
@@ -33,11 +34,13 @@ public interface DB {
 	 * Delete all loose moves of child
 	 * @param parentHash
 	 * @param childHash
+	 * @return false on error
 	 */
 	public abstract boolean deleteLooses(byte[] childHash);
 	/**
 	 * Delete all moves for this field
 	 * @param field
+	 * @return false on error
 	 */
 	public abstract boolean deleteMoves(byte[] fieldHash);
 	/**
