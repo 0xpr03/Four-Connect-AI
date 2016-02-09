@@ -240,7 +240,7 @@ public final class Controller<E extends AI> {
 			sb.append("\nLast win from ");
 			sb.append(LASTWIN.getState());
 			if(LASTWIN.isCapitulation()){
-				sb.append("By capitulation");
+				sb.append(" By capitulation");
 			}else{
 				Point a = LASTWIN.getPoint_a();
 				Point b = LASTWIN.getPoint_b();

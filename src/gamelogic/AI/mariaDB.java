@@ -129,6 +129,9 @@ public class mariaDB implements DB {
 	public boolean setMove(Move move) {
 		logger.entry();
 		try {
+			if( (move.isDraw() || move.isLoose() ) && !move.isUsed()){ // test that no invalid move is inserted
+				logger.warn("Probably invalid move! {}",()->move.toString());
+			}
 			stmUpdate.setBoolean(1, move.isUsed());
 			stmUpdate.setBoolean(2, move.isDraw());
 			stmUpdate.setBoolean(3, move.isLoose());

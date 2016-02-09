@@ -1,5 +1,6 @@
 package gamelogic.AI;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -18,23 +19,26 @@ import gamelogic.GController;
 public class KBS<E extends DB> implements AI {
 	
 	private Logger logger = LogManager.getLogger("AI");
+	private Logger logstate = LogManager.getLogger("AI-TEST");
 	private E db;
 	private Move MOVE_CURRENT;
 	private E_PLAYER player;
-	private boolean learning;
-	private boolean DRAWING; // true if knowingly drawing
-	private boolean LOOSING; // true if knowingly loosing
+	private boolean LEARNING;
 	private boolean SHUTDOWN = false;
+	
+	private final boolean follow_unused = false;
+	private List<Move> follow = new ArrayList<Move>();
 	
 	public KBS(E db, boolean learning){
 		this.db = db;
-		this.learning = learning;
+		this.LEARNING = learning;
 		logger.info("Knowledge based system initializing..");
 	}
 	
 	@Override
 	public void getMove() {
 		logger.entry(player);
+		
 		if(SHUTDOWN){
 			logger.debug("Shutdown set");
 			return;
@@ -43,12 +47,13 @@ public class KBS<E extends DB> implements AI {
 			logger.info("Game already ended");
 			return;
 		}
+		
 		List<Move> moves = db.getMoves(GController.getFieldState());
 		if(moves.isEmpty()){
 			List<Integer> possibilities = GController.getPossibilities();
 			logger.debug("Possibilities: {}",possibilities);
 			Move move = db.insertMoves(GController.getFieldState(), possibilities);
-			if(move == null){// can happen on concurrency
+			if(move == null){ // can happen on concurrency
 				logger.info("No moves!");
 				try {
 					Thread.sleep(10);
@@ -58,7 +63,7 @@ public class KBS<E extends DB> implements AI {
 				getMove();
 				return;
 			}
-			useMove(move);
+			useMove(move,false);
 		}else{
 			moveWithDraws(moves);
 		}
@@ -69,6 +74,7 @@ public class KBS<E extends DB> implements AI {
 	private void moveWithDraws(List<Move> moves){ // this function treats draws & looses different
 		Move win = null;
 		Move draw = null;
+		boolean found_loose = false;
 		for(Move move : moves){
 			if(move.isUsed()){
 				if(!move.isLoose() && !move.isDraw()){
@@ -77,22 +83,27 @@ public class KBS<E extends DB> implements AI {
 				}else if(move.isDraw()){
 					draw = move;
 					//break;
+				}else{
+					found_loose = true;
 				}
-			}else if(learning){
-				useMove(move);
+			}else if(LEARNING){
+				useMove(move,false);
 				logger.exit();
+				return;
+			}else{
+				logger.warn("Not in learning mode, but unused move found!");
 				return;
 			}
 		}
 		
 		if(win != null){ // win move (or not played till now)
 			logger.debug("Found win move");
-			useMove(win);
+			useMove(win,found_loose);
 		}else if(draw != null){ // no winning, but draw move
 			logger.debug("Found draw move");
-			useMove(draw);
+			useMove(draw,found_loose);
 		}else{ // no win or draw -> loose, if not already in loosing mode, set current (now last) move as loose
-			useMove(moves.get(0));
+			useMove(moves.get(0),true);
 		}
 	}
 	
@@ -103,36 +114,35 @@ public class KBS<E extends DB> implements AI {
 	 * @param move Expects to get a draw or worse loose move only if there's no alternative.
 	 * Otherwise this algorithm will fail.
 	 */
-	private void useMove(Move move){
+	private void useMove(Move move,boolean found_loose){
 		logger.entry(player);
 		logger.debug("Move: {}",()->move.toString());
-		// handle loose/draw marks
-		if(move.isLoose()){
-			if(!LOOSING){
+		
+		if(follow_unused){
+			follow.add(move);
+		}
+		
+		if(MOVE_CURRENT != null){
+			// handle loose/draw marks
+			if(move.isLoose()){
 				logger.debug("Going to loose");
-				if(MOVE_CURRENT != null){
-					MOVE_CURRENT.setLoose(true);
-				}
-				LOOSING = true;
-			}
-		}else if(move.isDraw()){
-			if(!DRAWING){
+				MOVE_CURRENT.setLoose(true);
+			}else if(move.isDraw()){
 				logger.debug("Going to draw");
-				if(MOVE_CURRENT != null){
-					MOVE_CURRENT.setDraw(true);
+				MOVE_CURRENT.setDraw(true);
+			}
+			// set used
+			if(move.isUsed()){ // only update parent if child also set
+				MOVE_CURRENT.setUsed(true);
+				if(!db.setMove(MOVE_CURRENT)){ // data race, table locking
+					logger.warn("Restarting!");
+					GController.restart();
+					return;
 				}
-				DRAWING = true;
+				logstate.debug("Marked");
 			}
 		}
-		// set used
-		if(MOVE_CURRENT != null && move.isUsed()){ // only update parent if child also set
-			MOVE_CURRENT.setUsed(true);
-			if(!db.setMove(MOVE_CURRENT)){ // data race, table locking
-				logger.warn("Restarting!");
-				GController.restart();
-				return;
-			}
-		}
+		
 		// handle deletes after parent update (crash security)
 		if(move.isLoose()){
 			if(db.deleteMoves(move.getField())){
@@ -143,10 +153,8 @@ public class KBS<E extends DB> implements AI {
 				GController.restart();
 				return;
 			}
-		}else if(move.isDraw()){
-			if(db.deleteLooses(move.getField())){
-				logger.debug("Using draw move! {}",player);
-			}else{ // data race, table locking
+		}else if(found_loose){
+			if(!db.deleteLooses(move.getField())){ // data race, table locking
 				logger.warn("Restarting!");
 				GController.restart();
 				return;
@@ -173,32 +181,45 @@ public class KBS<E extends DB> implements AI {
 		E_GAME_STATE state = GController.getGameState();
 		switch(state){
 		case DRAW:
-			if(!DRAWING){
+			if(follow_unused)
+				print_follow();
+			
+			if(!MOVE_CURRENT.isDraw()){
 				this.MOVE_CURRENT.setUsed(true);
 				this.MOVE_CURRENT.setDraw(true);
 				logger.debug("{}",()->MOVE_CURRENT.toString());
 				if(!db.setMove(MOVE_CURRENT)){
+					logger.warn("Restarting");
 					GController.restart();
 				}
 			}
 			break;
 		case WIN_A:
 		case WIN_B:
+			if(follow_unused)
+				print_follow();
+			
+			if(MOVE_CURRENT == null){
+				logger.error("No current move on win state! \n{}",GController.getprintedGameState());
+				return;
+			}
 			this.MOVE_CURRENT.setUsed(true);
 			if(checkWinnerMatch(state)){
-				if(this.MOVE_CURRENT.isLoose()){ // schlechter gegner, macht zug nicht valide
+				if(this.MOVE_CURRENT.isLoose()){ // impossible if ai works
 					logger.warn("Ignoring possible win-loose");
 				}else{
 					logger.debug("{}",()->MOVE_CURRENT.toString());
 					if(!db.setMove(MOVE_CURRENT)){
+						logger.warn("Restarting");
 						GController.restart();
 					}
 				}
 			}else{
-				if(!LOOSING){
+				if(!this.MOVE_CURRENT.isLoose()){
 					this.MOVE_CURRENT.setLoose(true);
 					logger.debug("{}",()->MOVE_CURRENT.toString());
 					if(!db.setMove(MOVE_CURRENT)){
+						logger.warn("Restarting");
 						GController.restart();
 					}
 				}
@@ -207,11 +228,17 @@ public class KBS<E extends DB> implements AI {
 		default:
 			break;
 		}
-		
-		
-		
 		MOVE_CURRENT = null;
 		logger.exit();
+	}
+	
+	private void print_follow(){
+		StringBuilder sb = new StringBuilder();
+		for(Move move : follow){
+			sb.append(move.toString());
+			sb.append("\n");
+		}
+		logger.warn("Follow: {} \n{}",this.player,sb.toString());
 	}
 
 	@Override
@@ -224,8 +251,6 @@ public class KBS<E extends DB> implements AI {
 	public void start(E_PLAYER player) {
 		logger.entry(player);
 		MOVE_CURRENT = null;
-		DRAWING = false;
-		LOOSING = false;
 		this.player = player;
 	}
 	
