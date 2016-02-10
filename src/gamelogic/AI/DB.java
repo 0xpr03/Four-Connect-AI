@@ -3,6 +3,7 @@ package gamelogic.AI;
 import java.util.List;
 
 import gamelogic.Controller.E_FIELD_STATE;
+import gamelogic.Controller.E_PLAYER;
 
 /**
  * DB Interface for AIs
@@ -47,4 +48,8 @@ public interface DB {
 	 * Shutdown
 	 */
 	public abstract void shutdown();
+	
+	
+	public abstract boolean insertRelation(Move parent, E_FIELD_STATE[][] child);
+	public abstract boolean insertRelation(Move parent, byte[] child);
 }

@@ -21,36 +21,51 @@ public class AITest {
 	private static Logger logger = LogManager.getLogger();
 	private static long lastmatch;
 	
+	private static long win_a = 0;
+	private static long win_b = 0;
+	private static long draw = 0;
+	private static long restarts = 0;
+	
 	public static void main(String[] args){ // external logger, length
-		if(args.length > 0){
+		if(args.length > 1){
 			if(!args[0].equals("none")){
-			LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
-			File file = new File(args[0]);
-			context.setConfigLocation(file.toURI());
+				LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
+				File file = new File(args[0]);
+				context.setConfigLocation(file.toURI());
 			}
 		}
 		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
 		
-		Level level_db = Level.WARN;
-		Level level_ai = Level.WARN;
-		int games = 60000;
+		Level level_db = Level.INFO;
+		Level level_ai = Level.TRACE;
+		int games = 100;
 		
 		if(args.length > 1){
 			games = Integer.parseInt(args[1]);
+		}else if(args.length > 0){
+			games = Integer.parseInt(args[0]);
 		}
-		run(level_db,level_ai,games);
+		logger.info("Games {}",games);
+		if(args.length > 1 &&  (GController.getX_MAX() != 7 || GController.getY_MAX() != 6)){
+			// protection from running invalid field evaluations on the server
+			logger.error("Stopping, field size modified!");
+		}else{
+			run(level_db,level_ai,games);
+		}
+		GController.shutdown();
 		logger.exit();
 	}
 	
 	private static void run(Level level_db, Level level_ai, int games){
 		logger.entry();
-		long win_a = 0;
-		long win_b = 0;
-		long draw = 0;
+		
 		registerExitFunction();
-		if(games > 1000){
-			level_db = Level.WARN;
+		Level logcontroller = Level.DEBUG;
+		if(games > 50){
+			level_db = Level.INFO;
 			level_ai = Level.WARN;
+			logcontroller = Level.INFO;
+			Configurator.setLevel("AI-TEST", Level.WARN);
 		}
 		Configurator.setLevel("DB", level_db);
 		Configurator.setLevel("AI", level_ai);
@@ -58,7 +73,8 @@ public class AITest {
 //			if(x % 1000 == 0){
 //				logger.info(x);
 //			}
-			GController.initGame(E_GAME_MODE.KI_INTERNAL,Level.INFO);
+			logger.info("Starting game");
+			GController.initGame(E_GAME_MODE.KI_INTERNAL,logcontroller);
 			GController.startGame();
 			while(gameRunning()){
 				switch(GController.getGameState()){
@@ -70,6 +86,7 @@ public class AITest {
 					break;
 				default:
 				}
+				//logger.info(GController.getprintedGameState());
 			}
 			switch(GController.getGameState()){
 			case DRAW:
@@ -83,6 +100,7 @@ public class AITest {
 				break;
 			case RESTART:  // datarace, table locking etc
 				x--;
+				restarts++;
 				break;
 			default:
 				break;
@@ -92,7 +110,7 @@ public class AITest {
 			//logger.info(()->GController.getprintedGameState());
 		}
 		logger.info(GController.getprintedGameState());
-		logger.info("Wins A:{} B:6{} Draws:{}",win_a,win_b,draw);
+		logger.info("Wins A:{} B:{} Draws:{} Restarts:{}",win_a,win_b,draw,restarts);
 	}
 	
 	private static void registerExitFunction() {
@@ -105,6 +123,7 @@ public class AITest {
 				}catch(Exception e){
 					logger.error("Trying to get state: {}",e);
 				}
+				logger.info("Wins A:{} B:{} Draws:{} Restarts:{}",win_a,win_b,draw,restarts);
 				GController.shutdown();
 				logger.exit();
 			}

@@ -35,6 +35,14 @@ public class GController {
 	}
 
 	/**
+	 * 
+	 * @see gamelogic.Controller#setDraw()
+	 */
+	public static void setDraw() {
+		controller.setDraw();
+	}
+
+	/**
 	 * @return
 	 * @see gamelogic.Controller#getPossibilities()
 	 */

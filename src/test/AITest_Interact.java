@@ -1,5 +1,9 @@
 package test;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,6 +13,12 @@ import gamelogic.GController;
 import gamelogic.Controller.E_GAME_MODE;
 import gamelogic.Controller.E_GAME_STATE;
 
+/**
+ * Interactive test Player vs AI of type KBS
+ * (most verbose output)
+ * @author Aron Heinecke
+ *
+ */
 public class AITest_Interact {
 	
 	private static Logger logger = LogManager.getLogger();
@@ -24,27 +34,35 @@ public class AITest_Interact {
 	
 	public static void main(String[] args){
 		init();
-		GController.initGame(E_GAME_MODE.SINGLE_PLAYER,Level.INFO);
+		GController.initGame(E_GAME_MODE.SINGLE_PLAYER,Level.TRACE);
 		GController.startGame();
 		logger.info("Gamemode: {}",GController.getGamemode());
-		if(System.console() == null){
-			System.err.println("No console!!");
-			System.exit(1);
-		}
+		E_GAME_STATE state = E_GAME_STATE.NONE;
 		while(gameRunning()){
-			logger.info("game running");
+			if(state != GController.getGameState()){
+				logger.info("STATE: {}",GController.getGameState());
+				state = GController.getGameState();
+			}
 			if(GController.getGameState() == E_GAME_STATE.PLAYER_A){
-				System.out.println(GController.getprintedGameState());
-				System.out.println("Please select a column, 0-6");
-				String input = System.console().readLine();
+				logger.info("Possibilities: \n{}",GController.getPossibilities());
+				logger.info("\n{}",GController.getprintedGameState());
+				System.out.println("Please select a column, 0-"+GController.getX_MAX());
+				String input;
 				try{
+					input = readLine("");
 					int in = Integer.parseInt(input);
+					logger.debug("Player using {}",in);
 					if(!GController.insertStone(in)){
 						System.out.println("Not in range!");
 					}
 				}catch(NumberFormatException e){
 					System.out.println("Not a number!");
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					logger.error(e1);
 				}
+			}else if(GController.getGameState() == E_GAME_STATE.PLAYER_B){
+				GController.moveAI_A();
 			}
 		}
 		System.out.println(GController.getprintedGameState());
@@ -55,11 +73,21 @@ public class AITest_Interact {
 		}
 	}
 	
+	private static String readLine(String format, Object... args) throws IOException {
+	    if (System.console() != null) {
+	        return System.console().readLine(format, args);
+	    }
+	    System.out.print(String.format(format, args));
+	    BufferedReader reader = new BufferedReader(new InputStreamReader(
+	            System.in));
+	    return reader.readLine();
+	}
+	
 	private static void registerExitFunction() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
-				logger.info("{}",GController.getGameState());
+				logger.info("State: {}",GController.getGameState());
 				GController.shutdown();
 			}
 		});
@@ -75,6 +103,7 @@ public class AITest_Interact {
 		case DRAW:
 		case WIN_A:
 		case WIN_B:
+		case RESTART:
 			return false;
 		default:
 			return true;

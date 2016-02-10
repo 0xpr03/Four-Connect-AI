@@ -124,6 +124,15 @@ public final class Controller<E extends AI> {
 		initGame(gamemode, LogManager.getRootLogger().getLevel());
 	}
 	
+	public void setDraw(){
+		if(GAMEMODE == E_GAME_MODE.KI_INTERNAL){
+			STATE = E_GAME_STATE.DRAW;
+			informAIs();
+		}else{
+			logger.error("Not allowed in this mode!");
+		}
+	}
+	
 	/**
 	 * Start a initialized game
 	 */
@@ -133,10 +142,15 @@ public final class Controller<E extends AI> {
 			return;
 		}
 		STATE = E_GAME_STATE.START;
-		if (GAMEMODE == E_GAME_MODE.MULTIPLAYER || GAMEMODE == E_GAME_MODE.SINGLE_PLAYER || GAMEMODE == E_GAME_MODE.FUZZING) {
+		switch(GAMEMODE){
+		case MULTIPLAYER:
+		case SINGLE_PLAYER:
+		case FUZZING:
 			STATE = getRandomBoolean() ? E_GAME_STATE.PLAYER_A : E_GAME_STATE.PLAYER_B;
-		}else{
+			break;
+		default:
 			STATE = E_GAME_STATE.PLAYER_A;
+			break;
 		}
 		start_AI();
 		new Thread() {
@@ -317,6 +331,7 @@ public final class Controller<E extends AI> {
 	 * @author Aron Heinecke
 	 */
 	private boolean checkDraw(){
+		logger.entry();
 		int y;
 		for(int x = 0; x < X_MAX; x++){
 			if(FIELD[x][0] == E_FIELD_STATE.NONE){ // empty column
@@ -413,6 +428,7 @@ public final class Controller<E extends AI> {
 				}
 			}
 		}
+		logger.debug("Nothing on checkdraw pos");
 		return true;
 	}
 	
@@ -882,24 +898,22 @@ public final class Controller<E extends AI> {
 		int ymax = GController.getY_MAX()-1;
 		synchronized (lock){
 			for(int x = 0; x < GController.getX_MAX(); x++){
-				logger.debug("State for {} {}",x,FIELD[x][ymax]);
 				if(FIELD[x][ymax] == E_FIELD_STATE.NONE){
 					possibilities.add(x);
 				}
 			}
 		}
+		logger.debug(possibilities);
 		return possibilities;
 	}
 	
 	public void shutdown(){
-		synchronized (lock){
 			STATE = E_GAME_STATE.NONE;
 			GAMEMODE = E_GAME_MODE.NONE;
 			if(AI_a != null)
 				AI_a.shutdown();
 			if(AI_b != null)
 				AI_b.shutdown();
-		}
 	}
 	
 	/**

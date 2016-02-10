@@ -16,6 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import gamelogic.Controller.E_FIELD_STATE;
+import gamelogic.Controller.E_PLAYER;
 
 /**
  * MariaDB DB handler for KBS
@@ -29,6 +30,12 @@ public class mariaDB implements DB {
 	private String user;
 	private String pw;
 	private String db;
+	
+	private long deletes = 0;
+	private long inserts = 0;
+	private long updates = 0;
+	private long deletesAll = 0;
+	
 	private lib lib = new lib();
 	int port;
 	private Connection connection;
@@ -40,6 +47,8 @@ public class mariaDB implements DB {
 	PreparedStatement stmUpdate;
 	PreparedStatement stmDelAll;
 	PreparedStatement stmDelLooses;
+	
+	PreparedStatement stmInsertRelation;
 	
 	public mariaDB(String address, int port, String user, String pw, String db){
 		this.address = address;
@@ -72,10 +81,11 @@ public class mariaDB implements DB {
 		
 		try {
 			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`field`,`move`,`used`,`draw`,`loose`) VALUES (?,?,?,?,?);");
-			stmSelect = connection.prepareStatement("SELECT `move`,`draw`,`loose`,`used` FROM `moves` USE INDEX (field) WHERE `field` = ?;");
-			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ?, `draw` = ?, `loose`= ? WHERE `field` = ? AND `move` = ?;");
+			stmSelect = connection.prepareStatement("SELECT `move`,`draw`,`loose`,`used` FROM `moves` USE INDEX(field,move) WHERE `field` = ? ORDER BY `move`;");
+			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ?, `draw` = ?, `loose`= ? WHERE `field` = ? AND `move` = ? ;");
 			stmDelAll = connection.prepareStatement("DELETE FROM `moves` WHERE `field` = ?;");
 			stmDelLooses = connection.prepareStatement("DELETE FROM `moves` WHERE `field` = ? AND `loose` = 1;");
+			stmInsertRelation = connection.prepareStatement("INSERT INTO `relations` (`parent`,`move`,`child`) VALUES (?,?,?);");
 		} catch (SQLException e) {
 			logger.error("Statement preparation {}",e);
 		}
@@ -93,6 +103,7 @@ public class mariaDB implements DB {
 				moves.add(new Move(field,rs.getInt(1),rs.getBoolean(2),rs.getBoolean(3),rs.getBoolean(4)));
 			}
 			rs.close();
+			stmUpdate.clearParameters();
 			return moves;
 		} catch (SQLException e) {
 			logger.error("getMoves {}",e);
@@ -113,11 +124,13 @@ public class mariaDB implements DB {
 				stmInsert.setInt(2, move);
 				stmInsert.executeUpdate();
 			}
+			stmUpdate.clearParameters();
+			inserts++;
 			//stmInsert.clearParameters();
-			return new Move(sha,moves.get(rand.nextInt(moves.size())),false,false,false);
+			return new Move(sha,moves.get(0),false,false,false);
 		} catch (SQLException e) {
 			if(e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class) || e.getCause().getClass().equals(SQLTransactionRollbackException.class)){
-				logger.info("Ignoring duplicate insertion exception");
+				logger.debug("Ignoring duplicate insertion exception");
 			}else{
 				logger.error("insertMoves {}",e);
 			}
@@ -138,11 +151,13 @@ public class mariaDB implements DB {
 			stmUpdate.setBytes(4, move.getField());
 			stmUpdate.setInt(5, move.getMove());
 			stmUpdate.executeUpdate();
+			stmUpdate.clearParameters();
 			//stmUpdate.clearParameters();
+			updates++;
 			return true;
 		} catch (SQLException e) {
 			if(e.getCause().getClass() == SQLTransactionRollbackException.class){
-				logger.info("Ignoring datarace exception");
+				logger.debug("Ignoring datarace exception");
 			}else{
 				logger.error("updateMove {}",e);
 			}
@@ -198,36 +213,60 @@ public class mariaDB implements DB {
 		} catch (SQLException e) {
 			logger.error("mariaDB shutdown {}",e);
 		}
+		logger.info("Stats: Deletes:{} DelAlls:{} Inserts:{} Updates:{}",deletes,deletesAll,inserts, updates);
+	}
+	
+	public boolean insertRelation(Move parent, E_FIELD_STATE[][] child){
+		return insertRelation(parent,lib.field2sha(child));
+	}
+	
+	public boolean insertRelation(Move parent, byte[] child){
+		try {
+			stmInsertRelation.setBytes(1, parent.getField());
+			stmInsertRelation.setInt(2, parent.getMove());
+			stmInsertRelation.setBytes(3, child);
+			stmInsertRelation.executeUpdate();
+			return true;
+		} catch (SQLException e) {
+			//logger.error("stmInsertRelation {}",e);
+			return false;
+		}
 	}
 
 	@Override
 	public boolean deleteMoves(byte[] fieldHash) {
 		logger.entry();
-		try {
-			stmDelAll.setBytes(1, fieldHash);
-			stmDelAll.executeUpdate();
-			return true;
-		} catch (SQLException e) {
-			logger.error("stmDelAll {}",e);
-			return false;
-		}
+		deletes++;
+//		try {
+//			stmDelAll.setBytes(1, fieldHash);
+//			stmDelAll.executeUpdate();
+//			deletes++;
+//			return true;
+//		} catch (SQLException e) {
+//			logger.error("stmDelAll {}",e);
+//			return false;
+//		}
+		return true;
 	}
 
 	@Override
 	public boolean deleteLooses(byte[] childHash) {
 		logger.entry();
-		try {
-			stmDelLooses.setBytes(1, childHash);
-			stmDelLooses.executeUpdate();
-			return true;
-		} catch (SQLException e) {
-			if(e.getCause().getClass() == SQLTransactionRollbackException.class){
-				logger.info("Ignoring datarace exception");
-			}else{
-				logger.error("stmDelLooses {}",e);
-			}
-			return false;
-		}
+		deletesAll++;
+//		try {
+////			stmDelLooses.setBytes(1, childHash);
+////			stmDelLooses.executeUpdate();
+//			deletesAll++;
+//			return true;
+//		} catch (SQLException e) {
+//			if(e.getCause().getClass() == SQLTransactionRollbackException.class){
+//				logger.debug("Ignoring datarace exception");
+//			}else{
+//				logger.error("stmDelLooses {}",e);
+//			}
+//			return false;
+//		}
+		return true;
 	}
 
 }

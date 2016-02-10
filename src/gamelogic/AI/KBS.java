@@ -26,7 +26,7 @@ public class KBS<E extends DB> implements AI {
 	private boolean LEARNING;
 	private boolean SHUTDOWN = false;
 	
-	private final boolean follow_unused = false;
+	private boolean follow_unused = true;
 	private List<Move> follow = new ArrayList<Move>();
 	
 	public KBS(E db, boolean learning){
@@ -77,7 +77,7 @@ public class KBS<E extends DB> implements AI {
 		boolean found_loose = false;
 		for(Move move : moves){
 			if(move.isUsed()){
-				if(!move.isLoose() && !move.isDraw()){
+				if((!move.isLoose()) && (!move.isDraw())){
 					win = move;
 					//break;
 				}else if(move.isDraw()){
@@ -122,52 +122,30 @@ public class KBS<E extends DB> implements AI {
 			follow.add(move);
 		}
 		
-		if(MOVE_CURRENT != null){
-			// handle loose/draw marks
-			if(move.isLoose()){
-				logger.debug("Going to loose");
-				MOVE_CURRENT.setLoose(true);
-			}else if(move.isDraw()){
-				logger.debug("Going to draw");
-				MOVE_CURRENT.setDraw(true);
-			}
-			// set used
-			if(move.isUsed()){ // only update parent if child also set
-				MOVE_CURRENT.setUsed(true);
-				if(!db.setMove(MOVE_CURRENT)){ // data race, table locking
+		// handle deletes after parent update (crash security)
+		if(move.isLoose()){
+			if(MOVE_CURRENT != null){
+				if(!db.deleteMoves(move.getField())){ // datarace, table locking
 					logger.warn("Restarting!");
 					GController.restart();
 					return;
 				}
-				logstate.debug("Marked");
+			}else{
+				logger.warn("Can't delete root");
 			}
-		}
-		
-		// handle deletes after parent update (crash security)
-		if(move.isLoose()){
-			if(db.deleteMoves(move.getField())){
-				logger.debug("Capitulation state for AI {}",player);
-				GController.capitulate(player);
-			}else{ // datarace, table locking
-				logger.warn("Restarting!");
-				GController.restart();
-				return;
-			}
-		}else if(found_loose){
-			if(!db.deleteLooses(move.getField())){ // data race, table locking
-				logger.warn("Restarting!");
-				GController.restart();
-				return;
-			}
-		}
-		MOVE_CURRENT = move;
-		// use move
-		if(!move.isLoose()){
+			logger.debug("Capitulation state for AI {}",player);
+			GController.capitulate(player);
+		}else if(move.isDraw()){
+			GController.setDraw();
+		}else{
+			MOVE_CURRENT = move;
 			if(!GController.insertStone(MOVE_CURRENT.getMove())){
 				logger.error("Couldn't insert stone! Wrong move! {} \n{}",MOVE_CURRENT.getMove(),GController.getprintedGameState());
 				logger.error(move.toString());
 			}
 		}
+		// use move
+		
 		logger.exit();
 	}
 	
@@ -183,6 +161,12 @@ public class KBS<E extends DB> implements AI {
 		case DRAW:
 			if(follow_unused)
 				print_follow();
+			
+			if(MOVE_CURRENT == null){
+				logger.error("No current move on win state! \n{}",GController.getprintedGameState());
+				follow_unused = true;
+				return;
+			}
 			
 			if(!MOVE_CURRENT.isDraw()){
 				this.MOVE_CURRENT.setUsed(true);
@@ -201,28 +185,25 @@ public class KBS<E extends DB> implements AI {
 			
 			if(MOVE_CURRENT == null){
 				logger.error("No current move on win state! \n{}",GController.getprintedGameState());
+				follow_unused = true;
 				return;
 			}
 			this.MOVE_CURRENT.setUsed(true);
 			if(checkWinnerMatch(state)){
-				if(this.MOVE_CURRENT.isLoose()){ // impossible if ai works
+				if(this.MOVE_CURRENT.isLoose() || this.MOVE_CURRENT.isDraw()){ // impossible if ai works
 					logger.warn("Ignoring possible win-loose");
 				}else{
 					logger.debug("{}",()->MOVE_CURRENT.toString());
-					if(!db.setMove(MOVE_CURRENT)){
-						logger.warn("Restarting");
-						GController.restart();
-					}
 				}
 			}else{
 				if(!this.MOVE_CURRENT.isLoose()){
 					this.MOVE_CURRENT.setLoose(true);
 					logger.debug("{}",()->MOVE_CURRENT.toString());
-					if(!db.setMove(MOVE_CURRENT)){
-						logger.warn("Restarting");
-						GController.restart();
-					}
 				}
+			}
+			if(!db.setMove(MOVE_CURRENT)){
+				logger.warn("Restarting");
+				GController.restart();
 			}
 			break;
 		default:
@@ -239,10 +220,14 @@ public class KBS<E extends DB> implements AI {
 			sb.append("\n");
 		}
 		logger.warn("Follow: {} \n{}",this.player,sb.toString());
+		follow.clear();
 	}
 
 	@Override
 	public void shutdown() {
+		if(SHUTDOWN){
+			return;
+		}
 		this.SHUTDOWN = true;
 		db.shutdown();
 	}
