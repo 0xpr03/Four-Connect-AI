@@ -1,10 +1,12 @@
 package gamelogic;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 
 import gamelogic.AI.AI;
@@ -17,6 +19,9 @@ import gamelogic.AI.AI;
  * @param <E>
  */
 public final class Controller<E extends AI> extends ControllerBase<E> {
+	
+	private Logger logger = LogManager.getLogger();
+	
 	public Controller(E kbs_trainer, E kbs_trainer2) {
 		super(kbs_trainer, kbs_trainer2);
 	}
@@ -29,7 +34,6 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	private List<E_FIELD_STATE[][]> matchHistory;
 	private E_GAME_STATE LAST_PLAYER;
 	
-	
 	/**
 	 * Initialize a new Game
 	 * @param gamemode on multiplayer / singleplayer the starting player will be selected randomly
@@ -38,7 +42,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	 */
 	public synchronized void initGame(E_GAME_MODE gamemode, Level loglevel) {
 		synchronized(lock){
-			Configurator.setLevel(logger.getName(), loglevel);
+			Configurator.setLevel(LogManager.getLogger(ControllerBase.class).getName(), loglevel);
 			if (gamemode == E_GAME_MODE.NONE){
 				logger.error("Wrong game mode! {}",gamemode);
 			}
@@ -53,7 +57,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 			GAMEMODE = gamemode;
 			
 			if(GAMEMODE == E_GAME_MODE.KI_TRAINING){
-				matchHistory = new ArrayList<E_FIELD_STATE[][]>();
+				matchHistory = new ArrayList<E_FIELD_STATE[][]>((X_MAX * Y_MAX) - 5);
 			}
 			
 			if (GAMEMODE == E_GAME_MODE.TESTING){
@@ -82,10 +86,11 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 			}
 			STATE = E_GAME_STATE.START;
 			switch(GAMEMODE){
+			case KI_TRAINING:
+				addHistory(); // add empty field
 			case MULTIPLAYER:
 			case SINGLE_PLAYER:
 			case KI_INTERNAL:
-			case KI_TRAINING:
 			case FUZZING:
 				STATE = getRandomBoolean() ? E_GAME_STATE.PLAYER_A : E_GAME_STATE.PLAYER_B;
 				break;
@@ -120,7 +125,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 					break;
 				}
 			}
-			
+		}
 			if(found_place != -1) {
 				MOVES++;
 				WinStore ws = checkWin(column,found_place);
@@ -128,8 +133,9 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 					if(checkDraw()){ // is draw
 						handelDraw();
 					}else{ // no draw, no win, next move
-						if(matchHistory != null)
-							matchHistory.add(FIELD);
+						if(matchHistory != null){
+							addHistory();
+						}
 						STATE = STATE == E_GAME_STATE.PLAYER_A ? E_GAME_STATE.PLAYER_B : E_GAME_STATE.PLAYER_A;
 					}
 				}else{
@@ -140,12 +146,20 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 			}
 			
 			//TODO: call graphics && let it callback the next run
-		}
 		return found_place != -1;
+	}
+	
+	private E_FIELD_STATE[][] copyField(E_FIELD_STATE[][] origin){
+		E_FIELD_STATE[][] copy = new E_FIELD_STATE[X_MAX][Y_MAX];
+		for(int x = 0; x < X_MAX; x++){
+			copy[x] = Arrays.copyOf(origin[x],Y_MAX);
+		}
+		return copy;
 	}
 	
 	protected synchronized void checkHistory(){
 		logger.entry();
+		logger.debug(()->super.getprintedGameState());
 		if(GAMEMODE == E_GAME_MODE.KI_TRAINING)
 			LAST_PLAYER = STATE;
 	}
@@ -160,33 +174,39 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	 * Curent KI is finished with a all moves
 	 * Go back & lat KI before move
 	 */
-	protected void handle_KI_moveless(){
+	private void handle_KI_moveless(){
 		logger.entry();
-		int size = matchHistory.size() -1;
-		if(size >= 1){
-			matchHistory.remove(size);
-			size--;
-		}
-		FIELD = matchHistory.get(size);
+		logger.info(()->super.getprintedGameState());
+		go_back_history(true);
 		MOVES -= 2;
-		if(STATE == E_GAME_STATE.PLAYER_A){
+		
+		E_GAME_STATE state_cache = STATE;
+		//TODO: change to represent current gamestate
+		logger.warn("Using default win state to inform!");
+		STATE = E_GAME_STATE.WIN_A;
+		AI_a.gameEvent();
+		AI_b.gameEvent();
+		
+		if(state_cache == E_GAME_STATE.PLAYER_A){
+			AI_a.goBackHistory();
 			STATE = E_GAME_STATE.PLAYER_B;
-		}else if(STATE == E_GAME_STATE.PLAYER_B){
+		}else if(state_cache == E_GAME_STATE.PLAYER_B){
+			AI_b.goBackHistory();
 			STATE = E_GAME_STATE.PLAYER_A;
 		}else{
 			return;
 		}
-		
+		logger.info(()->super.getprintedGameState());
 		logger.exit();
 	}
 	
 	/**
-	 * 
 	 * @return returns false if no unused moves remain
 	 */
 	public void moveAI_A(){
 		if(!AI_a.getMove()){
-			handle_KI_moveless();
+			if(GAMEMODE == E_GAME_MODE.KI_TRAINING)
+				handle_KI_moveless();
 		}
 	}
 	
@@ -195,7 +215,17 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	 */
 	public void moveAI_B(){
 		if(!AI_b.getMove()){
-			handle_KI_moveless();
+			if(GAMEMODE == E_GAME_MODE.KI_TRAINING)
+				handle_KI_moveless();
+		}
+	}
+	
+	private void addHistory(){
+		synchronized (lock) {
+			if(!matchHistory.add(copyField(FIELD))){
+				logger.error("Couldn't insert into list");
+				logger.debug(getPrintedHistory());
+			}
 		}
 	}
 	
@@ -222,14 +252,49 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	
 	protected synchronized void moveAgain(){
 		logger.entry();
-		int size = matchHistory.size() -1;
-		if(size >= 1){
-			matchHistory.remove(matchHistory.size()-1);
-			size --;
-		}
-		MOVES--;
-		FIELD = matchHistory.get(size);
+		logger.info(()->super.getprintedGameState());
+		logger.info(getPrintedHistory());
+		go_back_history(false);
 		STATE = LAST_PLAYER;
+		logger.info(()->super.getprintedGameState());
+	}
+	
+	private String getPrintedHistory(){
+		StringBuilder sb = new StringBuilder();
+		sb.append("Match History:");
+		sb.append(matchHistory.size());
+		sb.append(" \n");
+		for(E_FIELD_STATE[][] entry : matchHistory){
+			sb.append("Entry:\n");
+			for (int y = (Y_MAX-1); y >= 0; y--){
+				sb.append(y+"\t");
+				for (int x = 0; x < X_MAX; x++){
+					sb.append("|"+printConvGamest(entry[x][y]));
+				}
+				sb.append("|\n");
+			}
+		}
+		return sb.toString();
+	}
+	
+	/**
+	 * Set to true to go back history - 1
+	 * @param second
+	 */
+	private void go_back_history(boolean second){
+		logger.entry();
+		int size = matchHistory.size() - 1;
+		if(size >= 1){
+			if(second){
+				matchHistory.remove(size);
+				size--;
+				MOVES--;
+			}
+			MOVES--;
+			FIELD = copyField(matchHistory.get(size));
+		}else{
+			logger.error("toot little to go back");
+		}
 	}
 	
 	protected synchronized void informAIs(){
@@ -238,9 +303,11 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 			switch(LAST_PLAYER){
 			case PLAYER_A:
 				AI_a.gameEvent();
+				AI_a.goBackHistory();
 				break;
 			case PLAYER_B:
 				AI_b.gameEvent();
+				AI_b.goBackHistory();
 				break;
 			default:
 				logger.warn("no player!");

@@ -1,153 +1,131 @@
 package gamelogic.AI;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import gamelogic.Controller.E_GAME_STATE;
-import gamelogic.Controller.E_PLAYER;
+import gamelogic.ControllerBase.E_GAME_STATE;
+import gamelogic.ControllerBase.E_PLAYER;
 import gamelogic.GController;
 
 /**
  * Knowledge based AI system
+ * Training version
  * @author Aron Heinecke
  * 
  * @param <E> needs a DB handler
  */
-public class KBS<E extends DB> implements AI {
+public class KBS_trainer<E extends DB> implements AI {
 	
 	private Logger logger = LogManager.getLogger("AI");
-	private Logger logstate = LogManager.getLogger("AI-TEST");
 	private E db;
-	private Move MOVE_CURRENT;
 	private E_PLAYER player;
-	private boolean LEARNING;
+	private SelectResult moves;
+	private byte[] lastField = null;
+	private Move P_MOVE_CURRENT; // pointer to last moveHistory element
+	private List<Move> unused;
+	private List<Move> moveHistory;
 	private boolean SHUTDOWN = false;
 	
-	private boolean follow_unused = true;
+	private boolean follow_unused = false;
 	private List<Move> follow = new ArrayList<Move>();
 	
-	public KBS(E db, boolean learning){
+	public KBS_trainer(E db){
 		this.db = db;
-		this.LEARNING = learning;
 		logger.info("Knowledge based system initializing..");
 	}
 	
 	@Override
-	public void getMove() {
+	public boolean getMove() {
 		logger.entry(player);
 		
 		if(SHUTDOWN){
 			logger.debug("Shutdown set");
-			return;
+			return true;
 		}
 		if(GController.getGameState() != E_GAME_STATE.PLAYER_A && GController.getGameState() != E_GAME_STATE.PLAYER_B){
 			logger.info("Game already ended");
-			return;
+			return true;
 		}
 		
-		List<Move> moves = db.getMoves(GController.getFieldState());
-		if(moves.isEmpty()){
-			List<Integer> possibilities = GController.getPossibilities();
-			logger.debug("Possibilities: {}",possibilities);
-			Move move = db.insertMoves(GController.getFieldState(), possibilities);
-			if(move == null){ // can happen on concurrency
-				logger.info("No moves!");
-				try {
-					Thread.sleep(10);
-				} catch (InterruptedException e) {
-					logger.warn(e);
+		Move new_move = null;
+		if(Arrays.equals(lastField, db.getHash())){
+			for(Move move : unused){
+				if(!move.isUsed()){
+					new_move = move;
 				}
-				getMove();
-				return;
 			}
-			useMove(move,false);
 		}else{
-			moveWithDraws(moves);
+			SelectResult moves = db.getMoves(GController.getFieldState(),this.player==E_PLAYER.PLAYER_A);
+			if(moves.isEmpty()){
+				List<Integer> possibilities = GController.getPossibilities();
+				logger.debug("Possibilities: {}",possibilities);
+				SelectResult sel = db.insertMoves(GController.getFieldState(), possibilities,player==E_PLAYER.PLAYER_A);
+				if(sel == null){ // can happen on concurrency
+					logger.error("Error on insert!");
+					System.exit(1);
+					return true;
+				}
+				
+				lastField = new byte[20];
+				lastField = db.getHash();
+				unused = new ArrayList<Move>(sel.getUnused());
+				new_move = unused.get(0);
+			}else{
+				if(!moves.getUnused().isEmpty()){
+					new_move = moves.getUnused().get(0);
+				}
+			}
 		}
-		
+		if(new_move == null){
+			logger.debug("No new move");
+			return false;
+		}else{
+			moveHistory.add(new_move);
+			updatePointer();
+			if(!GController.insertStone(P_MOVE_CURRENT.getMove())){
+				logger.error("Couldn't insert stone! Wrong move! \n{}",GController.getprintedGameState());
+				logger.error(P_MOVE_CURRENT.toString());
+			}
+		}
 		logger.exit();
+		return true;
 	}
 	
-	private void moveWithDraws(List<Move> moves){ // this function treats draws & looses different
-		Move win = null;
-		Move draw = null;
-		boolean found_loose = false;
-		for(Move move : moves){
-			if(move.isUsed()){
-				if((!move.isLoose()) && (!move.isDraw())){
-					win = move;
-					//break;
-				}else if(move.isDraw()){
-					draw = move;
-					//break;
-				}else{
-					found_loose = true;
-				}
-			}else if(LEARNING){
-				useMove(move,false);
-				logger.exit();
-				return;
-			}else{
-				logger.warn("Not in learning mode, but unused move found!");
-				return;
-			}
-		}
-		
-		if(win != null){ // win move (or not played till now)
-			logger.debug("Found win move");
-			useMove(win,found_loose);
-		}else if(draw != null){ // no winning, but draw move
-			logger.debug("Found draw move");
-			useMove(draw,found_loose);
-		}else{ // no win or draw -> loose, if not already in loosing mode, set current (now last) move as loose
-			useMove(moves.get(0),true);
-		}
+	private void updatePointer(){
+		P_MOVE_CURRENT = moveHistory.get(moveHistory.size() -1);
 	}
 	
 	/**
-	 * Uses a move
-	 * Handles Draw/Win/loose child moves
-	 * 
-	 * @param move Expects to get a draw or worse loose move only if there's no alternative.
-	 * Otherwise this algorithm will fail.
+	 * Go back one move in the history
 	 */
-	private void useMove(Move move,boolean found_loose){
-		logger.entry(player);
-		logger.debug("Move: {}",()->move.toString());
-		
-		if(follow_unused){
-			follow.add(move);
+	public void goBackHistory(){
+		if(logger.isDebugEnabled()){
+			logger.debug(printHistory());
 		}
-		
-		// handle deletes after parent update (crash security)
-		if(move.isLoose()){
-			if(MOVE_CURRENT != null){
-				if(!db.deleteMoves(move.getField())){ // datarace, table locking
-					logger.warn("Restarting!");
-					GController.restart();
-					return;
-				}
-			}else{
-				logger.warn("Can't delete root");
-			}
-			logger.debug("Capitulation state for AI {}",player);
-			GController.capitulate(player);
-		}else if(move.isDraw()){
-			GController.setDraw();
+		if(moveHistory.size() >= 1){
+			moveHistory.remove(moveHistory.size() -1);
+			updatePointer();
 		}else{
-			MOVE_CURRENT = move;
-			if(!GController.insertStone(MOVE_CURRENT.getMove())){
-				logger.error("Couldn't insert stone! Wrong move! {} \n{}",MOVE_CURRENT.getMove(),GController.getprintedGameState());
-				logger.error(move.toString());
-			}
+			logger.error("Can't go back one more!  Elements:{} {}",moveHistory.size(),this.player);
 		}
-		// use move
-		
-		logger.exit();
+		if(logger.isDebugEnabled()){
+			logger.debug(printHistory());
+		}
 	}
+	
+	private String printHistory(){
+		StringBuilder sb = new StringBuilder();
+		for(Move move : moveHistory){
+			sb.append(move.toString());
+			sb.append("\n");
+		}
+		return sb.toString();
+	}
+	
 	
 	@Override
 	public void gameEvent() {
@@ -157,59 +135,31 @@ public class KBS<E extends DB> implements AI {
 			return;
 		}
 		E_GAME_STATE state = GController.getGameState();
+		
+		if(follow_unused)
+			print_follow();
+		
+		if(P_MOVE_CURRENT == null){
+			logger.error("No current move on win state! \n{}",GController.getprintedGameState());
+			logger.warn("Null move");
+			return;
+		}
+		
 		switch(state){
 		case DRAW:
-			if(follow_unused)
-				print_follow();
-			
-			if(MOVE_CURRENT == null){
-				logger.error("No current move on win state! \n{}",GController.getprintedGameState());
-				follow_unused = true;
-				return;
-			}
-			
-			if(!MOVE_CURRENT.isDraw()){
-				this.MOVE_CURRENT.setUsed(true);
-				this.MOVE_CURRENT.setDraw(true);
-				logger.debug("{}",()->MOVE_CURRENT.toString());
-				if(!db.setMove(MOVE_CURRENT)){
-					logger.warn("Restarting");
-					GController.restart();
-				}
-			}
-			break;
 		case WIN_A:
 		case WIN_B:
-			if(follow_unused)
-				print_follow();
-			
-			if(MOVE_CURRENT == null){
-				logger.error("No current move on win state! \n{}",GController.getprintedGameState());
-				follow_unused = true;
-				return;
-			}
-			this.MOVE_CURRENT.setUsed(true);
-			if(checkWinnerMatch(state)){
-				if(this.MOVE_CURRENT.isLoose() || this.MOVE_CURRENT.isDraw()){ // impossible if ai works
-					logger.warn("Ignoring possible win-loose");
-				}else{
-					logger.debug("{}",()->MOVE_CURRENT.toString());
-				}
-			}else{
-				if(!this.MOVE_CURRENT.isLoose()){
-					this.MOVE_CURRENT.setLoose(true);
-					logger.debug("{}",()->MOVE_CURRENT.toString());
-				}
-			}
-			if(!db.setMove(MOVE_CURRENT)){
-				logger.warn("Restarting");
-				GController.restart();
+			this.P_MOVE_CURRENT.setUsed(true);
+			if(!db.setMove(P_MOVE_CURRENT)){
+				logger.error("Invalid set");
+				System.exit(1);
 			}
 			break;
 		default:
 			break;
 		}
-		MOVE_CURRENT = null;
+		P_MOVE_CURRENT = null;
+		logger.debug(printHistory());
 		logger.exit();
 	}
 	
@@ -235,7 +185,8 @@ public class KBS<E extends DB> implements AI {
 	@Override
 	public void start(E_PLAYER player) {
 		logger.entry(player);
-		MOVE_CURRENT = null;
+		P_MOVE_CURRENT = null;
+		moveHistory = new ArrayList<Move>( (GController.getX_MAX() * GController.getY_MAX()) /2 );
 		this.player = player;
 	}
 	

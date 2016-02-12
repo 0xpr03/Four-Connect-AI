@@ -233,7 +233,7 @@ public class gameControllerTester {
 				String lowest_field_draw = "";
 				long time = System.currentTimeMillis();
 				for(int x = 0; x < games_per_thread; x++){
-					@SuppressWarnings({ "rawtypes", "unchecked" })
+					@SuppressWarnings({ "rawtypes" })
 					Controller controller = new Controller();
 					controller.initGame(gamemode, Level.WARN);
 					controller.startGame();

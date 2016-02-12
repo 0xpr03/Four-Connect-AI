@@ -5,18 +5,14 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.SQLNonTransientConnectionException;
-import java.sql.SQLTransactionRollbackException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import gamelogic.Controller.E_FIELD_STATE;
-import gamelogic.Controller.E_PLAYER;
+import gamelogic.ControllerBase.E_FIELD_STATE;
+import gamelogic.GController;
 
 /**
  * MariaDB DB handler for KBS
@@ -39,8 +35,6 @@ public class mariaDB implements DB {
 	private lib lib = new lib();
 	int port;
 	private Connection connection;
-	
-	private Random rand = new Random(System.nanoTime());
 	
 	PreparedStatement stmInsert;
 	PreparedStatement stmSelect;
@@ -80,9 +74,11 @@ public class mariaDB implements DB {
 		}
 		
 		try {
-			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`field`,`move`,`used`,`draw`,`loose`) VALUES (?,?,?,?,?);");
-			stmSelect = connection.prepareStatement("SELECT `move`,`draw`,`loose`,`used` FROM `moves` USE INDEX(field,move) WHERE `field` = ? ORDER BY `move`;");
-			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ?, `draw` = ?, `loose`= ? WHERE `field` = ? AND `move` = ? ;");
+			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`field`,`move`,`player_a`,`used`) VALUES (?,?,?,?);");
+			stmSelect = connection.prepareStatement("SELECT `move`,`used` FROM `moves` USE INDEX(field,player_a) WHERE `field` = ? AND `player_a` = ?;");
+			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ? WHERE `field` = ? AND `move` = ? AND `player_a` = ? ;");
+			
+			
 			stmDelAll = connection.prepareStatement("DELETE FROM `moves` WHERE `field` = ?;");
 			stmDelLooses = connection.prepareStatement("DELETE FROM `moves` WHERE `field` = ? AND `loose` = 1;");
 			stmInsertRelation = connection.prepareStatement("INSERT INTO `relations` (`parent`,`move`,`child`) VALUES (?,?,?);");
@@ -92,19 +88,24 @@ public class mariaDB implements DB {
 	}
 	
 	@Override
-	public List<Move> getMoves(E_FIELD_STATE[][] field_in) {
+	public SelectResult getMoves(E_FIELD_STATE[][] field_in,boolean player_a) {
 		logger.entry();
 		try {
 			byte[] field = lib.field2sha(field_in);
 			stmSelect.setBytes(1, field);
+			stmSelect.setBoolean(2, player_a);
 			ResultSet rs = stmSelect.executeQuery();
-			List<Move> moves = new ArrayList<Move>(7);
+			SelectResult sel = new SelectResult();
 			while(rs.next()){
-				moves.add(new Move(field,rs.getInt(1),rs.getBoolean(2),rs.getBoolean(3),rs.getBoolean(4)));
+				Move move = new Move(field,rs.getInt(1),false,false,rs.getBoolean(2),player_a);
+				if(move.isUsed()){
+					sel.addWin(move);
+				}else{
+					sel.addUnused(move);
+				}
 			}
 			rs.close();
-			stmUpdate.clearParameters();
-			return moves;
+			return sel;
 		} catch (SQLException e) {
 			logger.error("getMoves {}",e);
 			return null;
@@ -112,28 +113,28 @@ public class mariaDB implements DB {
 	}
 
 	@Override
-	public Move insertMoves(E_FIELD_STATE[][] field, List<Integer> moves) {
+	public SelectResult insertMoves(E_FIELD_STATE[][] field, List<Integer> moves,boolean player_a) {
 		logger.entry();
 		try {
 			byte[] sha = lib.field2sha(field);
+			
 			stmInsert.setBytes(1, sha);
-			stmInsert.setBoolean(3, false);
+			stmInsert.setBoolean(3, player_a);
 			stmInsert.setBoolean(4, false);
-			stmInsert.setBoolean(5, false);
+			SelectResult sel = new SelectResult();
 			for(int move : moves){
 				stmInsert.setInt(2, move);
 				stmInsert.executeUpdate();
+				sel.addUnused(new Move(sha, move, player_a));
 			}
-			stmUpdate.clearParameters();
 			inserts++;
-			//stmInsert.clearParameters();
-			return new Move(sha,moves.get(0),false,false,false);
+			return sel;
 		} catch (SQLException e) {
-			if(e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class) || e.getCause().getClass().equals(SQLTransactionRollbackException.class)){
-				logger.debug("Ignoring duplicate insertion exception");
-			}else{
+//			if(e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class) || e.getCause().getClass().equals(SQLTransactionRollbackException.class)){
+//				logger.error("Ignoring duplicate insertion exception");
+//			}else{
 				logger.error("insertMoves {}",e);
-			}
+//			}
 			return null;
 		}
 	}
@@ -146,21 +147,19 @@ public class mariaDB implements DB {
 				logger.warn("Probably invalid move! {}",()->move.toString());
 			}
 			stmUpdate.setBoolean(1, move.isUsed());
-			stmUpdate.setBoolean(2, move.isDraw());
-			stmUpdate.setBoolean(3, move.isLoose());
-			stmUpdate.setBytes(4, move.getField());
-			stmUpdate.setInt(5, move.getMove());
+			stmUpdate.setBytes(2, move.getField());
+			stmUpdate.setInt(3, move.getMove());
+			stmUpdate.setBoolean(4, move.isPlayer_a());
 			stmUpdate.executeUpdate();
-			stmUpdate.clearParameters();
 			//stmUpdate.clearParameters();
 			updates++;
 			return true;
 		} catch (SQLException e) {
-			if(e.getCause().getClass() == SQLTransactionRollbackException.class){
-				logger.debug("Ignoring datarace exception");
-			}else{
+//			if(e.getCause().getClass() == SQLTransactionRollbackException.class){
+//				logger.debug("Ignoring datarace exception");
+//			}else{
 				logger.error("updateMove {}",e);
-			}
+//			}
 			return false;
 		}
 	}
@@ -268,5 +267,7 @@ public class mariaDB implements DB {
 //		}
 		return true;
 	}
-
+	public byte[] getHash(){
+		 return lib.field2sha(GController.getFieldState());
+	}
 }

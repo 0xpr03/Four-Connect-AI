@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configurator;
 
-import gamelogic.Controller.E_GAME_MODE;
+import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.GController;
 
 /**
@@ -16,7 +16,7 @@ import gamelogic.GController;
  * @author Aron Heinecke
  *
  */
-public class AITest {
+public class AITrainer {
 	
 	private static Logger logger = LogManager.getLogger();
 	private static long lastmatch;
@@ -36,9 +36,9 @@ public class AITest {
 		}
 		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
 		
-		Level level_db = Level.INFO;
+		Level level_db = Level.DEBUG;
 		Level level_ai = Level.TRACE;
-		int games = 100;
+		int games = 1;
 		
 		if(args.length > 1){
 			games = Integer.parseInt(args[1]);
@@ -49,9 +49,9 @@ public class AITest {
 		if(args.length > 1 &&  (GController.getX_MAX() != 7 || GController.getY_MAX() != 6)){
 			// protection from running invalid field evaluations on the server
 			logger.error("Stopping, field size modified!");
-		}else{
-			run(level_db,level_ai,games);
 		}
+		run(level_db,level_ai,games);
+		
 		GController.shutdown();
 		logger.exit();
 	}
@@ -60,7 +60,7 @@ public class AITest {
 		logger.entry();
 		
 		registerExitFunction();
-		Level logcontroller = Level.DEBUG;
+		Level logcontroller = Level.INFO;
 		if(games > 50){
 			level_db = Level.INFO;
 			level_ai = Level.WARN;
@@ -70,13 +70,10 @@ public class AITest {
 		Configurator.setLevel("DB", level_db);
 		Configurator.setLevel("AI", level_ai);
 		for(int x = 0; x < games; x++){
-//			if(x % 1000 == 0){
-//				logger.info(x);
-//			}
-			logger.info("Starting game");
-			GController.initGame(E_GAME_MODE.KI_INTERNAL,logcontroller);
+			GController.initGame(E_GAME_MODE.KI_TRAINING,logcontroller);
 			GController.startGame();
 			while(gameRunning()){
+				GController.printGameState();
 				switch(GController.getGameState()){
 				case PLAYER_A:
 					GController.moveAI_A();
@@ -85,8 +82,8 @@ public class AITest {
 					GController.moveAI_B();
 					break;
 				default:
+					logger.info(GController.getGameState());
 				}
-				//logger.info(GController.getprintedGameState());
 			}
 			switch(GController.getGameState()){
 			case DRAW:
@@ -106,8 +103,6 @@ public class AITest {
 				break;
 			}
 			lastmatch = System.currentTimeMillis();
-			//logger.info(()->GController.getGameState());
-			//logger.info(()->GController.getprintedGameState());
 		}
 		logger.info(GController.getprintedGameState());
 		logger.info("Wins A:{} B:{} Draws:{} Restarts:{}",win_a,win_b,draw,restarts);
@@ -136,14 +131,14 @@ public class AITest {
 	 * @return
 	 */
 	private static boolean gameRunning(){
-		switch(GController.getGameState()){
-		case DRAW:
-		case WIN_A:
-		case WIN_B:
-		case RESTART:
-			return false;
-		default:
+//		switch(GController.getGameState()){
+//		case DRAW:
+//		case WIN_A:
+//		case WIN_B:
+//		case RESTART:
+//			return false;
+//		default:
 			return true;
-		}
+//		}
 	}
 }

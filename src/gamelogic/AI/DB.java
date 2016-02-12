@@ -2,8 +2,7 @@ package gamelogic.AI;
 
 import java.util.List;
 
-import gamelogic.Controller.E_FIELD_STATE;
-import gamelogic.Controller.E_PLAYER;
+import gamelogic.ControllerBase.E_FIELD_STATE;
 
 /**
  * DB Interface for AIs
@@ -16,14 +15,14 @@ public interface DB {
 	 * @param field
 	 * @return
 	 */
-	public abstract List<Move> getMoves(E_FIELD_STATE[][] field);
+	public abstract SelectResult getMoves(E_FIELD_STATE[][] field,boolean player_a);
 	/**
 	 * Insert moves
 	 * @param field
 	 * @param moves
 	 * @return returns first move
 	 */
-	public abstract Move insertMoves(E_FIELD_STATE[][] field, List<Integer> moves);
+	public abstract SelectResult insertMoves(E_FIELD_STATE[][] field, List<Integer> moves,boolean player_a);
 	/**
 	 * Set/Update move
 	 * @param move
@@ -52,4 +51,5 @@ public interface DB {
 	
 	public abstract boolean insertRelation(Move parent, E_FIELD_STATE[][] child);
 	public abstract boolean insertRelation(Move parent, byte[] child);
+	public abstract byte[] getHash();
 }

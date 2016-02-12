@@ -31,4 +31,9 @@ public interface AI {
 	 * Called so the AI can calculate it's next step while the animation is still running.
 	 */
 	public abstract void preProcessing();
+	
+	/**
+	 * Go back one in the move history and update this as the current-last move
+	 */
+	public abstract void goBackHistory();
 }

@@ -25,6 +25,7 @@ public class GController {
 		controller = new Controller<KBS_trainer<mariaDB>>(new KBS_trainer<mariaDB>(new mariaDB(address,3306,user,pw,db)), new KBS_trainer<mariaDB>(new mariaDB(address,3306,user,pw,db)));
 	}
 	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static void init(){
 		controller = new Controller();
 	}

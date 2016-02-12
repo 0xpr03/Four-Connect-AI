@@ -1,6 +1,6 @@
 package gamelogic;
 
-import gamelogic.Controller.E_GAME_STATE;
+import gamelogic.ControllerBase.E_GAME_STATE;
 
 /**
  * Class to store a vector based on two points where the win happened
