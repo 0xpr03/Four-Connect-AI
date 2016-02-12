@@ -17,6 +17,8 @@ import java.util.Random;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import renderEngine.DisplayManager;
 import renderEngine.Loader;
@@ -29,6 +31,7 @@ import renderEngine.MasterRenderer;
 import terrain.Terrain;
 import textures.TerrainTexture;
 import textures.TerrainTexturePack;
+import toolbox.MousePicker;
 
 /**
  *
@@ -41,6 +44,8 @@ public class MainGameLoop {
 	private static GuiRenderer guiRenderer;
 	private static MasterRenderer renderer;
 	private static Loader loader;
+	private static boolean menu = false;
+	private static boolean menuToggle = true;
 
 	/**
 	 * @param args
@@ -53,25 +58,21 @@ public class MainGameLoop {
 		DisplayManager.createDisplay();
 		loader = new Loader();
 
+		renderer = new MasterRenderer();
+		
 		logger.trace("loading textures");
 		// LOAD TERRAIN STUFF
-		TerrainTexture backgroundTexture = new TerrainTexture(loader.loadTexture("chess"));
-		TerrainTexture rTexture = new TerrainTexture(loader.loadTexture("Road"));
-		TerrainTexture gTexture = new TerrainTexture(loader.loadTexture("Stein"));
-		TerrainTexture bTexture = new TerrainTexture(loader.loadTexture("160"));
+		TerrainTexture backgroundTexture = new TerrainTexture(loader.loadTexture("grass"));
+		TerrainTexture rTexture = new TerrainTexture(loader.loadTexture("grass"));
+		TerrainTexture gTexture = new TerrainTexture(loader.loadTexture("grass"));
+		TerrainTexture bTexture = new TerrainTexture(loader.loadTexture("grass"));
 
 		TerrainTexturePack texturePack = new TerrainTexturePack(backgroundTexture, rTexture, gTexture, bTexture);
 		TerrainTexture blendMap = new TerrainTexture(loader.loadTexture("black"));
 
 		logger.trace("loading models");
 		// LOAD MODELS & TEXTURES
-		TexturedModel cube = loader.loadtoVAO("flachercube", "chess");
-		
-		TexturedModel tree = loader.loadtoVAO("tree", "tree");
-
-		TexturedModel fern = loader.loadtoVAO("fern", "fern");
-
-		TexturedModel bunny = loader.loadtoVAO("bunny", "white");
+		TexturedModel tree = loader.loadtoVAO("lowPolyTree", "lowPolyTree");
 
 		TexturedModel lamp = loader.loadtoVAO("lamp", "lamp");
 
@@ -81,16 +82,23 @@ public class MainGameLoop {
 
 		List<Entity> allentities = new ArrayList<>();
 
-		List<GuiTexture> guis = new ArrayList<GuiTexture>();
-		GuiTexture gui = new GuiTexture(loader.loadTexture("fern"), new Vector2f(0.5f, 0.5f),
-				new Vector2f(0.25f, 0.25f));
-		guis.add(gui);
+		List<GuiTexture> menuGuis = new ArrayList<GuiTexture>();
+		GuiTexture gui = new GuiTexture(loader.loadTexture("testMenu"), new Vector2f(0.0f, 0.0f),
+				new Vector2f(1f, 1f));
+		menuGuis.add(gui);
+		GuiTexture test = new GuiTexture(loader.loadTexture("mouse"), new Vector2f(0.5f, 0.5f), new Vector2f(0.25f, 0.35f));
+		menuGuis.add(test);
 
 		guiRenderer = new GuiRenderer(loader);
-
-//		createRandomEntities(allentities,terrain, tree, 100, 300-150, -300,0f,0f,0f,4);
-//		createRandomEntities(allentities,terrain, fern, 100, 300-150, -300,0f,360,0f,0.9f);
 		
+		Camera camera = new Camera(new Vector3f(0, 10, 0));
+
+		MousePicker picker = new MousePicker(camera, renderer.getProjectionMatrix(), terrain);
+
+		createRandomEntities(allentities,terrain, tree, 100, 300-150, -300,0f,0f,0f,0.5f);
+//		createRandomEntities(allentities,terrain, fern, 100, 300-150, -300,0f,360,0f,0.9f);
+		Entity lampTest = new Entity(lamp, new Vector3f(0, 0, 0), 0, 0, 0, 1);
+		allentities.add(lampTest);
 
 		Light sun = new Light(new Vector3f(0, 10000, -7000), new Vector3f(0.4f, 0.4f, 0.4f));
 		List<Light> lights = new ArrayList<>();
@@ -98,23 +106,34 @@ public class MainGameLoop {
 //		lights.add(new Light(new Vector3f(10, terrain.getHeightOfTerrain(10, 10) + 20, 10), new Vector3f(5, 0, 0), new Vector3f(1, 0.01f, 0.002f)));
 	
 //		allentities.add(new Entity(lamp, new Vector3f(10, terrain.getHeightOfTerrain(10, 10), 10), 0, 0, 0, 1));
-		allentities.add(new Entity(cube, new Vector3f(0, 0, 0), 0, 0, 0, 1));
-
-		Camera camera = new Camera(new Vector3f(0, 10, 0));
-		
+				
 		logger.trace("entering renderer");
-		renderer = new MasterRenderer();
-
+		
 		while (!Display.isCloseRequested()) {
+			checkMenu();
+			if(menu != true) {
 			camera.move(terrain);
+			
+			picker.update();
+			Vector3f terrainPoint = picker.getCurrentTerrainPoint(); //Gibt den Punkt aus, auf dem mouse Ray auf terrain trifft.
+			if(terrainPoint != null) {
+				lampTest.setPosition(terrainPoint);
+			}
 			renderer.processTerrain(terrain);
 			for (Entity entity : allentities) {
 				renderer.processEntity(entity);
 			}
 
-			renderer.render(lights, camera);
-			guiRenderer.render(guis);
+			renderer.render(lights, camera);			
 			DisplayManager.updateDisplay();
+			} else {
+				float x = (2.0f * Mouse.getX()) / Display.getWidth() - 1f;
+				float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1f;
+				test.setPosition(new Vector2f(x, y));
+				renderer.render(lights, camera);	
+				guiRenderer.render(menuGuis);
+				DisplayManager.updateDisplay();
+			}
 		}
 		exit();
 	}
@@ -144,6 +163,19 @@ public class MainGameLoop {
 			loader.cleanUp();
 		DisplayManager.closeDisplay();
 		logger.exit();
+	}
+	
+	private static void checkMenu() {
+		if(!Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
+			menuToggle = true;
+		}
+		if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE) && menu == false && menuToggle == true) {
+			menu = true;
+			menuToggle = false;
+		}else if (Keyboard.isKeyDown(Keyboard.KEY_ESCAPE) && menu == true && menuToggle == true){
+			menu = false;
+			menuToggle = false;
+		}
 	}
 
 	/**

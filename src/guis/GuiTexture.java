@@ -30,6 +30,10 @@ public class GuiTexture {
     public Vector2f getPosition() {
         return position;
     }
+    
+    public void setPosition(Vector2f position) {
+    	this.position = position;
+    }
 
     public Vector2f getScale() {
         return scale;

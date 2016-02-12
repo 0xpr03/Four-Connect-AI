@@ -8,11 +8,16 @@ package renderEngine;
 import entities.Camera;
 import entities.Entity;
 import entities.Light;
+import main.MainGameLoop;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import models.TexturedModel;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Matrix4f;
@@ -26,6 +31,7 @@ import terrain.Terrain;
  */
 public class MasterRenderer {
     
+	
     private static final float FOV = 70;
     private static final float NEAR_PLANE = 0.1f;
     private static final float FAR_PLANE = 1000;
@@ -58,6 +64,10 @@ public class MasterRenderer {
     
     public static void disableCulling() {
         GL11.glDisable(GL11.GL_CULL_FACE);        
+    }
+    
+    public Matrix4f getProjectionMatrix() {
+    	return projectionMatrix;
     }
     
     public void render(List<Light> lights, Camera camera) {
@@ -106,7 +116,7 @@ public class MasterRenderer {
     }
     
     private void createProjectionMatrix() {
-        float aspectRatio = (float) Display.getWidth() / (float) Display.getHeight();
+    	float aspectRatio = (float) Display.getWidth() / (float) Display.getHeight();
         float y_scale = (float) ((1f / Math.tan(Math.toRadians(FOV/2f))) * aspectRatio);
         float x_scale = y_scale / aspectRatio;
         float frustum_length = FAR_PLANE - NEAR_PLANE;
