@@ -11,7 +11,10 @@ import fontMeshCreator.TextMeshData;
 import renderEngine.Loader;
 
 public class TextMaster {
-	
+	/***
+	 * fontRendering and fontMeshCreator packages ist just some basic java to get the fonts ready to render, 
+	 * uninteresting for other use than printing letters on the screen
+	 */
 	private static Loader loader;
 	private static Map<FontType, List<GUIText>> texts = new HashMap<>();
 	private static FontRenderer renderer;

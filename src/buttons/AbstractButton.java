@@ -2,8 +2,6 @@ package buttons;
 
 import java.util.List;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector2f;
@@ -26,7 +24,9 @@ public abstract class AbstractButton implements Button{
 		guiTexture = new GuiTexture(loader.loadTexture(texture), position, scale);
 		OriginalScale = scale;
 	}
-	
+	/***
+	 * Checks for collision of mouse and button etc.
+	 */
 	public void update(){
 		if(!isHidden) {
 			Vector2f location = guiTexture.getPosition();
