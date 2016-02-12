@@ -5,25 +5,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.Configurator;
 
 import gamelogic.AI.AI;
-import gamelogic.Controller.E_FIELD_STATE;
 
 /**
- * Main controller for the game four connect
+ * Basic controller for the game four connect
  * This class is NOT supposed to be created and used object.
  * Use GController as main instance!!
  * @author Aron Heinecke
  * @param <E>
  *
  */
-public final class Controller<E extends AI> {
+public class ControllerBase<E extends AI> {
 	public enum E_GAME_MODE {
-		NONE, SINGLE_PLAYER, MULTIPLAYER, KI_INTERNAL, FUZZING, TESTING
+		NONE, SINGLE_PLAYER, MULTIPLAYER, KI_INTERNAL,KI_TRAINING, FUZZING, TESTING
 	}
 	
 	public enum E_PLAYER {
@@ -38,20 +35,24 @@ public final class Controller<E extends AI> {
 		NONE, STONE_A, STONE_B
 	}
 	
-	private Logger logger = LogManager.getLogger();
-	private E_GAME_MODE GAMEMODE = E_GAME_MODE.NONE;
-	private E_GAME_STATE STATE = E_GAME_STATE.NONE;
-	private int MOVES;
-	private WinStore LASTWIN;
-	private E_FIELD_STATE[][] FIELD; // X Y
-	private final int NEEDED_WIN_DIFFERENCE = 2; //declaration: > x = win
-	private final Object lock = new Object();
-	private E AI_a = null; // primary AI
-	private E AI_b = null; // secondary for KI internal
-	private int X_MAX = 4;
-	private int Y_MAX = 4;
+	protected Logger logger = LogManager.getLogger();
+	protected E_GAME_MODE GAMEMODE = E_GAME_MODE.NONE;
+	protected E_GAME_STATE STATE = E_GAME_STATE.NONE;
+	protected int MOVES;
+	protected WinStore LASTWIN;
+	protected E_FIELD_STATE[][] FIELD; // X Y
+	protected final int NEEDED_WIN_DIFFERENCE = 2; //declaration: > x = win
+	protected final Object lock = new Object(); // lock for synchronization
+	protected E AI_a = null; // primary AI
+	protected E AI_b = null; // secondary for KI internal
+	protected int X_MAX = 7;
+	protected int Y_MAX = 6;
 	
-	public Controller(E ai_a, E ai_b){
+	public ControllerBase(){
+		checkBasics();
+	}
+	
+	public ControllerBase(E ai_a, E ai_b){
 		logger.entry();
 		if(AI_a == null)
 			AI_a = ai_a;
@@ -59,6 +60,10 @@ public final class Controller<E extends AI> {
 			AI_b = ai_b;
 		logger.debug("Init AI's: A:{} B:{}",AI_a != null, AI_b != null);
 		
+		checkBasics();
+	}
+	
+	private void checkBasics(){
 		if(X_MAX != 7)
 			logger.warn("X_MAX = {}",X_MAX);
 		if(Y_MAX != 6)
@@ -68,124 +73,35 @@ public final class Controller<E extends AI> {
 			logger.fatal("Invalid field state ordinals! FIELD{NONE:{},STONE_A:{},STONE_B:{}}",E_FIELD_STATE.NONE.ordinal(),E_FIELD_STATE.STONE_A.ordinal(),E_FIELD_STATE.STONE_B.ordinal());
 			shutdown();
 		}
-		
 	}
-	public Controller(){}
-
-	/**
-	 * Initialize a new Game
-	 * @param gamemode on multiplayer / singleplayer the starting player will be selected randomly
-	 * @param loglevel define a loglevel used for this game
-	 * everthing else it'll be player a
-	 */
-	public synchronized void initGame(E_GAME_MODE gamemode, Level loglevel) {
-		synchronized(lock){
-			Configurator.setLevel(logger.getName(), loglevel);
-			if (gamemode == E_GAME_MODE.NONE){
-				logger.error("Wrong game mode! {}",gamemode);
-			}
-			LASTWIN = null;
+	
+	public void shutdown(){
+		synchronized (lock) {
 			STATE = E_GAME_STATE.NONE;
-			FIELD = new E_FIELD_STATE[X_MAX][Y_MAX];
-			for(int i = 0; i < X_MAX; i++){
-				for (int j = 0; j < Y_MAX; j++){
-					FIELD[i][j] = E_FIELD_STATE.NONE;
-				}
-			}
-			GAMEMODE = gamemode;
-			if (GAMEMODE == E_GAME_MODE.TESTING){
-				logger.warn("Gamemode set to TESTING. All manipulations are enabled in this mode!");
-			}
-			MOVES = 0;
+			GAMEMODE = E_GAME_MODE.NONE;
+			if(AI_a != null)
+				AI_a.shutdown();
+			if(AI_b != null)
+				AI_b.shutdown();
+			
+			AI_a = null;
+			AI_b = null;
 		}
 	}
-	
-	public void moveAI_A(){
-		AI_a.getMove();
-	}
-	
-	public void moveAI_B(){
-		AI_b.getMove();
-	}
-	
-	/**
-	 * Sets the current game to restart mode
-	 * This is used only for KI internals where dataraces are comming
-	 */
-	public void restart(){
-		STATE = E_GAME_STATE.RESTART;
-	}
-	
-	/**
-	 * Initialize a new game
-	 * @param gamemode
-	 */
-	public void initGame(E_GAME_MODE gamemode){
-		initGame(gamemode, LogManager.getRootLogger().getLevel());
-	}
-	
-	public void setDraw(){
-		if(GAMEMODE == E_GAME_MODE.KI_INTERNAL){
-			STATE = E_GAME_STATE.DRAW;
-			informAIs();
-		}else{
-			logger.error("Not allowed in this mode!");
-		}
-	}
-	
-	/**
-	 * Start a initialized game
-	 */
-	public synchronized void startGame() {
-		if(GAMEMODE == E_GAME_MODE.NONE){
-			logger.error("Uninitialized game start!");
-			return;
-		}
-		STATE = E_GAME_STATE.START;
-		switch(GAMEMODE){
-		case MULTIPLAYER:
-		case SINGLE_PLAYER:
-		case FUZZING:
-			STATE = getRandomBoolean() ? E_GAME_STATE.PLAYER_A : E_GAME_STATE.PLAYER_B;
-			break;
-		default:
-			STATE = E_GAME_STATE.PLAYER_A;
-			break;
-		}
-		start_AI();
-		new Thread() {
-		    public void run() {
-		        try {
-		            run_AI();
-		        } catch(Error e) {
-		            logger.error(e);
-		        }
-		    }  
-		}.start();
-	}
-	
-	/**
-	 * Let KI start a move, if gamemode & current player matches
-	 */
-	private void run_AI(){
-		if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
-			if(STATE == E_GAME_STATE.PLAYER_B){
-//				AI_a.getMove();
-			}
-		}
-	}
-	
+
 	/**
 	 * Called on game start with AIs
 	 * AI_a is Player B on singleplayer
 	 * AI_a is player A on KI internal
 	 */
-	private void start_AI(){
-		if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
-			AI_a.start(E_PLAYER.PLAYER_B);
-		}else if(GAMEMODE == E_GAME_MODE.KI_INTERNAL){
-			AI_a.start(E_PLAYER.PLAYER_A);
-			AI_b.start(E_PLAYER.PLAYER_B);
+	protected void start_AI(){
+		synchronized (lock) {
+			if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
+				AI_a.start(E_PLAYER.PLAYER_B);
+			}else if(GAMEMODE == E_GAME_MODE.KI_INTERNAL ||GAMEMODE == E_GAME_MODE.KI_TRAINING){
+				AI_a.start(E_PLAYER.PLAYER_A);
+				AI_b.start(E_PLAYER.PLAYER_B);
+			}
 		}
 	}
 	
@@ -194,8 +110,7 @@ public final class Controller<E extends AI> {
 	 * @return
 	 */
 	public boolean getRandomBoolean() {
-	    Random random = new Random();
-	    return random.nextBoolean();
+	    return new Random().nextBoolean();
 	}
 	
 	/**
@@ -203,7 +118,9 @@ public final class Controller<E extends AI> {
 	 * @return FIELD_STATE[XY_MAX][XY_MAX]
 	 */
 	public synchronized E_FIELD_STATE[][] getFieldState(){
-		return FIELD;
+		synchronized (lock) {
+			return FIELD;
+		}
 	}
 	
 	/**
@@ -219,7 +136,9 @@ public final class Controller<E extends AI> {
 	 * @return GAME_STATE
 	 */
 	public E_GAME_STATE getGameState() {
-		return STATE;
+		synchronized (lock) {
+			return STATE;
+		}
 	}
 	
 	/**
@@ -279,7 +198,7 @@ public final class Controller<E extends AI> {
 		logger.info(()->getprintedGameState());
 	}
 	
-	private String printConvGamest(E_FIELD_STATE input){
+	protected String printConvGamest(E_FIELD_STATE input){
 		switch(input){
 		case NONE:
 			return "-";
@@ -296,32 +215,28 @@ public final class Controller<E extends AI> {
 	 * Check for win based on the current stone
 	 * @return
 	 */
-	private synchronized boolean checkWin(final int posx, final int posy){
+	protected synchronized WinStore checkWin(final int posx, final int posy){
 		logger.debug("Player: {}",STATE);
 		E_FIELD_STATE wstate = STATE == E_GAME_STATE.PLAYER_A ?  E_FIELD_STATE.STONE_A : E_FIELD_STATE.STONE_B;
 		logger.debug("wished state: {}",wstate);
 		WinStore wst = checkWin_Y(posx, posy, wstate);
 		if ( wst != null ){
-			handleWin(wst);
-			return true;
+			return wst;
 		}
 		wst = checkWin_X(posx, posy, wstate);
 		if ( wst != null ){
-			handleWin(wst);
-			return true;
+			return wst;
 		}
 		wst = checkWin_XYP(posx, posy, wstate);
 		if ( wst != null ){
-			handleWin(wst);
-			return true;
+			return wst;
 		}
 		wst = checkWin_XYM(posx, posy, wstate);
 		if ( wst != null ){
-			handleWin(wst);
-			return true;
+			return wst;
 		}
 		
-		return false;
+		return null;
 	}
 	
 	/**
@@ -330,9 +245,16 @@ public final class Controller<E extends AI> {
 	 * @return true if it's a draw
 	 * @author Aron Heinecke
 	 */
-	private boolean checkDraw(){
+	protected boolean checkDraw(){
 		logger.entry();
 		int y;
+		
+//		if(MOVES == (X_MAX * Y_MAX) -1){
+//			return true;
+//		}else{
+//			return false;
+//		}
+		
 		for(int x = 0; x < X_MAX; x++){
 			if(FIELD[x][0] == E_FIELD_STATE.NONE){ // empty column
 				return false;
@@ -390,7 +312,7 @@ public final class Controller<E extends AI> {
 	 * @return true if no possible win for pos is found
 	 * @author Aron Heinecke
 	 */
-	private boolean checkDrawPos(int x, int y, boolean test_diag_only, boolean test_horiz_vert_only){
+	protected boolean checkDrawPos(int x, int y, boolean test_diag_only, boolean test_horiz_vert_only){
 		E_FIELD_STATE wstate = FIELD[x][y];
 		{
 			if(!test_diag_only){
@@ -433,33 +355,6 @@ public final class Controller<E extends AI> {
 	}
 	
 	/**
-	 * Handle wins, calling animation functions etc
-	 * @param ws
-	 * @author Aron Heinecke
-	 */
-	private synchronized void handleWin(WinStore ws){
-		if(ws.isCapitulation()){
-			logger.debug("Capitulation");
-		}else{
-			logger.debug("Point A:{}|{} B:{}|{}",ws.getPoint_a().getX(),ws.getPoint_a().getY(),ws.getPoint_b().getX(),ws.getPoint_b().getY());
-		}
-		logger.debug("State: {}",ws.getState());
-		STATE = ws.getState();
-		LASTWIN = ws;
-		informAIs();
-		//TODO: run handle code for winner display etc
-	}
-	
-	private synchronized void informAIs(){
-		if(GAMEMODE == E_GAME_MODE.KI_INTERNAL){
-			AI_a.gameEvent();
-			AI_b.gameEvent();
-		}else if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
-			AI_a.gameEvent();
-		}
-	}
-	
-	/**
 	 * Check if player wins on y coordinate
 	 * @param posx
 	 * @param posy
@@ -467,7 +362,7 @@ public final class Controller<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	private WinStore checkWin_Y(final int posx,final int posy,final E_FIELD_STATE wstate) {
+	protected WinStore checkWin_Y(final int posx,final int posy,final E_FIELD_STATE wstate) {
 		logger.debug("posx:{} posy:{} wstate:{}",posx,posy,wstate);
 		Point a = getYmax(wstate,posx,posy,false);
 		Point b = getYmin(wstate,posx,posy,false);
@@ -481,7 +376,7 @@ public final class Controller<E extends AI> {
 		}
 	}
 	
-	private boolean matchField(E_FIELD_STATE field,E_FIELD_STATE wstate, boolean ignore_empty){
+	protected boolean matchField(E_FIELD_STATE field,E_FIELD_STATE wstate, boolean ignore_empty){
 		if (ignore_empty)
 			return field == wstate || field == E_FIELD_STATE.NONE;
 		return field == wstate;
@@ -493,7 +388,7 @@ public final class Controller<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	private Point getYmax(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
+	protected Point getYmax(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
 		int max_y = posy;
 		for(int y = posy; y < Y_MAX; y++){
 			if ( matchField(FIELD[posx][y],wstate,ignore_none) ) {
@@ -511,7 +406,7 @@ public final class Controller<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	private Point getYmin(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
+	protected Point getYmin(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
 		int min_y = posy;
 		for(int y = posy; y >= 0; y--){
 			if ( matchField(FIELD[posx][y],wstate,ignore_none) ) {
@@ -531,7 +426,7 @@ public final class Controller<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	private WinStore checkWin_X(final int posx,final int posy,final E_FIELD_STATE wstate) {
+	protected WinStore checkWin_X(final int posx,final int posy,final E_FIELD_STATE wstate) {
 		Point a = getXmax(wstate,posx, posy,false);
 		Point b = getXmin(wstate,posx,posy,false);
 		
@@ -550,7 +445,7 @@ public final class Controller<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	private Point getXmax(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
+	protected Point getXmax(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
 		int max_x = posx;
 		for(int x = posx; x < X_MAX; x++){
 			if ( matchField(FIELD[x][posy],wstate,ignore_none) ) {
@@ -568,7 +463,7 @@ public final class Controller<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	private Point getXmin(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
+	protected Point getXmin(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
 		int min_x = posx;
 		for(int x = posx; x >= 0; x--){
 			if ( matchField(FIELD[x][posy],wstate,ignore_none) ) {
@@ -589,7 +484,7 @@ public final class Controller<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	private WinStore checkWin_XYP(final int posx,final int posy,final E_FIELD_STATE wstate) {
+	protected WinStore checkWin_XYP(final int posx,final int posy,final E_FIELD_STATE wstate) {
 		Point a = getXmaxYmax(wstate,posx,posy,false);
 		Point b = getXminYmin(wstate,posx,posy,false);
 		
@@ -608,7 +503,7 @@ public final class Controller<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	private Point getXmaxYmax(final E_FIELD_STATE wstate,final int posx,final int posy,boolean ignore_none){
+	protected Point getXmaxYmax(final E_FIELD_STATE wstate,final int posx,final int posy,boolean ignore_none){
 		int max_x = posx;
 		int max_y = posy;
 		while (max_x+1 < X_MAX && max_y+1 < Y_MAX){
@@ -628,7 +523,7 @@ public final class Controller<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	private Point getXminYmin(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
+	protected Point getXminYmin(final E_FIELD_STATE wstate,final int posx,final int posy, boolean ignore_none){
 		int min_x = posx;
 		int min_y = posy;
 		while (min_x-1 >= 0 && min_y-1 >= 0){
@@ -653,7 +548,7 @@ public final class Controller<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	private WinStore checkWin_XYM(final int posx,final int posy,final E_FIELD_STATE wstate) {
+	protected WinStore checkWin_XYM(final int posx,final int posy,final E_FIELD_STATE wstate) {
 		
 		Point a = getXmaxYmin(wstate,posx,posy,false);
 		logger.debug("P1: {}|{}",a.getX(),a.getY());
@@ -679,7 +574,7 @@ public final class Controller<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	private Point getXmaxYmin(final E_FIELD_STATE wstate,final int posx,final int posy,boolean ignore_none){
+	protected Point getXmaxYmin(final E_FIELD_STATE wstate,final int posx,final int posy,boolean ignore_none){
 		int max_x = posx;
 		int min_y = posy;
 		while (max_x+1 < X_MAX && min_y-1 >= 0){
@@ -699,7 +594,7 @@ public final class Controller<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	private Point getXminYmax(final E_FIELD_STATE wstate,final int posx,final int posy,boolean ignore_none){
+	protected Point getXminYmax(final E_FIELD_STATE wstate,final int posx,final int posy,boolean ignore_none){
 		int min_x = posx;
 		int max_y = posy;
 		while (max_y+1 < Y_MAX && min_x-1 >= 0){
@@ -741,7 +636,7 @@ public final class Controller<E extends AI> {
 			printGameState();
 			for(int x = 0; x < X_MAX; x++){
 				for(int y = 0; y < Y_MAX; y++){
-					if(checkWin(x, y)){
+					if(checkWin(x, y) != null){
 						logger.info("Found win at {}|{}",y,x);
 						break;
 					}
@@ -777,14 +672,13 @@ public final class Controller<E extends AI> {
 	 */
 	public E_FIELD_STATE[][] D_parseField(String input){
 		String[] args = input.split("\n");
-		logger.debug("Input: {}",args);
 		logger.debug("0 column: {}",args[0]);
 		E_FIELD_STATE[][] data = new E_FIELD_STATE[X_MAX][Y_MAX];
-		for(int i = 0; i < X_MAX; i++){
-			for (int j = 0; j < Y_MAX; j++){
-				FIELD[i][j] = E_FIELD_STATE.NONE;
-			}
-		}
+//		for(int i = 0; i < X_MAX; i++){
+//			for (int j = 0; j < Y_MAX; j++){
+//				FIELD[i][j] = E_FIELD_STATE.NONE;
+//			}
+//		}
 		
 		if(Array.getLength(args) != Y_MAX){
 			logger.error("Invalid parse input size! {}",Array.getLength(args));
@@ -806,7 +700,7 @@ public final class Controller<E extends AI> {
 		return data;
 	}
 	
-	private E_FIELD_STATE parseChar(char s){
+	protected E_FIELD_STATE parseChar(char s){
 		E_FIELD_STATE state;
 		switch(s){
 		case 'A':
@@ -827,67 +721,6 @@ public final class Controller<E extends AI> {
 		return state;
 	}
 	
-	public synchronized void capitulate(E_PLAYER player){
-		WinStore ws = new WinStore(STATE);
-		handleWin(ws);
-	}
-	
-	/**
-	 * Insert stone
-	 * @param column value between 0-6
-	 * @return returns false on failure
-	 * @author Aron Heinecke
-	 */
-	public synchronized boolean insertStone(final int column){
-		logger.entry();
-		int found_place = -1;
-		//synchronized(lock){
-			if (STATE != E_GAME_STATE.PLAYER_A && STATE != E_GAME_STATE.PLAYER_B){
-				logger.warn("Ignoring stone insert due to state {}!",STATE);
-				return false;
-			}
-			E_FIELD_STATE new_field_state = STATE == E_GAME_STATE.PLAYER_A ? E_FIELD_STATE.STONE_A : E_FIELD_STATE.STONE_B;
-			
-			for(int i = 0; i < Y_MAX; i++){
-				if ( FIELD[column][i] == E_FIELD_STATE.NONE ) {
-					FIELD[column][i] = new_field_state;
-					found_place = i;
-					break;
-				}
-			}
-			
-			if(found_place != -1) {
-				MOVES++;
-				if ( !checkWin(column,found_place) ) {
-					if (checkDraw()){
-						STATE = E_GAME_STATE.DRAW;
-						informAIs();
-					}else{
-						STATE = STATE == E_GAME_STATE.PLAYER_A ? E_GAME_STATE.PLAYER_B : E_GAME_STATE.PLAYER_A;
-//						if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
-//							if(STATE == E_GAME_STATE.PLAYER_B){
-//								new Thread() {
-//								    public void run() {
-//								        try {
-//								            run_AI();
-//								        } catch(Error e) {
-//								            logger.error(e);
-//								        }
-//								    }  
-//								}.start();
-//							}
-//						}
-					}
-				}
-			}else{
-				logger.info("No more column space to insert any stones!");
-			}
-			
-			//TODO: call graphics && let it callback the next run
-		//}
-		return found_place != -1;
-	}
-	
 	/**
 	 * Returns list of possible moves
 	 * @return
@@ -895,9 +728,9 @@ public final class Controller<E extends AI> {
 	public List<Integer> getPossibilities(){
 		logger.entry();
 		List<Integer> possibilities = new ArrayList<Integer>();
-		int ymax = GController.getY_MAX()-1;
+		int ymax = getY_MAX()-1;
 		synchronized (lock){
-			for(int x = 0; x < GController.getX_MAX(); x++){
+			for(int x = 0; x < getX_MAX(); x++){
 				if(FIELD[x][ymax] == E_FIELD_STATE.NONE){
 					possibilities.add(x);
 				}
@@ -905,15 +738,6 @@ public final class Controller<E extends AI> {
 		}
 		logger.debug(possibilities);
 		return possibilities;
-	}
-	
-	public void shutdown(){
-			STATE = E_GAME_STATE.NONE;
-			GAMEMODE = E_GAME_MODE.NONE;
-			if(AI_a != null)
-				AI_a.shutdown();
-			if(AI_b != null)
-				AI_b.shutdown();
 	}
 	
 	/**

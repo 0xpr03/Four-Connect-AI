@@ -1,6 +1,6 @@
 package gamelogic.AI;
 
-import gamelogic.Controller.E_PLAYER;
+import gamelogic.ControllerBase.E_PLAYER;
 
 /**
  * The AI interface to be implemented by all AIs.
@@ -10,8 +10,9 @@ import gamelogic.Controller.E_PLAYER;
 public interface AI {
 	/**
 	 * Event called when the AI's supposed to make it's move.
+	 * @return false if all states where used
 	 */
-	public abstract void getMove();
+	public abstract boolean getMove();
 	/**
 	 * Event if the game is ended by loose/win/draw/cancel
 	 */
@@ -20,7 +21,6 @@ public interface AI {
 	 * Event call on system shutdown.
 	 */
 	public abstract void shutdown();
-	
 	/**
 	 * Called is a new game is started
 	 * @param player set to the user the AI is playing

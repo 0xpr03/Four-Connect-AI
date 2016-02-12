@@ -9,7 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import gamelogic.GController;
-import gamelogic.Controller.E_FIELD_STATE;
+import gamelogic.ControllerBase.E_FIELD_STATE;
 
 /**
  * Helper lib for the AI
