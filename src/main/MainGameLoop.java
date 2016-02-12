@@ -8,8 +8,13 @@ package main;
 import entities.Camera;
 import entities.Entity;
 import entities.Light;
+import fontMeshCreator.FontType;
+import fontMeshCreator.GUIText;
+import fontRendering.TextMaster;
 import guis.GuiRenderer;
 import guis.GuiTexture;
+
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -27,6 +32,8 @@ import models.TexturedModel;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
+import buttons.AbstractButton;
+import buttons.Button;
 import renderEngine.MasterRenderer;
 import terrain.Terrain;
 import textures.TerrainTexture;
@@ -57,6 +64,10 @@ public class MainGameLoop {
 
 		DisplayManager.createDisplay();
 		loader = new Loader();
+		TextMaster.init(loader);
+		
+		FontType font = new FontType(loader.loadTexture("tahoma"), new File("res/tahoma.fnt"));
+		GUIText text = new GUIText("This is a text test!", 1, font, new Vector2f(0, 0), 1f, true);
 
 		renderer = new MasterRenderer();
 		
@@ -106,15 +117,43 @@ public class MainGameLoop {
 //		lights.add(new Light(new Vector3f(10, terrain.getHeightOfTerrain(10, 10) + 20, 10), new Vector3f(5, 0, 0), new Vector3f(1, 0.01f, 0.002f)));
 	
 //		allentities.add(new Entity(lamp, new Vector3f(10, terrain.getHeightOfTerrain(10, 10), 10), 0, 0, 0, 1));
+		
+		AbstractButton path = new AbstractButton(loader, "null", new Vector2f(0,0), new Vector2f(0.2f, 0.2f)) {
+
+			@Override
+			public void onClick(Button button) {
+				logger.trace("Knopf ist gedrückt werdend");
 				
+			}
+
+			@Override
+			public void onStartHover(Button button) {
+				button.playHoverAnimation(0.092f);
+				
+			}
+
+			@Override
+			public void onStopHover(Button button) {
+				button.resetScale();
+				
+			}
+
+			@Override
+			public void whileHovering(Button button) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		};	
+		
 		logger.trace("entering renderer");
 		
 		while (!Display.isCloseRequested()) {
 			checkMenu();
 			if(menu != true) {
 			camera.move(terrain);
-			
 			picker.update();
+			path.hide(menuGuis);
 			Vector3f terrainPoint = picker.getCurrentTerrainPoint(); //Gibt den Punkt aus, auf dem mouse Ray auf terrain trifft.
 			if(terrainPoint != null) {
 				lampTest.setPosition(terrainPoint);
@@ -124,14 +163,18 @@ public class MainGameLoop {
 				renderer.processEntity(entity);
 			}
 
-			renderer.render(lights, camera);			
+			renderer.render(lights, camera);
+			TextMaster.render();
 			DisplayManager.updateDisplay();
-			} else {
+			} else {				
 				float x = (2.0f * Mouse.getX()) / Display.getWidth() - 1f;
-				float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1f;
+				float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1f;				
 				test.setPosition(new Vector2f(x, y));
+				path.show(menuGuis);				
+				path.update();
 				renderer.render(lights, camera);	
 				guiRenderer.render(menuGuis);
+				TextMaster.render();
 				DisplayManager.updateDisplay();
 			}
 		}
@@ -155,6 +198,7 @@ public class MainGameLoop {
 	 */
 	public static void exit() {
 		logger.trace("exiting");
+		TextMaster.cleanUp();
 		if (guiRenderer != null)
 			guiRenderer.cleanUp();
 		if (renderer != null)

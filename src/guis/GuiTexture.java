@@ -39,6 +39,9 @@ public class GuiTexture {
         return scale;
     }
     
+    public void setScale(Vector2f scale) {
+        this.scale = scale;
+    }
     
     
 }
