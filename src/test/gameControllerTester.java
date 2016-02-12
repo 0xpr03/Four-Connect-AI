@@ -22,8 +22,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import gamelogic.Controller;
-import gamelogic.Controller.E_GAME_MODE;
-import gamelogic.Controller.E_GAME_STATE;
+import gamelogic.ControllerBase;
+import gamelogic.ControllerBase.E_GAME_MODE;
+import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.GController;
 
 public class gameControllerTester {
@@ -32,7 +33,7 @@ public class gameControllerTester {
 	
 	@BeforeClass
 	public static void setupController() throws Exception {
-		
+		GController.init();
 	}
 
 	@AfterClass
@@ -48,9 +49,10 @@ public class gameControllerTester {
 	}
 	
 	private void init_test(){
-		GController.initGame(E_GAME_MODE.TESTING);
+		GController.initGame(E_GAME_MODE.TESTING,Level.TRACE);
 		GController.startGame();
 		GController.setState(E_GAME_STATE.PLAYER_A);
+		logger.info(GController.getGameState());
 		assertEquals("controller start state",E_GAME_STATE.PLAYER_A, GController.getGameState());
 	}
 	
@@ -205,7 +207,7 @@ public class gameControllerTester {
 			}
 		}
 		try{
-		final long games = 1000000000;
+		final long games = 1000;
 		final int lowest_moves_draw = 35; // border, everything below will be logged
 		
 		final E_GAME_MODE gamemode = E_GAME_MODE.FUZZING;
@@ -231,7 +233,7 @@ public class gameControllerTester {
 				String lowest_field_draw = "";
 				long time = System.currentTimeMillis();
 				for(int x = 0; x < games_per_thread; x++){
-					@SuppressWarnings("rawtypes")
+					@SuppressWarnings({ "rawtypes", "unchecked" })
 					Controller controller = new Controller();
 					controller.initGame(gamemode, Level.WARN);
 					controller.startGame();

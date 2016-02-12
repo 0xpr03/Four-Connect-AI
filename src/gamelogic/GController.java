@@ -4,11 +4,11 @@ import java.util.List;
 
 import org.apache.logging.log4j.Level;
 
-import gamelogic.Controller.E_FIELD_STATE;
-import gamelogic.Controller.E_GAME_MODE;
-import gamelogic.Controller.E_GAME_STATE;
-import gamelogic.Controller.E_PLAYER;
-import gamelogic.AI.KBS;
+import gamelogic.ControllerBase.E_FIELD_STATE;
+import gamelogic.ControllerBase.E_GAME_MODE;
+import gamelogic.ControllerBase.E_GAME_STATE;
+import gamelogic.ControllerBase.E_PLAYER;
+import gamelogic.AI.KBS_trainer;
 import gamelogic.AI.mariaDB;
 
 /**
@@ -19,16 +19,19 @@ import gamelogic.AI.mariaDB;
  */
 public class GController {
 	
-	private static Controller<KBS<mariaDB>> controller = null;
+	private static Controller<KBS_trainer<mariaDB>> controller = null;
 	
 	public static void init(String address, int port, String user, String pw, String db){
-		boolean learning = true;
-		controller = new Controller<KBS<mariaDB>>(new KBS<mariaDB>(new mariaDB(address,3306,user,pw,db),learning), new KBS<mariaDB>(new mariaDB(address,3306,user,pw,db),learning));
+		controller = new Controller<KBS_trainer<mariaDB>>(new KBS_trainer<mariaDB>(new mariaDB(address,3306,user,pw,db)), new KBS_trainer<mariaDB>(new mariaDB(address,3306,user,pw,db)));
+	}
+	
+	public static void init(){
+		controller = new Controller();
 	}
 	
 	/**
 	 * 
-	 * @see gamelogic.Controller#restart()
+	 * @see gamelogic.ControllerBase#restart()
 	 */
 	public static void restart() {
 		controller.restart();
@@ -36,7 +39,7 @@ public class GController {
 
 	/**
 	 * 
-	 * @see gamelogic.Controller#setDraw()
+	 * @see gamelogic.ControllerBase#setDraw()
 	 */
 	public static void setDraw() {
 		controller.setDraw();
@@ -44,7 +47,7 @@ public class GController {
 
 	/**
 	 * @return
-	 * @see gamelogic.Controller#getPossibilities()
+	 * @see gamelogic.ControllerBase#getPossibilities()
 	 */
 	public static List<Integer> getPossibilities() {
 		return controller.getPossibilities();
@@ -52,7 +55,7 @@ public class GController {
 
 	/**
 	 * 
-	 * @see gamelogic.Controller#moveAI_A()
+	 * @see gamelogic.ControllerBase#moveAI_A()
 	 */
 	public static void moveAI_A() {
 		controller.moveAI_A();
@@ -60,7 +63,7 @@ public class GController {
 
 	/**
 	 * 
-	 * @see gamelogic.Controller#moveAI_B()
+	 * @see gamelogic.ControllerBase#moveAI_B()
 	 */
 	public static void moveAI_B() {
 		controller.moveAI_B();
@@ -68,7 +71,7 @@ public class GController {
 
 	/**
 	 * @return
-	 * @see gamelogic.Controller#getGamemode()
+	 * @see gamelogic.ControllerBase#getGamemode()
 	 */
 	public static E_GAME_MODE getGamemode() {
 		return controller.getGamemode();
@@ -76,7 +79,7 @@ public class GController {
 
 	/**
 	 * 
-	 * @see gamelogic.Controller#shutdown()
+	 * @see gamelogic.ControllerBase#shutdown()
 	 */
 	public static void shutdown() {
 		controller.shutdown();
@@ -84,7 +87,7 @@ public class GController {
 
 	/**
 	 * @param player
-	 * @see gamelogic.Controller#capitulate(gamelogic.Controller.E_PLAYER)
+	 * @see gamelogic.ControllerBase#capitulate(gamelogic.ControllerBase.E_PLAYER)
 	 */
 	public static void capitulate(E_PLAYER player) {
 		controller.capitulate(player);
@@ -93,7 +96,7 @@ public class GController {
 	/**
 	 * @param gamemode
 	 * @param loglevel
-	 * @see gamelogic.Controller#initGame(gamelogic.Controller.E_GAME_MODE, org.apache.logging.log4j.Level)
+	 * @see gamelogic.ControllerBase#initGame(gamelogic.ControllerBase.E_GAME_MODE, org.apache.logging.log4j.Level)
 	 */
 	public static void initGame(E_GAME_MODE gamemode, Level loglevel) {
 		controller.initGame(gamemode, loglevel);
@@ -101,7 +104,7 @@ public class GController {
 
 	/**
 	 * @param gamemode
-	 * @see gamelogic.Controller#initGame(gamelogic.Controller.E_GAME_MODE)
+	 * @see gamelogic.ControllerBase#initGame(gamelogic.ControllerBase.E_GAME_MODE)
 	 */
 	public static void initGame(E_GAME_MODE gamemode) {
 		controller.initGame(gamemode);
@@ -109,7 +112,7 @@ public class GController {
 
 	/**
 	 * 
-	 * @see gamelogic.Controller#startGame()
+	 * @see gamelogic.ControllerBase#startGame()
 	 */
 	public static void startGame() {
 		controller.startGame();
@@ -117,7 +120,7 @@ public class GController {
 
 	/**
 	 * @return
-	 * @see gamelogic.Controller#getRandomBoolean()
+	 * @see gamelogic.ControllerBase#getRandomBoolean()
 	 */
 	public static boolean getRandomBoolean() {
 		return controller.getRandomBoolean();
@@ -125,7 +128,7 @@ public class GController {
 
 	/**
 	 * @return
-	 * @see gamelogic.Controller#getFieldState()
+	 * @see gamelogic.ControllerBase#getFieldState()
 	 */
 	public static E_FIELD_STATE[][] getFieldState() {
 		return controller.getFieldState();
@@ -133,7 +136,7 @@ public class GController {
 
 	/**
 	 * @return
-	 * @see gamelogic.Controller#getGameState()
+	 * @see gamelogic.ControllerBase#getGameState()
 	 */
 	public static E_GAME_STATE getGameState() {
 		return controller.getGameState();
@@ -141,7 +144,7 @@ public class GController {
 
 	/**
 	 * @return
-	 * @see gamelogic.Controller#getMoves()
+	 * @see gamelogic.ControllerBase#getMoves()
 	 */
 	public static int getMoves() {
 		return controller.getMoves();
@@ -149,7 +152,7 @@ public class GController {
 
 	/**
 	 * @return
-	 * @see gamelogic.Controller#getprintedGameState()
+	 * @see gamelogic.ControllerBase#getprintedGameState()
 	 */
 	public static String getprintedGameState() {
 		return controller.getprintedGameState();
@@ -157,7 +160,7 @@ public class GController {
 
 	/**
 	 * 
-	 * @see gamelogic.Controller#printGameState()
+	 * @see gamelogic.ControllerBase#printGameState()
 	 */
 	public static void printGameState() {
 		controller.printGameState();
@@ -166,7 +169,7 @@ public class GController {
 	/**
 	 * @param field
 	 * @return
-	 * @see gamelogic.Controller#D_setField(gamelogic.Controller.E_FIELD_STATE[][])
+	 * @see gamelogic.ControllerBase#D_setField(gamelogic.ControllerBase.E_FIELD_STATE[][])
 	 */
 	public static boolean D_setField(E_FIELD_STATE[][] field) {
 		return controller.D_setField(field);
@@ -174,7 +177,7 @@ public class GController {
 
 	/**
 	 * @return
-	 * @see gamelogic.Controller#D_analyzeField()
+	 * @see gamelogic.ControllerBase#D_analyzeField()
 	 */
 	public static boolean D_analyzeField() {
 		return controller.D_analyzeField();
@@ -183,7 +186,7 @@ public class GController {
 	/**
 	 * @param state
 	 * @return
-	 * @see gamelogic.Controller#setState(gamelogic.Controller.E_GAME_STATE)
+	 * @see gamelogic.ControllerBase#setState(gamelogic.ControllerBase.E_GAME_STATE)
 	 */
 	public static boolean setState(E_GAME_STATE state) {
 		return controller.setState(state);
@@ -192,7 +195,7 @@ public class GController {
 	/**
 	 * @param input
 	 * @return
-	 * @see gamelogic.Controller#D_parseField(java.lang.String)
+	 * @see gamelogic.ControllerBase#D_parseField(java.lang.String)
 	 */
 	public static E_FIELD_STATE[][] D_parseField(String input) {
 		return controller.D_parseField(input);
@@ -201,7 +204,7 @@ public class GController {
 	/**
 	 * @param column
 	 * @return
-	 * @see gamelogic.Controller#insertStone(int)
+	 * @see gamelogic.ControllerBase#insertStone(int)
 	 */
 	public static boolean insertStone(int column) {
 		return controller.insertStone(column);
@@ -209,7 +212,7 @@ public class GController {
 	
 	/**
 	 * @return
-	 * @see gamelogic.Controller#getX_MAX()
+	 * @see gamelogic.ControllerBase#getX_MAX()
 	 */
 	public static int getX_MAX() {
 		return controller.getX_MAX();
@@ -217,7 +220,7 @@ public class GController {
 
 	/**
 	 * @return
-	 * @see gamelogic.Controller#getY_MAX()
+	 * @see gamelogic.ControllerBase#getY_MAX()
 	 */
 	public static int getY_MAX() {
 		return controller.getY_MAX();
