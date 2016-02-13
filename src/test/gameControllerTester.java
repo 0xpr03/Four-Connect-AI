@@ -22,10 +22,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import gamelogic.Controller;
-import gamelogic.ControllerBase;
 import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.GController;
+import gamelogic.AI.Move;
+import gamelogic.AI.lib;
 
 public class gameControllerTester {
 	
@@ -54,6 +55,18 @@ public class gameControllerTester {
 		GController.setState(E_GAME_STATE.PLAYER_A);
 		logger.info(GController.getGameState());
 		assertEquals("controller start state",E_GAME_STATE.PLAYER_A, GController.getGameState());
+	}
+	
+	@Test
+	public void get_hash(){
+		lib lib = new lib();
+		String input = "----\n---X\n---X\nOOOX";
+		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
+		GController.startGame();
+		GController.D_setField(GController.D_parseField(input));
+		Move move = new Move(lib.field2sha(GController.getFieldState()), 1, true);
+		logger.info("Hash: {}",move.toString());
+		assertTrue(E_GAME_STATE.NONE != GController.getGameState());
 	}
 	
 	@Test
