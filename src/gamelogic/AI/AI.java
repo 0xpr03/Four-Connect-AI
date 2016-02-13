@@ -34,8 +34,9 @@ public interface AI {
 	
 	/**
 	 * Go back one in the move history and update this as the current-last move
+	 * @param allowEmpty if true, a turn to an empty list is allowed
 	 */
-	public abstract void goBackHistory();
+	public abstract void goBackHistory(boolean allowEmpty);
 	/**
 	 * Returns true if more moves are availale for the current field
 	 * @return

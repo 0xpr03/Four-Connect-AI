@@ -20,7 +20,7 @@ import gamelogic.AI.AI;
  */
 public final class Controller<E extends AI> extends ControllerBase<E> {
 	
-	private Logger logger = LogManager.getLogger();
+	private Logger logger = LogManager.getLogger("Controller");
 	
 	public Controller(E kbs_trainer, E kbs_trainer2) {
 		super(kbs_trainer, kbs_trainer2);
@@ -138,26 +138,26 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 				}
 			}
 		}
-			if(found_place != -1) {
-				MOVES++;
-				WinStore ws = checkWin(column,found_place);
-				if(ws == null){ // no win
-					if(checkDraw()){ // is draw
-						ALLOW_BACK_BOTH = true; // we're on a state where the last move leaded to a gameEvent sit.
-						handelDraw();
-					}else{ // no draw, no win, next move
-						if(matchHistory != null){
-							addHistory();
-						}
-						STATE = STATE == E_GAME_STATE.PLAYER_A ? E_GAME_STATE.PLAYER_B : E_GAME_STATE.PLAYER_A;
-					}
-				}else{
+		if(found_place != -1) {
+			MOVES++;
+			WinStore ws = checkWin(column,found_place);
+			if(ws == null){ // no win
+				if(checkDraw()){ // is draw
 					ALLOW_BACK_BOTH = true; // we're on a state where the last move leaded to a gameEvent sit.
-					handleWin(ws);
+					handelDraw();
+				}else{ // no draw, no win, next move
+					if(matchHistory != null){
+						addHistory();
+					}
+					STATE = STATE == E_GAME_STATE.PLAYER_A ? E_GAME_STATE.PLAYER_B : E_GAME_STATE.PLAYER_A;
 				}
 			}else{
-				logger.info("No more column space to insert any stones!");
+				ALLOW_BACK_BOTH = true; // we're on a state where the last move leaded to a gameEvent sit.
+				handleWin(ws);
 			}
+		}else{
+			logger.info("No more column space to insert any stones!");
+		}
 			
 			//TODO: call graphics && let it callback the next run
 		return found_place != -1;
@@ -191,29 +191,33 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	 */
 	private void handle_KI_moveless(){
 		logger.entry(ALLOW_BACK_BOTH);
-		logger.info(()->super.getprintedGameState());
+		logger.debug(()->super.getprintedGameState());
 		go_back_history(true);
+		if(MOVES == 0){
+			logger.fatal("Shutting down, moves are {} \n{}",MOVES,GController.getprintedGameState());
+			System.exit(0);
+		}
 		
 		E_GAME_STATE state_cache = STATE;
 		//TODO: change to represent current gamestate
-		logger.warn("Using default win state to inform!");
+		//logger.warn("Using default win state to inform!");
 		STATE = E_GAME_STATE.WIN_A;
 		if(ALLOW_BACK_BOTH){
 			MOVES -= 2;
 			AI_a.gameEvent();
 			AI_b.gameEvent();
-			AI_a.goBackHistory();
-			AI_b.goBackHistory();
+			AI_a.goBackHistory(false);
+			AI_b.goBackHistory(false);
 		}else{
-			MOVES -= 1;
+			MOVES--;
 			switch(state_cache){
 			case PLAYER_A:
 				AI_b.gameEvent();
-				AI_b.goBackHistory();
+				AI_b.goBackHistory(MOVES < 3);
 				break;
 			case PLAYER_B:
 				AI_a.gameEvent();
-				AI_a.goBackHistory();
+				AI_a.goBackHistory(MOVES < 3);
 				break;
 			default:
 				logger.error("Not supported case!");
@@ -230,7 +234,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 			logger.error("No state!");
 			return;
 		}
-		logger.info(()->super.getprintedGameState());
+		logger.debug(()->super.getprintedGameState());
 		logger.exit();
 	}
 	
@@ -286,11 +290,12 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	
 	protected synchronized void moveAgain(){
 		logger.entry();
-		logger.info(()->super.getprintedGameState());
-		logger.info(getPrintedHistory());
+		logger.debug(()->super.getprintedGameState());
+		logger.debug(()->getPrintedHistory());
 		go_back_history(false);
+		MOVES--;
 		STATE = LAST_PLAYER;
-		logger.info(()->super.getprintedGameState());
+		logger.debug(()->super.getprintedGameState());
 		ALLOW_BACK_BOTH = false;
 	}
 	
@@ -316,7 +321,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	 * Set to true to go back history - 1
 	 * @param second
 	 */
-	private void go_back_history(boolean second){
+	private void go_back_history(final boolean second){
 		logger.entry();
 		int size = matchHistory.size() - 1; // current last entry
 		if(size >= 0){
@@ -324,15 +329,14 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 				if(size > 0){
 					matchHistory.remove(size);
 					size--;
-					MOVES--;
 				}else{
 					logger.error("Not enough entries to go back!");
 				}
 			}
-			MOVES--;
 			FIELD = copyField(matchHistory.get(size));
 		}else{
-			logger.error("No history !");
+			logger.fatal("No history ! {}",GController.getprintedGameState());
+			System.exit(1);
 		}
 	}
 	
@@ -340,7 +344,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	 * Inform AI's and go back if needed
 	 * @param reset if set to true we'll only reset the game
 	 */
-	protected synchronized void informAIs(boolean game_end){
+	protected synchronized void informAIs(final boolean game_end){
 		logger.entry();
 		if(GAMEMODE == E_GAME_MODE.KI_TRAINING){
 			if(game_end){
@@ -350,14 +354,14 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 					has_moves = AI_a.hasMoreMoves();
 					if(has_moves){
 						AI_a.gameEvent();
-						AI_a.goBackHistory();
+						AI_a.goBackHistory(MOVES < 3);
 					}
 					break;
 				case PLAYER_B:
 					has_moves = AI_b.hasMoreMoves();
 					if(has_moves){
 						AI_b.gameEvent();
-						AI_b.goBackHistory();
+						AI_b.goBackHistory(MOVES < 3);
 					}
 					break;
 				default:
@@ -365,9 +369,9 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 					break;
 				}
 				if(has_moves){
-					logger.info(GController.getprintedGameState());
+					logger.debug(()->GController.getprintedGameState());
 					moveAgain();
-					logger.info(GController.getprintedGameState());
+					logger.debug(()->GController.getprintedGameState());
 				}else{
 					STATE = LAST_PLAYER;
 					handle_KI_moveless();

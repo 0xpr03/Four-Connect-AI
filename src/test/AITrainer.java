@@ -9,6 +9,7 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configurator;
 
 import gamelogic.ControllerBase.E_GAME_MODE;
+import net.java.games.input.Controller;
 import gamelogic.GController;
 
 /**
@@ -36,8 +37,8 @@ public class AITrainer {
 		}
 		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
 		
-		Level level_db = Level.TRACE;
-		Level level_ai = Level.TRACE;
+		Level level_db = Level.INFO;
+		Level level_ai = Level.INFO;
 		int games = 1;
 		
 		if(args.length > 1){
@@ -64,15 +65,16 @@ public class AITrainer {
 		if(games > 50){
 			level_db = Level.INFO;
 			level_ai = Level.WARN;
-			logcontroller = Level.INFO;
+			logcontroller = Level.WARN;
 		}
 		Configurator.setLevel("DB", level_db);
 		Configurator.setLevel("AI", level_ai);
+		Configurator.setLevel("Controller", Level.WARN);
 		for(int x = 0; x < games; x++){
 			GController.initGame(E_GAME_MODE.KI_TRAINING,logcontroller);
 			GController.startGame();
 			while(gameRunning()){
-				logger.info(GController.getprintedGameState());
+				//logger.info(GController.getprintedGameState());
 				switch(GController.getGameState()){
 				case PLAYER_A:
 					GController.moveAI_A();
@@ -113,7 +115,7 @@ public class AITrainer {
 			public void run() {
 				logger.info("Last match {}ms ago",System.currentTimeMillis() - lastmatch);
 				try{
-				logger.info("Current state: {}",GController.getGameState());
+					logger.info("Current state: {}",GController.getGameState());
 				}catch(Exception e){
 					logger.error("Trying to get state: {}",e);
 				}

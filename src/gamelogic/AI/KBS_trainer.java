@@ -106,13 +106,16 @@ public class KBS_trainer<E extends DB> implements AI {
 	/**
 	 * Go back one move in the history
 	 */
-	public void goBackHistory(){
+	public void goBackHistory(boolean allowEmpty){
 		if(logger.isDebugEnabled()){
 			logger.debug("{} {}",this.player,printHistory());
 		}
-		if(moveHistory.size() >= 1){
+		if(moveHistory.size() > 1){
 			moveHistory.remove(moveHistory.size() - 1);
 			updatePointer();
+		}else if(allowEmpty){
+			moveHistory.remove(moveHistory.size() -1 );
+			P_MOVE_CURRENT = null;
 		}else{
 			logger.error("Can't go back one more!  Elements:{} {}",moveHistory.size(),this.player);
 		}
@@ -163,7 +166,8 @@ public class KBS_trainer<E extends DB> implements AI {
 			break;
 		}
 		P_MOVE_CURRENT = null;
-		logger.debug("{} {}",this.player,printHistory());
+		if(logger.isDebugEnabled())
+			logger.debug("{} {}",this.player,printHistory());
 		logger.exit();
 	}
 	
