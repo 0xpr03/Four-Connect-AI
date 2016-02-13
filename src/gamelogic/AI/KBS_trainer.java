@@ -55,7 +55,6 @@ public class KBS_trainer<E extends DB> implements AI {
 		if(Arrays.equals(lastField, db.getHash())){
 			if(unused.size() != 0){
 				new_move = unused.get(0);
-				unused.remove(0);
 			}
 		}else{
 			SelectResult moves = db.getMoves(GController.getFieldState(),this.player==E_PLAYER.PLAYER_A);
@@ -73,7 +72,6 @@ public class KBS_trainer<E extends DB> implements AI {
 				lastField = db.getHash();
 				unused = new ArrayList<Move>(sel.getUnused());
 				new_move = unused.get(0);
-				unused.remove(0);
 			}else{
 				if(!moves.getUnused().isEmpty()){
 					new_move = moves.getUnused().get(0);
@@ -82,6 +80,7 @@ public class KBS_trainer<E extends DB> implements AI {
 		}
 		if(new_move == null){
 			logger.debug("No new move");
+			logger.debug(()->printUnused());
 			return false;
 		}else{
 			moveHistory.add(new_move);
@@ -96,7 +95,21 @@ public class KBS_trainer<E extends DB> implements AI {
 	}
 	
 	public boolean hasMoreMoves(){
-		return unused.size() != 0;
+		if(unused.size() != 0){
+			return true;
+		}else{
+			logger.debug(()->printUnused());
+			return false;
+		}
+	}
+	
+	private String printUnused(){
+		StringBuilder sb = new StringBuilder();
+		sb.append("Unused list:\n");
+		for(Move move : unused) {
+			sb.append(move.toString());
+		}
+		return sb.toString();
 	}
 	
 	private void updatePointer(){
@@ -119,6 +132,8 @@ public class KBS_trainer<E extends DB> implements AI {
 		}else{
 			logger.error("Can't go back one more!  Elements:{} {}",moveHistory.size(),this.player);
 		}
+		if(unused.size() > 0)
+			unused.remove(0);
 		if(logger.isDebugEnabled()){
 			logger.debug("{} {}",this.player,printHistory());
 		}
