@@ -35,6 +35,14 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	private E_GAME_STATE LAST_PLAYER;
 	
 	/**
+	 * If player x does a move, leading to a game end, we've to go back two times
+	 * But if we're resetting without this last move, we only must go back one times
+	 * ALLOW_BACK_BOTH is true, if we're allowing to go back on both ai's
+	 */
+	private boolean ALLOW_BACK_BOTH = false;
+	
+	
+	/**
 	 * Initialize a new Game
 	 * @param gamemode on multiplayer / singleplayer the starting player will be selected randomly
 	 * @param loglevel define a loglevel used for this game
@@ -88,6 +96,10 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 			switch(GAMEMODE){
 			case KI_TRAINING:
 				addHistory(); // add empty field
+				ALLOW_BACK_BOTH = false;
+				logger.warn("Using hard coded state!");
+				STATE = E_GAME_STATE.PLAYER_A;
+				break;
 			case MULTIPLAYER:
 			case SINGLE_PLAYER:
 			case KI_INTERNAL:
@@ -109,7 +121,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	 * @author Aron Heinecke
 	 */
 	public synchronized boolean insertStone(final int column){
-		logger.entry();
+		logger.entry(STATE);
 		int found_place = -1;
 		synchronized (lock) {
 			if (STATE != E_GAME_STATE.PLAYER_A && STATE != E_GAME_STATE.PLAYER_B){
@@ -131,6 +143,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 				WinStore ws = checkWin(column,found_place);
 				if(ws == null){ // no win
 					if(checkDraw()){ // is draw
+						ALLOW_BACK_BOTH = true; // we're on a state where the last move leaded to a gameEvent sit.
 						handelDraw();
 					}else{ // no draw, no win, next move
 						if(matchHistory != null){
@@ -139,6 +152,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 						STATE = STATE == E_GAME_STATE.PLAYER_A ? E_GAME_STATE.PLAYER_B : E_GAME_STATE.PLAYER_A;
 					}
 				}else{
+					ALLOW_BACK_BOTH = true; // we're on a state where the last move leaded to a gameEvent sit.
 					handleWin(ws);
 				}
 			}else{
@@ -167,7 +181,8 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	protected synchronized void handelDraw(){
 		checkHistory();
 		STATE = E_GAME_STATE.DRAW;
-		informAIs();
+		logger.debug("State: {}",STATE);
+		informAIs(true);
 	}
 	
 	/**
@@ -175,25 +190,44 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	 * Go back & lat KI before move
 	 */
 	private void handle_KI_moveless(){
-		logger.entry();
+		logger.entry(ALLOW_BACK_BOTH);
 		logger.info(()->super.getprintedGameState());
 		go_back_history(true);
-		MOVES -= 2;
 		
 		E_GAME_STATE state_cache = STATE;
 		//TODO: change to represent current gamestate
 		logger.warn("Using default win state to inform!");
 		STATE = E_GAME_STATE.WIN_A;
-		AI_a.gameEvent();
-		AI_b.gameEvent();
+		if(ALLOW_BACK_BOTH){
+			MOVES -= 2;
+			AI_a.gameEvent();
+			AI_b.gameEvent();
+			AI_a.goBackHistory();
+			AI_b.goBackHistory();
+		}else{
+			MOVES -= 1;
+			switch(state_cache){
+			case PLAYER_A:
+				AI_b.gameEvent();
+				AI_b.goBackHistory();
+				break;
+			case PLAYER_B:
+				AI_a.gameEvent();
+				AI_a.goBackHistory();
+				break;
+			default:
+				logger.error("Not supported case!");
+				break;
+			}
+		}
+		ALLOW_BACK_BOTH = false;
 		
 		if(state_cache == E_GAME_STATE.PLAYER_A){
-			AI_a.goBackHistory();
 			STATE = E_GAME_STATE.PLAYER_B;
 		}else if(state_cache == E_GAME_STATE.PLAYER_B){
-			AI_b.goBackHistory();
 			STATE = E_GAME_STATE.PLAYER_A;
 		}else{
+			logger.error("No state!");
 			return;
 		}
 		logger.info(()->super.getprintedGameState());
@@ -206,7 +240,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	public void moveAI_A(){
 		if(!AI_a.getMove()){
 			if(GAMEMODE == E_GAME_MODE.KI_TRAINING)
-				handle_KI_moveless();
+				informAIs(false);
 		}
 	}
 	
@@ -216,7 +250,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	public void moveAI_B(){
 		if(!AI_b.getMove()){
 			if(GAMEMODE == E_GAME_MODE.KI_TRAINING)
-				handle_KI_moveless();
+				informAIs(false);
 		}
 	}
 	
@@ -246,7 +280,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 		
 		STATE = ws.getState();
 		LASTWIN = ws;
-		informAIs();
+		informAIs(true);
 		//TODO: run handle code for winner display etc
 	}
 	
@@ -257,6 +291,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 		go_back_history(false);
 		STATE = LAST_PLAYER;
 		logger.info(()->super.getprintedGameState());
+		ALLOW_BACK_BOTH = false;
 	}
 	
 	private String getPrintedHistory(){
@@ -283,37 +318,63 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	 */
 	private void go_back_history(boolean second){
 		logger.entry();
-		int size = matchHistory.size() - 1;
-		if(size >= 1){
+		int size = matchHistory.size() - 1; // current last entry
+		if(size >= 0){
 			if(second){
-				matchHistory.remove(size);
-				size--;
-				MOVES--;
+				if(size > 0){
+					matchHistory.remove(size);
+					size--;
+					MOVES--;
+				}else{
+					logger.error("Not enough entries to go back!");
+				}
 			}
 			MOVES--;
 			FIELD = copyField(matchHistory.get(size));
 		}else{
-			logger.error("toot little to go back");
+			logger.error("No history !");
 		}
 	}
 	
-	protected synchronized void informAIs(){
+	/**
+	 * Inform AI's and go back if needed
+	 * @param reset if set to true we'll only reset the game
+	 */
+	protected synchronized void informAIs(boolean game_end){
 		logger.entry();
 		if(GAMEMODE == E_GAME_MODE.KI_TRAINING){
-			switch(LAST_PLAYER){
-			case PLAYER_A:
-				AI_a.gameEvent();
-				AI_a.goBackHistory();
-				break;
-			case PLAYER_B:
-				AI_b.gameEvent();
-				AI_b.goBackHistory();
-				break;
-			default:
-				logger.warn("no player!");
-				break;
+			if(game_end){
+				boolean has_moves = false;
+				switch(LAST_PLAYER){
+				case PLAYER_A:
+					has_moves = AI_a.hasMoreMoves();
+					if(has_moves){
+						AI_a.gameEvent();
+						AI_a.goBackHistory();
+					}
+					break;
+				case PLAYER_B:
+					has_moves = AI_b.hasMoreMoves();
+					if(has_moves){
+						AI_b.gameEvent();
+						AI_b.goBackHistory();
+					}
+					break;
+				default:
+					logger.warn("no player!");
+					break;
+				}
+				if(has_moves){
+					logger.info(GController.getprintedGameState());
+					moveAgain();
+					logger.info(GController.getprintedGameState());
+				}else{
+					STATE = LAST_PLAYER;
+					handle_KI_moveless();
+				}
+			}else{
+				handle_KI_moveless();
 			}
-			moveAgain();
 		}else if(GAMEMODE == E_GAME_MODE.KI_INTERNAL){
 			AI_a.gameEvent();
 			AI_b.gameEvent();

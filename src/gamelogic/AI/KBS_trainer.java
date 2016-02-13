@@ -53,10 +53,9 @@ public class KBS_trainer<E extends DB> implements AI {
 		
 		Move new_move = null;
 		if(Arrays.equals(lastField, db.getHash())){
-			for(Move move : unused){
-				if(!move.isUsed()){
-					new_move = move;
-				}
+			if(unused.size() != 0){
+				new_move = unused.get(0);
+				unused.remove(0);
 			}
 		}else{
 			SelectResult moves = db.getMoves(GController.getFieldState(),this.player==E_PLAYER.PLAYER_A);
@@ -74,6 +73,7 @@ public class KBS_trainer<E extends DB> implements AI {
 				lastField = db.getHash();
 				unused = new ArrayList<Move>(sel.getUnused());
 				new_move = unused.get(0);
+				unused.remove(0);
 			}else{
 				if(!moves.getUnused().isEmpty()){
 					new_move = moves.getUnused().get(0);
@@ -95,6 +95,10 @@ public class KBS_trainer<E extends DB> implements AI {
 		return true;
 	}
 	
+	public boolean hasMoreMoves(){
+		return unused.size() != 0;
+	}
+	
 	private void updatePointer(){
 		P_MOVE_CURRENT = moveHistory.get(moveHistory.size() -1);
 	}
@@ -104,21 +108,23 @@ public class KBS_trainer<E extends DB> implements AI {
 	 */
 	public void goBackHistory(){
 		if(logger.isDebugEnabled()){
-			logger.debug(printHistory());
+			logger.debug("{} {}",this.player,printHistory());
 		}
 		if(moveHistory.size() >= 1){
-			moveHistory.remove(moveHistory.size() -1);
+			moveHistory.remove(moveHistory.size() - 1);
 			updatePointer();
 		}else{
 			logger.error("Can't go back one more!  Elements:{} {}",moveHistory.size(),this.player);
 		}
 		if(logger.isDebugEnabled()){
-			logger.debug(printHistory());
+			logger.debug("{} {}",this.player,printHistory());
 		}
 	}
 	
 	private String printHistory(){
 		StringBuilder sb = new StringBuilder();
+		sb.append(moveHistory.size());
+		sb.append("\nHistory:\n");
 		for(Move move : moveHistory){
 			sb.append(move.toString());
 			sb.append("\n");
@@ -134,8 +140,6 @@ public class KBS_trainer<E extends DB> implements AI {
 			logger.debug("Shutdown set");
 			return;
 		}
-		E_GAME_STATE state = GController.getGameState();
-		
 		if(follow_unused)
 			print_follow();
 		
@@ -145,7 +149,7 @@ public class KBS_trainer<E extends DB> implements AI {
 			return;
 		}
 		
-		switch(state){
+		switch(GController.getGameState()){
 		case DRAW:
 		case WIN_A:
 		case WIN_B:
@@ -159,7 +163,7 @@ public class KBS_trainer<E extends DB> implements AI {
 			break;
 		}
 		P_MOVE_CURRENT = null;
-		logger.debug(printHistory());
+		logger.debug("{} {}",this.player,printHistory());
 		logger.exit();
 	}
 	

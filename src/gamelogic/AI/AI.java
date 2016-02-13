@@ -36,4 +36,9 @@ public interface AI {
 	 * Go back one in the move history and update this as the current-last move
 	 */
 	public abstract void goBackHistory();
+	/**
+	 * Returns true if more moves are availale for the current field
+	 * @return
+	 */
+	public abstract boolean hasMoreMoves();
 }

@@ -633,7 +633,7 @@ public class ControllerBase<E extends AI> {
 	 */
 	public boolean D_analyzeField(){
 		if(GAMEMODE == E_GAME_MODE.TESTING){
-			printGameState();
+			logger.debug(getprintedGameState());
 			for(int x = 0; x < X_MAX; x++){
 				for(int y = 0; y < Y_MAX; y++){
 					if(checkWin(x, y) != null){

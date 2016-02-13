@@ -36,7 +36,7 @@ public class AITrainer {
 		}
 		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
 		
-		Level level_db = Level.DEBUG;
+		Level level_db = Level.TRACE;
 		Level level_ai = Level.TRACE;
 		int games = 1;
 		
@@ -65,7 +65,6 @@ public class AITrainer {
 			level_db = Level.INFO;
 			level_ai = Level.WARN;
 			logcontroller = Level.INFO;
-			Configurator.setLevel("AI-TEST", Level.WARN);
 		}
 		Configurator.setLevel("DB", level_db);
 		Configurator.setLevel("AI", level_ai);
@@ -73,7 +72,7 @@ public class AITrainer {
 			GController.initGame(E_GAME_MODE.KI_TRAINING,logcontroller);
 			GController.startGame();
 			while(gameRunning()){
-				GController.printGameState();
+				logger.info(GController.getprintedGameState());
 				switch(GController.getGameState()){
 				case PLAYER_A:
 					GController.moveAI_A();
