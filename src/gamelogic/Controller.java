@@ -163,6 +163,11 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 		return found_place != -1;
 	}
 	
+	/**
+	 * Copies the field, creating a full copy
+	 * @param origin
+	 * @return
+	 */
 	private E_FIELD_STATE[][] copyField(E_FIELD_STATE[][] origin){
 		E_FIELD_STATE[][] copy = new E_FIELD_STATE[X_MAX][Y_MAX];
 		for(int x = 0; x < X_MAX; x++){
@@ -171,6 +176,10 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 		return copy;
 	}
 	
+	/**
+	 * Sets the LAST_PLAYER to the current state
+	 * called before win/draw/ states are set
+	 */
 	protected synchronized void checkHistory(){
 		logger.entry();
 		logger.debug(()->super.getprintedGameState());
@@ -178,11 +187,35 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 			LAST_PLAYER = STATE;
 	}
 	
+	/**
+	 * Handle draws, calling everything needed
+	 */
 	protected synchronized void handelDraw(){
 		checkHistory();
 		STATE = E_GAME_STATE.DRAW;
 		logger.debug("State: {}",STATE);
 		informAIs(true);
+	}
+	
+	/**
+	 * Handle wins, calling animation functions etc
+	 * @param ws
+	 * @author Aron Heinecke
+	 */
+	protected synchronized void handleWin(WinStore ws){
+		if(ws.isCapitulation()){
+			logger.debug("Capitulation");
+		}else{
+			logger.debug("Point A:{}|{} B:{}|{}",ws.getPoint_a().getX(),ws.getPoint_a().getY(),ws.getPoint_b().getX(),ws.getPoint_b().getY());
+		}
+		logger.debug("State: {}",ws.getState());
+		
+		checkHistory();
+		
+		STATE = ws.getState();
+		LASTWIN = ws;
+		informAIs(true);
+		//TODO: run handle code for winner display etc
 	}
 	
 	/**
@@ -206,34 +239,46 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 			MOVES -= 2;
 			AI_a.gameEvent();
 			AI_b.gameEvent();
-			AI_a.goBackHistory(false);
-			AI_b.goBackHistory(false);
+			AI_a.goBackHistory(MOVES < 3);
+			AI_b.goBackHistory(MOVES < 3);
+			
+			if(state_cache == E_GAME_STATE.PLAYER_A){
+				STATE = E_GAME_STATE.PLAYER_B;
+			}else if(state_cache == E_GAME_STATE.PLAYER_B){
+				STATE = E_GAME_STATE.PLAYER_A;
+			}else{
+				logger.error("No state!");
+				return;
+			}
+			ALLOW_BACK_BOTH = false;
 		}else{
 			MOVES--;
 			switch(state_cache){
 			case PLAYER_A:
 				AI_b.gameEvent();
+				//AI_a.goBackHistory(MOVES < 3);
 				AI_b.goBackHistory(MOVES < 3);
 				break;
 			case PLAYER_B:
 				AI_a.gameEvent();
+				//AI_b.goBackHistory(MOVES < 3);
 				AI_a.goBackHistory(MOVES < 3);
 				break;
 			default:
 				logger.error("Not supported case!");
 				break;
 			}
+			
+			if(state_cache == E_GAME_STATE.PLAYER_A){
+				STATE = E_GAME_STATE.PLAYER_B;
+			}else if(state_cache == E_GAME_STATE.PLAYER_B){
+				STATE = E_GAME_STATE.PLAYER_A;
+			}else{
+				logger.error("No state!");
+				return;
+			}
 		}
-		ALLOW_BACK_BOTH = false;
 		
-		if(state_cache == E_GAME_STATE.PLAYER_A){
-			STATE = E_GAME_STATE.PLAYER_B;
-		}else if(state_cache == E_GAME_STATE.PLAYER_B){
-			STATE = E_GAME_STATE.PLAYER_A;
-		}else{
-			logger.error("No state!");
-			return;
-		}
 		logger.debug(()->super.getprintedGameState());
 		logger.exit();
 	}
@@ -267,36 +312,16 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 		}
 	}
 	
-	/**
-	 * Handle wins, calling animation functions etc
-	 * @param ws
-	 * @author Aron Heinecke
-	 */
-	protected synchronized void handleWin(WinStore ws){
-		if(ws.isCapitulation()){
-			logger.debug("Capitulation");
-		}else{
-			logger.debug("Point A:{}|{} B:{}|{}",ws.getPoint_a().getX(),ws.getPoint_a().getY(),ws.getPoint_b().getX(),ws.getPoint_b().getY());
-		}
-		logger.debug("State: {}",ws.getState());
-		
-		checkHistory();
-		
-		STATE = ws.getState();
-		LASTWIN = ws;
-		informAIs(true);
-		//TODO: run handle code for winner display etc
-	}
-	
 	protected synchronized void moveAgain(){
 		logger.entry();
 		logger.debug(()->super.getprintedGameState());
-		logger.debug(()->getPrintedHistory());
+		//logger.debug(()->getPrintedHistory());
 		go_back_history(false);
 		MOVES--;
 		STATE = LAST_PLAYER;
 		logger.debug(()->super.getprintedGameState());
 		ALLOW_BACK_BOTH = false;
+		logger.exit();
 	}
 	
 	private String getPrintedHistory(){

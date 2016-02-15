@@ -60,7 +60,7 @@ public class gameControllerTester {
 	@Test
 	public void get_hash(){
 		lib lib = new lib();
-		String input = "----\n---X\n---X\nOOOX";
+		String input = "---O\n--XO\n--OO\nX-XX";
 		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
 		GController.startGame();
 		GController.D_setField(GController.D_parseField(input));

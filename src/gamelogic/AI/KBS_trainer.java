@@ -68,23 +68,28 @@ public class KBS_trainer<E extends DB> implements AI {
 					return true;
 				}
 				
-				lastField = new byte[20];
 				lastField = db.getHash();
 				unused = new ArrayList<Move>(sel.getUnused());
 				new_move = unused.get(0);
+				if(unused.size() != possibilities.size()){
+					logger.error("Wrong list size {} poss. {}",unused.size(),possibilities.size());
+				}
 			}else{
 				if(!moves.getUnused().isEmpty()){
-					new_move = moves.getUnused().get(0);
+					lastField = db.getHash();
+					unused = new ArrayList<Move>(moves.getUnused());
+					new_move = unused.get(0);
 				}
 			}
 		}
 		if(new_move == null){
-			logger.debug("No new move");
+			logger.debug("No new moves");
 			logger.debug(()->printUnused());
 			return false;
 		}else{
 			moveHistory.add(new_move);
 			updatePointer();
+			logger.debug("Using move {}",()->P_MOVE_CURRENT.toString());
 			if(!GController.insertStone(P_MOVE_CURRENT.getMove())){
 				logger.error("Couldn't insert stone! Wrong move! \n{}",GController.getprintedGameState());
 				logger.error(P_MOVE_CURRENT.toString());
@@ -94,13 +99,13 @@ public class KBS_trainer<E extends DB> implements AI {
 		return true;
 	}
 	
+	/**
+	 * Returns true if the AI has more moves in store
+	 * Ignoring the first, as it's the latest used one
+	 * @see gamelogic.Controller#informAIs(boolean) code
+	 */
 	public boolean hasMoreMoves(){
-		if(unused.size() != 0){
-			return true;
-		}else{
-			logger.debug(()->printUnused());
-			return false;
-		}
+		return unused.size() > 1; // ignore current
 	}
 	
 	private String printUnused(){
@@ -112,6 +117,9 @@ public class KBS_trainer<E extends DB> implements AI {
 		return sb.toString();
 	}
 	
+	/**
+	 * Set pointer P_MOVE_CURRENT to last entry in moveHistory
+	 */
 	private void updatePointer(){
 		P_MOVE_CURRENT = moveHistory.get(moveHistory.size() -1);
 	}
@@ -132,8 +140,17 @@ public class KBS_trainer<E extends DB> implements AI {
 		}else{
 			logger.error("Can't go back one more!  Elements:{} {}",moveHistory.size(),this.player);
 		}
-		if(unused.size() > 0)
+		if(unused.size() > 0){
+			if(!unused.get(0).isUsed()){
+				logger.error("Unused not used! {}\n{}",unused.get(0).toString(),printUnused());
+				System.exit(1);
+			}
+			if(logger.isDebugEnabled())
+				logger.debug("Remoing {}",unused.get(0).toString());
 			unused.remove(0);
+		}else{
+			logger.debug("Not removing, empty unused index.");
+		}
 		if(logger.isDebugEnabled()){
 			logger.debug("{} {}",this.player,printHistory());
 		}
@@ -178,11 +195,12 @@ public class KBS_trainer<E extends DB> implements AI {
 			}
 			break;
 		default:
+			logger.error("Unknown case for gameEvent!");
 			break;
 		}
 		P_MOVE_CURRENT = null;
 		if(logger.isDebugEnabled())
-			logger.debug("{} {}",this.player,printHistory());
+			logger.debug("{} {}",this.player,printUnused());
 		logger.exit();
 	}
 	

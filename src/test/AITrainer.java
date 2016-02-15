@@ -7,9 +7,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.newdawn.slick.state.GameState;
 
 import gamelogic.ControllerBase.E_GAME_MODE;
-import net.java.games.input.Controller;
+import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.GController;
 
 /**
@@ -21,13 +22,11 @@ public class AITrainer {
 	
 	private static Logger logger = LogManager.getLogger();
 	private static long lastmatch;
+	private static long start_time;
 	
-	private static long win_a = 0;
-	private static long win_b = 0;
-	private static long draw = 0;
-	private static long restarts = 0;
+	private static long moves = 0;
 	
-	public static void main(String[] args){ // external logger, length
+	public static void main(String[] args){ // external logger, length, starting player [a,b]
 		if(args.length > 1){
 			if(!args[0].equals("none")){
 				LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
@@ -38,7 +37,7 @@ public class AITrainer {
 		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
 		
 		Level level_db = Level.INFO;
-		Level level_ai = Level.DEBUG;
+		Level level_ai = Level.INFO;
 		int games = 1;
 		
 		if(args.length > 1){
@@ -51,13 +50,26 @@ public class AITrainer {
 			// protection from running invalid field evaluations on the server
 			logger.error("Stopping, field size modified!");
 		}
-		run(level_db,level_ai,games);
+		E_GAME_STATE player = E_GAME_STATE.PLAYER_B;
+		if(args.length > 2){
+			switch(args[2]){
+			case "a":
+				player = E_GAME_STATE.PLAYER_A;
+				break;
+			case "b":
+				player = E_GAME_STATE.PLAYER_B;
+				break;
+			default:
+				logger.warn("Unknown input for starting player: {}",args[2]);
+			}
+		}
+		run(level_db,level_ai,games,player);
 		
 		GController.shutdown();
 		logger.exit();
 	}
 	
-	private static void run(Level level_db, Level level_ai, int games){
+	private static void run(Level level_db, Level level_ai, int games,E_GAME_STATE starting_pl){
 		logger.entry();
 		
 		registerExitFunction();
@@ -69,57 +81,43 @@ public class AITrainer {
 		}
 		Configurator.setLevel("DB", level_db);
 		Configurator.setLevel("AI", level_ai);
-		Configurator.setLevel("Controller", Level.DEBUG);
-		for(int x = 0; x < games; x++){
-			GController.initGame(E_GAME_MODE.KI_TRAINING,logcontroller);
-			GController.startGame();
-			while(gameRunning()){
-				logger.info(GController.getprintedGameState());
-				switch(GController.getGameState()){
-				case PLAYER_A:
-					GController.moveAI_A();
-					break;
-				case PLAYER_B:
-					GController.moveAI_B();
-					break;
-				default:
-					logger.info(GController.getGameState());
-				}
-			}
+		Configurator.setLevel("Controller", Level.WARN);
+		
+		start_time=System.currentTimeMillis();
+		GController.initGame(E_GAME_MODE.KI_TRAINING,logcontroller);
+		GController.startGame();
+		GController.setState(starting_pl);
+		logger.info("Starting player: {}",starting_pl);
+		while(gameRunning()){
+			//logger.info(GController.getprintedGameState());
+			moves++;
+			lastmatch = System.currentTimeMillis();
 			switch(GController.getGameState()){
-			case DRAW:
-				draw++;
+			case PLAYER_A:
+				GController.moveAI_A();
 				break;
-			case WIN_A:
-				win_a++;
-				break;
-			case WIN_B:
-				win_b++;
-				break;
-			case RESTART:  // datarace, table locking etc
-				x--;
-				restarts++;
+			case PLAYER_B:
+				GController.moveAI_B();
 				break;
 			default:
+				logger.info(GController.getGameState());
 				break;
 			}
-			lastmatch = System.currentTimeMillis();
 		}
 		logger.info(GController.getprintedGameState());
-		logger.info("Wins A:{} B:{} Draws:{} Restarts:{}",win_a,win_b,draw,restarts);
 	}
 	
 	private static void registerExitFunction() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
-				logger.info("Last match {}ms ago",System.currentTimeMillis() - lastmatch);
+				logger.info("Last move {}ms ago",System.currentTimeMillis() - lastmatch);
 				try{
 					logger.info("Current state: {}",GController.getGameState());
 				}catch(Exception e){
 					logger.error("Trying to get state: {}",e);
 				}
-				logger.info("Wins A:{} B:{} Draws:{} Restarts:{}",win_a,win_b,draw,restarts);
+				logger.info("Took {}ms and {} moves including re-moves",System.currentTimeMillis()-start_time,moves);
 				GController.shutdown();
 				logger.exit();
 			}

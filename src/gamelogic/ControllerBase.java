@@ -655,7 +655,7 @@ public class ControllerBase<E extends AI> {
 	 * @return true on success
 	 */
 	public boolean setState(E_GAME_STATE state){
-		if(GAMEMODE == E_GAME_MODE.TESTING){
+		if(GAMEMODE == E_GAME_MODE.TESTING || GAMEMODE == E_GAME_MODE.KI_TRAINING){
 			STATE = state;
 			return true;
 		}else{
