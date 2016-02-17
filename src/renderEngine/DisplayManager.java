@@ -5,6 +5,9 @@
  */
 package renderEngine;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.LWJGLException;
@@ -28,17 +31,10 @@ public class DisplayManager {
      * dmi public index for switching modes
      */
     private static DisplayMode[] adm;
-    private static DisplayMode[] dms;
-    private static DisplayMode dm_640x480;		//4:3
-	private static DisplayMode dm_1280x960;		//4:3
-	private static DisplayMode dm_1280x768;		//5:3
-	private static DisplayMode dm_1440x900;		//16:10
-	private static DisplayMode dm_1280x720;		//16:9
-	private static DisplayMode dm_1366x768;		//16:9
-	private static DisplayMode dm_1600x900;		//16:9
-	private static DisplayMode dm_1920x1080;	//16:9
+    private static List<DisplayMode> dms;
+	private static Logger logger = LogManager.getLogger();
 	public static boolean fullscreen = false;
-	public static int dmi = 1;
+	public static int dmi = 4;
     
     private static long lastFrameTime;
     private static float delta;
@@ -51,28 +47,44 @@ public class DisplayManager {
             
         try {
         	adm = Display.getAvailableDisplayModes();
-    /***
-     * Resolution list at the bottom
-     */
-        	dm_640x480 = adm[68]; 
-        	dm_1280x960 = adm[39];
-        	dm_1280x768 = adm[6];
-        	dm_1440x900 = adm[11];
-        	dm_1280x720 = adm[83];
-        	dm_1366x768 = adm[15];
-        	dm_1600x900 = adm[86];
-        	dm_1920x1080 = adm[76];      	
-        	
-        	dms = new DisplayMode[8];
-        	dms[0] = dm_640x480;
-        	dms[1] = dm_1280x768;
-        	dms[2] = dm_1280x960;
-        	dms[3] = dm_1440x900;
-        	dms[4] = dm_1280x720;
-        	dms[5] = dm_1366x768;
-        	dms[6] = dm_1600x900;
-        	dms[7] = dm_1920x1080;
-            Display.setDisplayMode(dms[dmi]);
+        	dms = new ArrayList<DisplayMode>(10);
+    
+        	for(DisplayMode dm : adm) {
+        		boolean freq = dm.getFrequency() == 60 ? true : false;
+        		boolean width = false;
+        		boolean height = false;
+        		switch(dm.getHeight()){
+        		case 360:
+        		case 480:
+        		case 720:
+        		case 900:
+        		case 960:
+        		case 1080:
+        			height = true;
+        			break;
+        		default:
+        		}
+        		switch(dm.getWidth()){
+        		case 480:
+        		case 640:
+        		case 1280:
+        		case 1440:
+        		case 1600:
+        		case 1920:
+        			width = true;
+        			break;
+        		default:
+        		}
+        		if(freq && width && height){
+        			dms.add(dm);
+        		}
+        	}
+   	
+        	for(DisplayMode md : dms){ // statt adm ein array was obbe erzeugt wird an if(fruq && width && height)`
+        		logger.debug("Height {} Width {} Freq {} {}", md.getHeight(),md.getWidth(),md.getFrequency(), calculateRatio(md));
+        		// alternativ ein [print to screen zur auswahl]
+        	}
+            Display.setDisplayMode(dms.get(dmi));
             Display.create(new PixelFormat(), attribs);
             Display.setTitle("Game1ATrial");
             Display.setFullscreen(fullscreen);            
@@ -80,8 +92,47 @@ public class DisplayManager {
             e.printStackTrace();    
         }
         
-        GL11.glViewport(0, 0, dms[dmi].getWidth(), dms[dmi].getHeight());
+        GL11.glViewport(0, 0, dms.get(dmi).getWidth(), dms.get(dmi).getHeight());
         lastFrameTime = getCurrentTime();
+    }
+    
+    private static String calculateRatio(DisplayMode dm) {
+    	String ratio;
+    	int nw = -1;
+    	int nh = -1;
+    	String nws = "N/A";
+		String nhs = "N/A";		
+    	if(((double)dm.getHeight()/(double)dm.getWidth() * 5) == 4) {
+    		nw = 5;
+    		nh = 4;
+    	}else if(((double)dm.getHeight()/(double)dm.getWidth() * 4) == 3) {
+    		nw = 4;
+    		nh = 3;
+    	}else if(((double)dm.getHeight()/(double)dm.getWidth() * 3) == 2) {
+    		nw = 3;
+    		nh = 2;
+    	}else if(((double)dm.getHeight()/(double)dm.getWidth() * 16) == 10) {
+    		nw = 16;
+    		nh = 10;
+    	}else if(((double)dm.getHeight()/(double)dm.getWidth() * 5) == 3) {
+    		nw = 5;
+    		nh = 3;
+    	}else if(((double)dm.getHeight()/(double)dm.getWidth() * 16) == 9) {
+    		nw = 16;
+    		nh = 9;
+    	}else if(((double)dm.getHeight()/(double)dm.getWidth() * 19) == 10) {
+    		nw = 19;
+    		nh = 10;
+    	}else if(((double)dm.getHeight()/(double)dm.getWidth() * 21) == 9) {
+    		nw = 21;
+    		nh = 9;
+    	}
+    	if(nw != -1 && nh != -1) {
+    		nws = Integer.toString(nw);
+    		nhs = Integer.toString(nh);
+    	}
+    	ratio = "Ratio " + nws + " : " + nhs;
+    	return ratio;
     }
     
     public static void updateDisplay() {
@@ -103,98 +154,6 @@ public class DisplayManager {
     
     private static long getCurrentTime() {
         return Sys.getTime() * 1000 / Sys.getTimerResolution();
-    }
-       
-    /***
-     * 	1600 x 1024 x 32 @100Hz
-		1360 x 768 x 32 @120Hz
-		1366 x 768 x 32 @120Hz
-		1366 x 768 x 32 @100Hz
-		1360 x 768 x 32 @100Hz
-		1600 x 1024 x 32 @120Hz
-		1280 x 768 x 32 @60Hz
-		720 x 576 x 32 @144Hz
-		1366 x 768 x 32 @85Hz
-		1360 x 768 x 32 @85Hz
-		1600 x 1024 x 32 @85Hz
-		1440 x 900 x 32 @60Hz
-		1680 x 1050 x 32 @144Hz
-		1280 x 800 x 32 @60Hz
-		1280 x 768 x 32 @100Hz
-		1366 x 768 x 32 @60Hz
-		1360 x 768 x 32 @60Hz
-		1440 x 900 x 32 @85Hz
-		1280 x 800 x 32 @85Hz
-		1280 x 768 x 32 @120Hz
-		1600 x 1024 x 32 @60Hz
-		1440 x 900 x 32 @100Hz
-		1280 x 800 x 32 @100Hz
-		1280 x 960 x 32 @144Hz
-		1280 x 768 x 32 @85Hz
-		1280 x 800 x 32 @120Hz
-		1440 x 900 x 32 @120Hz
-		1280 x 960 x 32 @100Hz
-		720 x 576 x 32 @60Hz
-		1280 x 800 x 32 @144Hz
-		1440 x 900 x 32 @144Hz
-		1680 x 1050 x 32 @60Hz
-		1280 x 960 x 32 @120Hz
-		1280 x 768 x 32 @144Hz
-		1280 x 960 x 32 @85Hz
-		720 x 576 x 32 @120Hz
-		1680 x 1050 x 32 @100Hz
-		1680 x 1050 x 32 @120Hz
-		720 x 576 x 32 @100Hz
-		1280 x 960 x 32 @60Hz
-		1360 x 768 x 32 @144Hz
-		720 x 576 x 32 @85Hz
-		1366 x 768 x 32 @144Hz
-		1600 x 1024 x 32 @144Hz
-		1680 x 1050 x 32 @85Hz
-		1920 x 1080 x 32 @144Hz
-		800 x 600 x 32 @85Hz
-		640 x 480 x 32 @85Hz
-		1024 x 768 x 32 @60Hz
-		1280 x 1024 x 32 @60Hz
-		800 x 600 x 32 @120Hz
-		640 x 480 x 32 @100Hz
-		720 x 480 x 32 @60Hz
-		640 x 480 x 32 @120Hz
-		800 x 600 x 32 @100Hz
-		1024 x 768 x 32 @100Hz
-		1280 x 1024 x 32 @100Hz
-		720 x 480 x 32 @85Hz
-		1152 x 864 x 32 @144Hz
-		1024 x 768 x 32 @120Hz
-		1280 x 1024 x 32 @120Hz
-		1280 x 720 x 32 @144Hz
-		800 x 600 x 32 @60Hz
-		720 x 480 x 32 @120Hz
-		720 x 480 x 32 @100Hz
-		1600 x 900 x 32 @144Hz
-		1024 x 768 x 32 @85Hz
-		1280 x 1024 x 32 @85Hz
-		640 x 480 x 32 @60Hz
-		720 x 480 x 32 @144Hz
-		1600 x 900 x 32 @100Hz
-		1280 x 720 x 32 @120Hz
-		1280 x 720 x 32 @100Hz
-		1152 x 864 x 32 @85Hz
-		1600 x 900 x 32 @120Hz
-		1152 x 864 x 32 @100Hz
-		1920 x 1080 x 32 @60Hz
-		1280 x 720 x 32 @85Hz
-		1024 x 768 x 32 @144Hz
-		1280 x 1024 x 32 @144Hz
-		1600 x 900 x 32 @85Hz
-		1152 x 864 x 32 @120Hz
-		800 x 600 x 32 @144Hz
-		1280 x 720 x 32 @60Hz
-		1920 x 1080 x 32 @85Hz
-		640 x 480 x 32 @144Hz
-		1600 x 900 x 32 @60Hz
-		1920 x 1080 x 32 @120Hz
-		1152 x 864 x 32 @60Hz
-		1920 x 1080 x 32 @100Hz
-      */
+    }       
+   
 }
