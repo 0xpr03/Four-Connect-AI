@@ -31,17 +31,18 @@ public interface DB {
 	public abstract boolean setMove(Move move);
 	/**
 	 * Delete all loose moves of child
-	 * @param parentHash
-	 * @param childHash
+	 * @param field id
+	 * @param player_a
 	 * @return false on error
 	 */
-	public abstract boolean deleteLooses(byte[] childHash);
+	public abstract boolean deleteLooses(long fid, boolean player_a);
 	/**
 	 * Delete all moves for this field
-	 * @param field
+	 * @param field id
+	 * @param player_a
 	 * @return false on error
 	 */
-	public abstract boolean deleteMoves(byte[] fieldHash);
+	public abstract boolean deleteMoves(long fid, boolean player_a);
 	/**
 	 * Shutdown
 	 */

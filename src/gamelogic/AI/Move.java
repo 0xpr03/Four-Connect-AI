@@ -13,7 +13,7 @@ public class Move {
 	private byte[] field;
 	private long fid;
 	private boolean player_a;
-	public Move(byte[] field,long fid, int move, boolean draw, boolean loose, boolean used,boolean player_a) {
+	public Move(byte[] field,long fid, int move, boolean loose,boolean draw, boolean used,boolean player_a) {
 		this.field = field;
 		this.move = move;
 		this.draw = draw;

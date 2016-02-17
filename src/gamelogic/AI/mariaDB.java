@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
+import java.sql.SQLTransactionRollbackException;
 import java.sql.Statement;
 import java.util.List;
 
@@ -80,12 +81,12 @@ public class mariaDB implements DB {
 			stmInsFID = connection.prepareStatement("INSERT INTO `fields` (`field`) VALUES (?);", Statement.RETURN_GENERATED_KEYS);
 			stmSelFID = connection.prepareStatement("SELECT `fid` FROM `fields` WHERE `field` = ?;");
 			
-			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`fid`,`move`,`player_a`,`used`) VALUES (?,?,?,?);");
-			stmSelect = connection.prepareStatement("SELECT `move`,`used` FROM `moves` USE INDEX(`fid`,`player_a`) WHERE `fid` = ? AND `player_a` = ?;");
-			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ? WHERE `fid` = ? AND `move` = ? AND `player_a` = ? ;");
+			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`fid`,`move`,`player_a`,`used`,`loose`,`draw`) VALUES (?,?,?,?,?);");
+			stmSelect = connection.prepareStatement("SELECT `move`,`used`,`loose`,`draw` FROM `moves` USE INDEX(`fid`,`player_a`) WHERE `fid` = ? AND `player_a` = ?;");
+			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ?, `loose` = ?, `draw` = ? WHERE `fid` = ? AND `move` = ? AND `player_a` = ? ;");
 			
-			stmDelAll = connection.prepareStatement("DELETE FROM `moves` WHERE `fid` = ?;");
-			stmDelLooses = connection.prepareStatement("DELETE FROM `moves` WHERE `fid` = ? AND `loose` = 1;");
+			stmDelAll = connection.prepareStatement("DELETE FROM `moves` WHERE `fid` = ? AND `player_a` = ?;");
+			stmDelLooses = connection.prepareStatement("DELETE FROM `moves` WHERE `fid` = ? AND `loose` = 1 AND `player_a` = ?;");
 		} catch (SQLException e) {
 			logger.error("Statement preparation {}",e);
 		}
@@ -106,7 +107,7 @@ public class mariaDB implements DB {
 				stmSelect.setBoolean(2, player_a);
 				ResultSet rs = stmSelect.executeQuery();
 				while(rs.next()){
-					Move move = new Move(field,fID,rs.getInt(1),false,false,rs.getBoolean(2),player_a);
+					Move move = new Move(field,fID,rs.getInt(1),rs.getBoolean(3),rs.getBoolean(4),rs.getBoolean(2),player_a);
 					if(move.isUsed()){
 						sel.addWin(move);
 					}else{
@@ -179,9 +180,11 @@ public class mariaDB implements DB {
 			stmInsert.setLong(1, fID);
 			stmInsert.setBoolean(3, player_a);
 			stmInsert.setBoolean(4, false);
+			stmInsert.setBoolean(5, false);
+			stmInsert.setBoolean(6, false);
 			SelectResult sel = new SelectResult();
 			for(int move : moves){
-				logger.debug("Inserting {} {} {}",fID,move,player_a);
+				logger.debug("Inserting {} {} pla:{}",fID,move,player_a);
 				stmInsert.setInt(2, move);
 				stmInsert.executeUpdate();
 				sel.addUnused(new Move(sha, fID, move, player_a));
@@ -206,9 +209,11 @@ public class mariaDB implements DB {
 				logger.warn("Probably invalid move! {}",()->move.toString());
 			}
 			stmUpdate.setBoolean(1, move.isUsed());
-			stmUpdate.setLong(2, move.getFID());
-			stmUpdate.setInt(3, move.getMove());
-			stmUpdate.setBoolean(4, move.isPlayer_a());
+			stmUpdate.setBoolean(2, move.isLoose());
+			stmUpdate.setBoolean(3, move.isDraw());
+			stmUpdate.setLong(4, move.getFID());
+			stmUpdate.setInt(5, move.getMove());
+			stmUpdate.setBoolean(6, move.isPlayer_a());
 			stmUpdate.executeUpdate();
 			//stmUpdate.clearParameters();
 			updates++;
@@ -291,38 +296,34 @@ public class mariaDB implements DB {
 	}
 
 	@Override
-	public boolean deleteMoves(byte[] fieldHash) {
+	public boolean deleteMoves(long fid, boolean player_a) {
 		logger.entry();
 		deletes++;
-//		try {
-//			stmDelAll.setBytes(1, fieldHash);
-//			stmDelAll.executeUpdate();
-//			deletes++;
-//			return true;
-//		} catch (SQLException e) {
-//			logger.error("stmDelAll {}",e);
-//			return false;
-//		}
-		return true;
+		try {
+			stmDelAll.setLong(1, fid);
+			stmDelAll.setBoolean(2, player_a);
+			stmDelAll.executeUpdate();
+			deletes++;
+			return true;
+		} catch (SQLException e) {
+			logger.error("stmDelAll {}",e);
+		}
+		return false;
 	}
 
 	@Override
-	public boolean deleteLooses(byte[] childHash) {
+	public boolean deleteLooses(long fid, boolean player_a) {
 		logger.entry();
 		deletesAll++;
-//		try {
-////			stmDelLooses.setBytes(1, childHash);
-////			stmDelLooses.executeUpdate();
-//			deletesAll++;
-//			return true;
-//		} catch (SQLException e) {
-//			if(e.getCause().getClass() == SQLTransactionRollbackException.class){
-//				logger.debug("Ignoring datarace exception");
-//			}else{
-//				logger.error("stmDelLooses {}",e);
-//			}
-//			return false;
-//		}
+		try {
+			stmDelLooses.setLong(1, fid);
+			stmDelLooses.setBoolean(2, player_a);
+			stmDelLooses.executeUpdate();
+			deletesAll++;
+			return true;
+		} catch (SQLException e) {
+			logger.error("stmDelLooses {}",e);
+		}
 		return true;
 	}
 	public byte[] getHash(){

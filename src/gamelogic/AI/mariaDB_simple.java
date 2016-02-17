@@ -291,39 +291,21 @@ public class mariaDB_simple implements DB {
 	}
 
 	@Override
-	public boolean deleteMoves(byte[] fieldHash) {
+	@Deprecated
+	public boolean deleteMoves(long fieldid, boolean player_a) {
 		logger.entry();
 		deletes++;
-//		try {
-//			stmDelAll.setBytes(1, fieldHash);
-//			stmDelAll.executeUpdate();
-//			deletes++;
-//			return true;
-//		} catch (SQLException e) {
-//			logger.error("stmDelAll {}",e);
-//			return false;
-//		}
-		return true;
+		logger.warn("No deletion implemented for this db handler!");
+		return false;
 	}
 
 	@Override
-	public boolean deleteLooses(byte[] childHash) {
+	@Deprecated
+	public boolean deleteLooses(long fieldid, boolean player_a) {
 		logger.entry();
 		deletesAll++;
-//		try {
-////			stmDelLooses.setBytes(1, childHash);
-////			stmDelLooses.executeUpdate();
-//			deletesAll++;
-//			return true;
-//		} catch (SQLException e) {
-//			if(e.getCause().getClass() == SQLTransactionRollbackException.class){
-//				logger.debug("Ignoring datarace exception");
-//			}else{
-//				logger.error("stmDelLooses {}",e);
-//			}
-//			return false;
-//		}
-		return true;
+		logger.warn("No deletion implemented for this db handler!");
+		return false;
 	}
 	public byte[] getHash(){
 		 return lib.field2sha(GController.getFieldState());
