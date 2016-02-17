@@ -20,7 +20,7 @@ import gamelogic.GController;
  * @author Aron Heinecke
  *
  */
-public class mariaDB_simple implements DB {
+public class mariaDB implements DB {
 	
 	private Logger logger = LogManager.getLogger("DB");
 	private String address;
@@ -47,7 +47,7 @@ public class mariaDB_simple implements DB {
 	PreparedStatement stmDelAll;
 	PreparedStatement stmDelLooses;
 	
-	public mariaDB_simple(String address, int port, String user, String pw, String db){
+	public mariaDB(String address, int port, String user, String pw, String db){
 		this.address = address;
 		this.port = port;
 		this.user = user;
