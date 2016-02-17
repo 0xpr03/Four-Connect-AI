@@ -5,6 +5,22 @@
  */
 package main;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.Display;
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
+
+import buttons.AbstractButton;
+import buttons.Button;
 import entities.Camera;
 import entities.Entity;
 import entities.Light;
@@ -13,29 +29,9 @@ import fontMeshCreator.GUIText;
 import fontRendering.TextMaster;
 import guis.GuiRenderer;
 import guis.GuiTexture;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.Configurator;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.Display;
-
+import models.TexturedModel;
 import renderEngine.DisplayManager;
 import renderEngine.Loader;
-import models.TexturedModel;
-
-import org.lwjgl.util.vector.Vector2f;
-import org.lwjgl.util.vector.Vector3f;
-
-import buttons.AbstractButton;
-import buttons.Button;
 import renderEngine.MasterRenderer;
 import terrain.Terrain;
 import textures.TerrainTexture;
@@ -166,58 +162,13 @@ public class MainGameLoop {
 		};	
 
 		logger.trace("entering renderer");
-		//Terrain terrain, MousePicker picker, AbstractButton button, List<GuiTexture> menuGuis,
-		//Entity lampTest, List<Entity> allentities, List<Light> lights, GuiTexture test
+		
 		while (!Display.isCloseRequested()) {
 			checkInputs();
 			states();
 		}
-//		while (!Display.isCloseRequested()) {
-//			checkMenu();
-//			if(menu != true) {
-//			camera.move(terrain);
-//			picker.update();
-//			path.hide(menuGuis);
-//			Vector3f terrainPoint = picker.getCurrentTerrainPoint(); //Gibt den Punkt aus, auf dem mouse Ray auf terrain trifft.
-//			if(terrainPoint != null) {
-//				lampTest.setPosition(terrainPoint);
-//			}
-//			renderer.processTerrain(terrain);
-//			for (Entity entity : allentities) {
-//				renderer.processEntity(entity);
-//			}
-//
-//			renderer.render(lights, camera);
-//			TextMaster.render();
-//			DisplayManager.updateDisplay();
-//			} else {				
-//				float x = (2.0f * Mouse.getX()) / Display.getWidth() - 1f;
-//				float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1f;				
-//				test.setPosition(new Vector2f(x, y));
-//				path.show(menuGuis);				
-//				path.update();
-//				renderer.render(lights, camera);	
-//				guiRenderer.render(menuGuis);
-//				TextMaster.render();
-//				DisplayManager.updateDisplay();
-//			}
-//		}
 		exit();
 	}
-	
-		
-//	private static void checkMenu() {
-//		if(!Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
-//			menuToggle = true;
-//		}
-//		if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE) && menu == false && menuToggle == true) {
-//			menu = true;
-//			menuToggle = false;
-//		}else if (Keyboard.isKeyDown(Keyboard.KEY_ESCAPE) && menu == true && menuToggle == true){
-//			menu = false;
-//			menuToggle = false;
-//		}
-//	}	
 	
 	private static void states() {
 		switch(state) {
@@ -277,6 +228,10 @@ public class MainGameLoop {
 				if(Keyboard.isKeyDown(Keyboard.KEY_RETURN)) {
 					state = State.GAME;
 				}
+				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE))  {
+					exit();
+				}
+				
 			}
 		break;
 		}
