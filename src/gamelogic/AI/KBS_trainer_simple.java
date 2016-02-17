@@ -18,7 +18,7 @@ import gamelogic.GController;
  * 
  * @param <E> needs a DB handler
  */
-public class KBS_trainer<E extends DB> implements AI {
+public class KBS_trainer_simple<E extends DB> implements AI {
 	
 	private Logger logger = LogManager.getLogger("AI");
 	private E db;
@@ -33,7 +33,7 @@ public class KBS_trainer<E extends DB> implements AI {
 	private boolean follow_unused = false;
 	private List<Move> follow = new ArrayList<Move>();
 	
-	public KBS_trainer(E db){
+	public KBS_trainer_simple(E db){
 		this.db = db;
 		logger.info("Knowledge based system initializing..");
 	}

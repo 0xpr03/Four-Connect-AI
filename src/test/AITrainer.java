@@ -7,7 +7,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configurator;
-import org.newdawn.slick.state.GameState;
 
 import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
@@ -36,8 +35,8 @@ public class AITrainer {
 		}
 		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
 		
-		Level level_db = Level.INFO;
-		Level level_ai = Level.INFO;
+		Level level_db = Level.WARN;
+		Level level_ai = Level.WARN;
 		int games = 1;
 		
 		if(args.length > 1){
@@ -50,7 +49,7 @@ public class AITrainer {
 			// protection from running invalid field evaluations on the server
 			logger.error("Stopping, field size modified!");
 		}
-		E_GAME_STATE player = E_GAME_STATE.PLAYER_B;
+		E_GAME_STATE player = E_GAME_STATE.PLAYER_A;
 		if(args.length > 2){
 			switch(args[2]){
 			case "a":
@@ -73,12 +72,7 @@ public class AITrainer {
 		logger.entry();
 		
 		registerExitFunction();
-		Level logcontroller = Level.INFO;
-		if(games > 50){
-			level_db = Level.INFO;
-			level_ai = Level.WARN;
-			logcontroller = Level.WARN;
-		}
+		Level logcontroller = Level.WARN;
 		Configurator.setLevel("DB", level_db);
 		Configurator.setLevel("AI", level_ai);
 		Configurator.setLevel("Controller", Level.WARN);

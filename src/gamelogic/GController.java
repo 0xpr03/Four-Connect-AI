@@ -8,8 +8,8 @@ import gamelogic.ControllerBase.E_FIELD_STATE;
 import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.ControllerBase.E_PLAYER;
-import gamelogic.AI.KBS_trainer;
-import gamelogic.AI.mariaDB;
+import gamelogic.AI.KBS_trainer_simple;
+import gamelogic.AI.mariaDB_simple;
 
 /**
  * The MAIN controller of the game four connect
@@ -19,10 +19,10 @@ import gamelogic.AI.mariaDB;
  */
 public class GController {
 	
-	private static Controller<KBS_trainer<mariaDB>> controller = null;
+	private static Controller<KBS_trainer_simple<mariaDB_simple>> controller = null;
 	
 	public static void init(String address, int port, String user, String pw, String db){
-		controller = new Controller<KBS_trainer<mariaDB>>(new KBS_trainer<mariaDB>(new mariaDB(address,3306,user,pw,db)), new KBS_trainer<mariaDB>(new mariaDB(address,3306,user,pw,db)));
+		controller = new Controller<KBS_trainer_simple<mariaDB_simple>>(new KBS_trainer_simple<mariaDB_simple>(new mariaDB_simple(address,3306,user,pw,db)), new KBS_trainer_simple<mariaDB_simple>(new mariaDB_simple(address,3306,user,pw,db)));
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })

@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
+import java.sql.Statement;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -19,7 +20,7 @@ import gamelogic.GController;
  * @author Aron Heinecke
  *
  */
-public class mariaDB implements DB {
+public class mariaDB_simple implements DB {
 	
 	private Logger logger = LogManager.getLogger("DB");
 	private String address;
@@ -36,15 +37,21 @@ public class mariaDB implements DB {
 	int port;
 	private Connection connection;
 	
+	PreparedStatement stmSelFID;
+	PreparedStatement stmInsFID;
+	
 	PreparedStatement stmInsert;
 	PreparedStatement stmSelect;
 	PreparedStatement stmUpdate;
+	
+	
+	
 	PreparedStatement stmDelAll;
 	PreparedStatement stmDelLooses;
 	
 	PreparedStatement stmInsertRelation;
 	
-	public mariaDB(String address, int port, String user, String pw, String db){
+	public mariaDB_simple(String address, int port, String user, String pw, String db){
 		this.address = address;
 		this.port = port;
 		this.user = user;
@@ -74,13 +81,19 @@ public class mariaDB implements DB {
 		}
 		
 		try {
-			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`field`,`move`,`player_a`,`used`) VALUES (?,?,?,?);");
-			stmSelect = connection.prepareStatement("SELECT `move`,`used` FROM `moves` USE INDEX(field,player_a) WHERE `field` = ? AND `player_a` = ?;");
-			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ? WHERE `field` = ? AND `move` = ? AND `player_a` = ? ;");
+			stmInsFID = connection.prepareStatement("INSERT INTO `fields` (`field`) VALUES (?);", Statement.RETURN_GENERATED_KEYS);
+			stmSelFID = connection.prepareStatement("SELECT `fid` FROM `fields` WHERE `field` = ?;");
 			
+//			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`field`,`move`,`player_a`,`used`) VALUES (?,?,?,?);");
+//			stmSelect = connection.prepareStatement("SELECT `move`,`used` FROM `moves` USE INDEX(field,player_a) WHERE `field` = ? AND `player_a` = ?;");
+//			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ? WHERE `field` = ? AND `move` = ? AND `player_a` = ? ;");
 			
-			stmDelAll = connection.prepareStatement("DELETE FROM `moves` WHERE `field` = ?;");
-			stmDelLooses = connection.prepareStatement("DELETE FROM `moves` WHERE `field` = ? AND `loose` = 1;");
+			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`fid`,`move`,`player_a`,`used`) VALUES (?,?,?,?);");
+			stmSelect = connection.prepareStatement("SELECT `move`,`used` FROM `moves` USE INDEX(`fid`,`player_a`) WHERE `fid` = ? AND `player_a` = ?;");
+			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ? WHERE `fid` = ? AND `move` = ? AND `player_a` = ? ;");
+			
+			stmDelAll = connection.prepareStatement("DELETE FROM `moves` WHERE `fid` = ?;");
+			stmDelLooses = connection.prepareStatement("DELETE FROM `moves` WHERE `fid` = ? AND `loose` = 1;");
 			stmInsertRelation = connection.prepareStatement("INSERT INTO `relations` (`parent`,`move`,`child`) VALUES (?,?,?);");
 		} catch (SQLException e) {
 			logger.error("Statement preparation {}",e);
@@ -89,43 +102,102 @@ public class mariaDB implements DB {
 	
 	@Override
 	public SelectResult getMoves(E_FIELD_STATE[][] field_in,boolean player_a) {
-		logger.entry();
+		logger.entry(player_a);
 		try {
-			byte[] field = lib.field2sha(field_in);
-			stmSelect.setBytes(1, field);
-			stmSelect.setBoolean(2, player_a);
-			ResultSet rs = stmSelect.executeQuery();
 			SelectResult sel = new SelectResult();
-			while(rs.next()){
-				Move move = new Move(field,rs.getInt(1),false,false,rs.getBoolean(2),player_a);
-				if(move.isUsed()){
-					sel.addWin(move);
-				}else{
-					sel.addUnused(move);
+			byte[] field = lib.field2sha(field_in);
+			long fID = getFieldID(field);
+			if(fID == -2) // error check
+				return null;
+			
+			if(fID != -1){
+				logger.debug("Found id");
+				stmSelect.setLong(1, fID);
+				stmSelect.setBoolean(2, player_a);
+				ResultSet rs = stmSelect.executeQuery();
+				while(rs.next()){
+					Move move = new Move(field,fID,rs.getInt(1),false,false,rs.getBoolean(2),player_a);
+					if(move.isUsed()){
+						sel.addWin(move);
+					}else{
+						sel.addUnused(move);
+					}
 				}
+				rs.close();
 			}
-			rs.close();
 			return sel;
 		} catch (SQLException e) {
 			logger.error("getMoves {}",e);
 			return null;
 		}
 	}
+	
+	/**
+	 * Retrive the field ID
+	 * @param fieldHash
+	 * @return -1 if no element was found
+	 * 	-2 on error
+	 */
+	private long getFieldID(byte[] fieldHash){
+		logger.entry();
+		try {
+			stmSelFID.setBytes(1, fieldHash);
+			ResultSet rs = stmSelFID.executeQuery();
+			if(rs.next()){
+				return rs.getLong(1);
+			}else{
+				return -1;
+			}
+		} catch (SQLException e) {
+			logger.error("stmSelFID {}",e);
+			return -2;
+		}
+	}
+	
+	/**
+	 * Insert a new field ID
+	 * @param fieldHash
+	 * @return new fID
+	 */
+	private long insertFieldID(byte[] fieldHash){
+		logger.entry();
+		try {
+			stmInsFID.setBytes(1, fieldHash);
+			stmInsFID.executeUpdate();
+			ResultSet rs = stmInsFID.getGeneratedKeys();
+			if(rs.next()){
+				long fid = rs.getLong(1);
+				rs.close();
+				return fid;
+			}
+		} catch (SQLException e) {
+			logger.error("stmInsFID {}",e);
+		}
+		return -1;
+	}
 
 	@Override
 	public SelectResult insertMoves(E_FIELD_STATE[][] field, List<Integer> moves,boolean player_a) {
-		logger.entry();
+		logger.entry(player_a);
 		try {
 			byte[] sha = lib.field2sha(field);
-			
-			stmInsert.setBytes(1, sha);
+			long fID = getFieldID(sha);
+			if(fID == -2){ // no fid or error
+				return null;
+			}
+			if(fID == -1){
+				fID = insertFieldID(sha);
+			}
+			logger.info("FID: {}",fID);
+			stmInsert.setLong(1, fID);
 			stmInsert.setBoolean(3, player_a);
 			stmInsert.setBoolean(4, false);
 			SelectResult sel = new SelectResult();
 			for(int move : moves){
+				logger.debug("Inserting {} {} {}",fID,move,player_a);
 				stmInsert.setInt(2, move);
 				stmInsert.executeUpdate();
-				sel.addUnused(new Move(sha, move, player_a));
+				sel.addUnused(new Move(sha, fID, move, player_a));
 			}
 			inserts++;
 			return sel;
@@ -146,8 +218,10 @@ public class mariaDB implements DB {
 			if( (move.isDraw() || move.isLoose() ) && !move.isUsed()){ // test that no invalid move is inserted
 				logger.warn("Probably invalid move! {}",()->move.toString());
 			}
+			logger.debug("Updating for {}",()->move.toString());
 			stmUpdate.setBoolean(1, move.isUsed());
-			stmUpdate.setBytes(2, move.getField());
+			stmUpdate.setLong(2, move.getFID());
+//			stmUpdate.setBytes(2, move.getField());
 			stmUpdate.setInt(3, move.getMove());
 			stmUpdate.setBoolean(4, move.isPlayer_a());
 			stmUpdate.executeUpdate();
@@ -168,49 +242,65 @@ public class mariaDB implements DB {
 	public void shutdown() {
 		logger.entry();
 		{
-		try {
-			stmInsert.cancel();
-			stmInsert.close();
-		} catch (SQLException e) {
-			logger.error("stmInsert shutdown {}",e);
-		}
-		}
-		{
-		try {
-			stmSelect.cancel();
-			stmSelect.close();
-		} catch (SQLException e) {
-			logger.error("stmSelect shutdown {}",e);
-		}
+			try {
+				stmInsFID.cancel();
+				stmInsFID.close();
+			} catch (SQLException e) {
+				logger.error("stmInsFID shutdown {}", e);
+			}
 		}
 		{
-		try {
-			stmUpdate.cancel();
-			stmUpdate.close();
-		} catch (SQLException e) {
-			logger.error("stmUpdate shutdown {}",e);
-		}
-		}
-		{
-		try {
-			stmDelAll.cancel();
-			stmDelAll.close();
-		} catch (SQLException e) {
-			logger.error("stmDelAll shutdown {}",e);
-		}
+			try {
+				stmSelFID.cancel();
+				stmSelFID.close();
+			} catch (SQLException e) {
+				logger.error("stmSelFID shutdown {}", e);
+			}
 		}
 		{
-		try {
-			stmDelLooses.cancel();
-			stmDelLooses.close();
-		} catch (SQLException e) {
-			logger.error("stmDelLooses shutdown {}",e);
+			try {
+				stmInsert.cancel();
+				stmInsert.close();
+			} catch (SQLException e) {
+				logger.error("stmInsert shutdown {}", e);
+			}
 		}
+		{
+			try {
+				stmSelect.cancel();
+				stmSelect.close();
+			} catch (SQLException e) {
+				logger.error("stmSelect shutdown {}", e);
+			}
+		}
+		{
+			try {
+				stmUpdate.cancel();
+				stmUpdate.close();
+			} catch (SQLException e) {
+				logger.error("stmUpdate shutdown {}", e);
+			}
+		}
+		{
+			try {
+				stmDelAll.cancel();
+				stmDelAll.close();
+			} catch (SQLException e) {
+				logger.error("stmDelAll shutdown {}", e);
+			}
+		}
+		{
+			try {
+				stmDelLooses.cancel();
+				stmDelLooses.close();
+			} catch (SQLException e) {
+				logger.error("stmDelLooses shutdown {}", e);
+			}
 		}
 		try {
 			connection.close();
 		} catch (SQLException e) {
-			logger.error("mariaDB shutdown {}",e);
+			logger.error("mariaDB shutdown {}", e);
 		}
 		logger.info("Stats: Deletes:{} DelAlls:{} Inserts:{} Updates:{}",deletes,deletesAll,inserts, updates);
 	}
