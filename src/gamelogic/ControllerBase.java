@@ -45,8 +45,8 @@ public class ControllerBase<E extends AI> {
 	protected final Object lock = new Object(); // lock for synchronization
 	protected E AI_a = null; // primary AI
 	protected E AI_b = null; // secondary for KI internal
-	protected int X_MAX = 4;
-	protected int Y_MAX = 4;
+	protected int X_MAX = 7;
+	protected int Y_MAX = 6;
 	
 	public ControllerBase(){
 		checkBasics();

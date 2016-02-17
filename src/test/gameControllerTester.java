@@ -27,6 +27,7 @@ import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.GController;
 import gamelogic.AI.Move;
 import gamelogic.AI.lib;
+import gamelogic.AI.mariaDB_simple;
 
 public class gameControllerTester {
 	
@@ -156,6 +157,18 @@ public class gameControllerTester {
 		GController.startGame();
 		GController.D_setField(GController.D_parseField(input));
 		assertEquals("no draw check",false,GController.D_analyzeField());
+	}
+	
+	@Test
+	public void test_AI(){ // 4*4
+		if(GController.getY_MAX() == 4 && GController.getX_MAX() == 4){
+			String[] fields_used = {"----\n----\nOXOX\nXXOO",""};
+			mariaDB_simple mdb = new mariaDB_simple("localhost", 3306, "ai", "", "ai");
+			lib lib = new lib();
+			for(String s : fields_used){
+				
+			}
+		}
 	}
 	
 	@Test
