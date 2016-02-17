@@ -44,12 +44,8 @@ public class mariaDB_simple implements DB {
 	PreparedStatement stmSelect;
 	PreparedStatement stmUpdate;
 	
-	
-	
 	PreparedStatement stmDelAll;
 	PreparedStatement stmDelLooses;
-	
-	PreparedStatement stmInsertRelation;
 	
 	public mariaDB_simple(String address, int port, String user, String pw, String db){
 		this.address = address;
@@ -84,17 +80,12 @@ public class mariaDB_simple implements DB {
 			stmInsFID = connection.prepareStatement("INSERT INTO `fields` (`field`) VALUES (?);", Statement.RETURN_GENERATED_KEYS);
 			stmSelFID = connection.prepareStatement("SELECT `fid` FROM `fields` WHERE `field` = ?;");
 			
-//			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`field`,`move`,`player_a`,`used`) VALUES (?,?,?,?);");
-//			stmSelect = connection.prepareStatement("SELECT `move`,`used` FROM `moves` USE INDEX(field,player_a) WHERE `field` = ? AND `player_a` = ?;");
-//			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ? WHERE `field` = ? AND `move` = ? AND `player_a` = ? ;");
-			
 			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`fid`,`move`,`player_a`,`used`) VALUES (?,?,?,?);");
 			stmSelect = connection.prepareStatement("SELECT `move`,`used` FROM `moves` USE INDEX(`fid`,`player_a`) WHERE `fid` = ? AND `player_a` = ?;");
 			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ? WHERE `fid` = ? AND `move` = ? AND `player_a` = ? ;");
 			
 			stmDelAll = connection.prepareStatement("DELETE FROM `moves` WHERE `fid` = ?;");
 			stmDelLooses = connection.prepareStatement("DELETE FROM `moves` WHERE `fid` = ? AND `loose` = 1;");
-			stmInsertRelation = connection.prepareStatement("INSERT INTO `relations` (`parent`,`move`,`child`) VALUES (?,?,?);");
 		} catch (SQLException e) {
 			logger.error("Statement preparation {}",e);
 		}
@@ -111,7 +102,6 @@ public class mariaDB_simple implements DB {
 				return null;
 			
 			if(fID != -1){
-				logger.debug("Found id");
 				stmSelect.setLong(1, fID);
 				stmSelect.setBoolean(2, player_a);
 				ResultSet rs = stmSelect.executeQuery();
@@ -188,7 +178,6 @@ public class mariaDB_simple implements DB {
 			if(fID == -1){
 				fID = insertFieldID(sha);
 			}
-			logger.info("FID: {}",fID);
 			stmInsert.setLong(1, fID);
 			stmInsert.setBoolean(3, player_a);
 			stmInsert.setBoolean(4, false);
@@ -218,10 +207,8 @@ public class mariaDB_simple implements DB {
 			if( (move.isDraw() || move.isLoose() ) && !move.isUsed()){ // test that no invalid move is inserted
 				logger.warn("Probably invalid move! {}",()->move.toString());
 			}
-			logger.debug("Updating for {}",()->move.toString());
 			stmUpdate.setBoolean(1, move.isUsed());
 			stmUpdate.setLong(2, move.getFID());
-//			stmUpdate.setBytes(2, move.getField());
 			stmUpdate.setInt(3, move.getMove());
 			stmUpdate.setBoolean(4, move.isPlayer_a());
 			stmUpdate.executeUpdate();
@@ -303,23 +290,6 @@ public class mariaDB_simple implements DB {
 			logger.error("mariaDB shutdown {}", e);
 		}
 		logger.info("Stats: Deletes:{} DelAlls:{} Inserts:{} Updates:{}",deletes,deletesAll,inserts, updates);
-	}
-	
-	public boolean insertRelation(Move parent, E_FIELD_STATE[][] child){
-		return insertRelation(parent,lib.field2sha(child));
-	}
-	
-	public boolean insertRelation(Move parent, byte[] child){
-		try {
-			stmInsertRelation.setBytes(1, parent.getField());
-			stmInsertRelation.setInt(2, parent.getMove());
-			stmInsertRelation.setBytes(3, child);
-			stmInsertRelation.executeUpdate();
-			return true;
-		} catch (SQLException e) {
-			//logger.error("stmInsertRelation {}",e);
-			return false;
-		}
 	}
 
 	@Override

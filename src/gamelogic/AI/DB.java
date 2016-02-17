@@ -29,7 +29,6 @@ public interface DB {
 	 * @return false on error
 	 */
 	public abstract boolean setMove(Move move);
-//	public abstract void getLink(byte[] parent);
 	/**
 	 * Delete all loose moves of child
 	 * @param parentHash
@@ -48,8 +47,5 @@ public interface DB {
 	 */
 	public abstract void shutdown();
 	
-	
-	public abstract boolean insertRelation(Move parent, E_FIELD_STATE[][] child);
-	public abstract boolean insertRelation(Move parent, byte[] child);
 	public abstract byte[] getHash();
 }
