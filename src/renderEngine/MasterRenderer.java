@@ -88,6 +88,12 @@ public class MasterRenderer {
         entities.clear();
     }
     
+    public void render() {
+    	prepare();
+    	renderer.render(entities);
+    	entities.clear();
+    }
+    
     public void processTerrain(Terrain terrain) {
         terrains.add(terrain);
     }

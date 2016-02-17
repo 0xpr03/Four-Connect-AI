@@ -8,17 +8,14 @@ import org.lwjgl.util.vector.Vector2f;
 
 import guis.GuiTexture;
 import renderEngine.Loader;
-import toolbox.MousePicker;
 
 public abstract class AbstractButton implements Button{
-		
-	private MousePicker picker;
-	
+			
 	private GuiTexture guiTexture;
 	
 	private Vector2f OriginalScale;
 	
-	private boolean isHidden= false, isHovering = false;
+	private boolean isHidden= true, isHovering = false;
 	
 	public AbstractButton(Loader loader, String texture, Vector2f position, Vector2f scale) {
 		guiTexture = new GuiTexture(loader.loadTexture(texture), position, scale);

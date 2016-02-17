@@ -19,12 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
+
 import renderEngine.DisplayManager;
 import renderEngine.Loader;
 import models.TexturedModel;
@@ -46,19 +48,35 @@ import toolbox.MousePicker;
  */
 public class MainGameLoop {
 
+	private static enum State {
+		INTRO, MAIN_MENU, GAME, INGAME_MENU;
+	}	
+	private static State state = State.INTRO;
 	private static final Logger logger = LogManager.getLogger(MainGameLoop.class);
-	private static String VERSION = "0.1";
+	private static String VERSION = "0.1";	
+	
+	// GLOBAL VARS, GAME LOOP
 	private static GuiRenderer guiRenderer;
 	private static MasterRenderer renderer;
 	private static Loader loader;
-	private static boolean menu = false;
-	private static boolean menuToggle = true;
+	private static Camera camera;
+	private static Terrain terrain;
+	private static MousePicker picker;
+	private static AbstractButton button;
+	private static List<GuiTexture> menuGuis;
+	private static Entity lampTest;
+	private static List<Entity> allentities;
+	private static List<Light> lights;
+	private static GuiTexture mouseCircle;
+	private static GuiTexture intro;
 
 	/**
 	 * @param args
 	 *            the command line arguments
 	 */
 	public static void main(String[] args) {
+//		Configurator.setLevel(LogManager.getLogger(MainGameLoop.class).getName(), Level.TRACE);
+		
 		checkLoggingConf();
 		logger.info("User {}", VERSION);
 
@@ -88,37 +106,36 @@ public class MainGameLoop {
 		TexturedModel lamp = loader.loadtoVAO("lamp", "lamp");
 
 		logger.trace("creating entities");
-		// Create Entities
-		Terrain terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "black");
+		terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "black");
 
-		List<Entity> allentities = new ArrayList<>();
+		allentities = new ArrayList<>();
 
-		List<GuiTexture> menuGuis = new ArrayList<GuiTexture>();
+		menuGuis = new ArrayList<GuiTexture>();
 		GuiTexture gui = new GuiTexture(loader.loadTexture("testMenu"), new Vector2f(0.0f, 0.0f),
 				new Vector2f(1f, 1f));
 		menuGuis.add(gui);
-		GuiTexture test = new GuiTexture(loader.loadTexture("mouse"), new Vector2f(0.5f, 0.5f), new Vector2f(0.25f, 0.35f));
-		menuGuis.add(test);
+		mouseCircle = new GuiTexture(loader.loadTexture("mouse"), new Vector2f(0.5f, 0.5f), new Vector2f(0.25f, 0.35f));
+		menuGuis.add(mouseCircle);
 
 		guiRenderer = new GuiRenderer(loader);
 		
-		Camera camera = new Camera(new Vector3f(0, 10, 0));
+		camera = new Camera(new Vector3f(0, 10, 0));
 
-		MousePicker picker = new MousePicker(camera, renderer.getProjectionMatrix(), terrain);
+		picker = new MousePicker(camera, renderer.getProjectionMatrix(), terrain);
 
+		intro = new GuiTexture(loader.loadTexture("intro"), new Vector2f(0.0f, 0.0f), new Vector2f(1f, 1f));
 		createRandomEntities(allentities,terrain, tree, 100, 300-150, -300,0f,0f,0f,0.5f);
-//		createRandomEntities(allentities,terrain, fern, 100, 300-150, -300,0f,360,0f,0.9f);
-		Entity lampTest = new Entity(lamp, new Vector3f(0, 0, 0), 0, 0, 0, 1);
+		lampTest = new Entity(lamp, new Vector3f(0, 0, 0), 0, 0, 0, 1);
 		allentities.add(lampTest);
 
 		Light sun = new Light(new Vector3f(0, 10000, -7000), new Vector3f(0.4f, 0.4f, 0.4f));
-		List<Light> lights = new ArrayList<>();
+		lights = new ArrayList<>();
 		lights.add(sun);
 //		lights.add(new Light(new Vector3f(10, terrain.getHeightOfTerrain(10, 10) + 20, 10), new Vector3f(5, 0, 0), new Vector3f(1, 0.01f, 0.002f)));
 	
 //		allentities.add(new Entity(lamp, new Vector3f(10, terrain.getHeightOfTerrain(10, 10), 10), 0, 0, 0, 1));
 		
-		AbstractButton path = new AbstractButton(loader, "null", new Vector2f(0,0), new Vector2f(0.2f, 0.2f)) {
+		button = new AbstractButton(loader, "null", new Vector2f(0,0), new Vector2f(0.2f, 0.2f)) {
 
 			@Override
 			public void onClick(Button button) {
@@ -145,15 +162,71 @@ public class MainGameLoop {
 			}
 			
 		};	
-		
+
 		logger.trace("entering renderer");
-		
+		//Terrain terrain, MousePicker picker, AbstractButton button, List<GuiTexture> menuGuis,
+		//Entity lampTest, List<Entity> allentities, List<Light> lights, GuiTexture test
 		while (!Display.isCloseRequested()) {
-			checkMenu();
-			if(menu != true) {
+			checkInputs();
+			states();
+		}
+//		while (!Display.isCloseRequested()) {
+//			checkMenu();
+//			if(menu != true) {
+//			camera.move(terrain);
+//			picker.update();
+//			path.hide(menuGuis);
+//			Vector3f terrainPoint = picker.getCurrentTerrainPoint(); //Gibt den Punkt aus, auf dem mouse Ray auf terrain trifft.
+//			if(terrainPoint != null) {
+//				lampTest.setPosition(terrainPoint);
+//			}
+//			renderer.processTerrain(terrain);
+//			for (Entity entity : allentities) {
+//				renderer.processEntity(entity);
+//			}
+//
+//			renderer.render(lights, camera);
+//			TextMaster.render();
+//			DisplayManager.updateDisplay();
+//			} else {				
+//				float x = (2.0f * Mouse.getX()) / Display.getWidth() - 1f;
+//				float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1f;				
+//				test.setPosition(new Vector2f(x, y));
+//				path.show(menuGuis);				
+//				path.update();
+//				renderer.render(lights, camera);	
+//				guiRenderer.render(menuGuis);
+//				TextMaster.render();
+//				DisplayManager.updateDisplay();
+//			}
+//		}
+		exit();
+	}
+	
+		
+//	private static void checkMenu() {
+//		if(!Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
+//			menuToggle = true;
+//		}
+//		if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE) && menu == false && menuToggle == true) {
+//			menu = true;
+//			menuToggle = false;
+//		}else if (Keyboard.isKeyDown(Keyboard.KEY_ESCAPE) && menu == true && menuToggle == true){
+//			menu = false;
+//			menuToggle = false;
+//		}
+//	}	
+	
+	private static void states() {
+		switch(state) {
+		case INTRO:
+			guiRenderer.render(intro);
+			DisplayManager.updateDisplay();
+			break;
+		case GAME:
 			camera.move(terrain);
 			picker.update();
-			path.hide(menuGuis);
+			button.hide(menuGuis);
 			Vector3f terrainPoint = picker.getCurrentTerrainPoint(); //Gibt den Punkt aus, auf dem mouse Ray auf terrain trifft.
 			if(terrainPoint != null) {
 				lampTest.setPosition(terrainPoint);
@@ -166,21 +239,40 @@ public class MainGameLoop {
 			renderer.render(lights, camera);
 			TextMaster.render();
 			DisplayManager.updateDisplay();
-			} else {				
-				float x = (2.0f * Mouse.getX()) / Display.getWidth() - 1f;
-				float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1f;				
-				test.setPosition(new Vector2f(x, y));
-				path.show(menuGuis);				
-				path.update();
-				renderer.render(lights, camera);	
-				guiRenderer.render(menuGuis);
-				TextMaster.render();
-				DisplayManager.updateDisplay();
-			}
+			break;
+		case INGAME_MENU:
+			float x = (2.0f * Mouse.getX()) / Display.getWidth() - 1f;
+			float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1f;				
+			mouseCircle.setPosition(new Vector2f(x, y));
+			button.show(menuGuis);				
+			button.update();
+			renderer.render();	
+			guiRenderer.render(menuGuis);
+			TextMaster.render();
+			DisplayManager.updateDisplay();
+			break;
 		}
-		exit();
 	}
 	
+	private static void checkInputs() {
+		switch(state) {
+		case GAME: 	
+			while(Keyboard.next()) {
+				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
+		 			state = State.INGAME_MENU;
+		 		}
+			}
+		break;
+		case INGAME_MENU:
+			while(Keyboard.next()) {
+				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
+					state = State.GAME;
+				}
+			}
+		break;
+		}
+	}
+
 	private static void createRandomEntities(List<Entity> allentities, Terrain terrain, TexturedModel model, int amount, int r_x, int r_z, float rotX, float rotY, float rotZ, float scale){
 		logger.entry();
 		Random random = new Random();
@@ -191,8 +283,8 @@ public class MainGameLoop {
 			allentities.add(new Entity(model, random.nextInt(4), new Vector3f(x, y, z), rotX, random.nextFloat() * rotY, rotZ,
 					scale));
 		}
-	}
-
+	}	
+	
 	/**
 	 * Cleanup openGL context for exiting
 	 */
@@ -207,19 +299,6 @@ public class MainGameLoop {
 			loader.cleanUp();
 		DisplayManager.closeDisplay();
 		logger.exit();
-	}
-	
-	private static void checkMenu() {
-		if(!Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
-			menuToggle = true;
-		}
-		if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE) && menu == false && menuToggle == true) {
-			menu = true;
-			menuToggle = false;
-		}else if (Keyboard.isKeyDown(Keyboard.KEY_ESCAPE) && menu == true && menuToggle == true){
-			menu = false;
-			menuToggle = false;
-		}
 	}
 
 	/**
