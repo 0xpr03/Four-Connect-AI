@@ -23,7 +23,6 @@ public class KBS_trainer_simple<E extends DB> implements AI {
 	private Logger logger = LogManager.getLogger("AI");
 	private E db;
 	private E_PLAYER player;
-	private SelectResult moves;
 	private byte[] lastField = null;
 	private Move P_MOVE_CURRENT; // pointer to last moveHistory element
 	private List<Move> unused;
@@ -230,17 +229,7 @@ public class KBS_trainer_simple<E extends DB> implements AI {
 		moveHistory = new ArrayList<Move>( (GController.getX_MAX() * GController.getY_MAX()) /2 );
 		this.player = player;
 	}
-	
-	private boolean checkWinnerMatch(E_GAME_STATE state){
-		if(this.player == E_PLAYER.PLAYER_A && state == E_GAME_STATE.WIN_A){
-			return true;
-		}else if(this.player == E_PLAYER.PLAYER_B && state == E_GAME_STATE.WIN_B){
-			return true;
-		}else{
-			return false;
-		}
-	}
-	
+
 	@Override
 	public void preProcessing() {
 		// TODO Auto-generated method stub
