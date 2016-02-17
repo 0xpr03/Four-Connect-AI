@@ -123,7 +123,9 @@ public class MainGameLoop {
 
 		picker = new MousePicker(camera, renderer.getProjectionMatrix(), terrain);
 
-		intro = new GuiTexture(loader.loadTexture("intro"), new Vector2f(0.0f, 0.0f), new Vector2f(1f, 1f));
+		intro = new GuiTexture(loader.loadTexture("testIntro"), //needs to be squared and the pixel count must be 2^n
+				new Vector2f(0f/*(2.0f * -1f) / Display.getWidth() - 1f*/, 0f/*(2.0f * -1f) / Display.getHeight() - 1f*/),
+				new Vector2f(Display.getWidth()/Display.getHeight(), 1f));
 		createRandomEntities(allentities,terrain, tree, 100, 300-150, -300,0f,0f,0f,0.5f);
 		lampTest = new Entity(lamp, new Vector3f(0, 0, 0), 0, 0, 0, 1);
 		allentities.add(lampTest);
@@ -266,6 +268,13 @@ public class MainGameLoop {
 		case INGAME_MENU:
 			while(Keyboard.next()) {
 				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
+					state = State.GAME;
+				}
+			}
+		break;		
+		case INTRO:
+			while(Keyboard.next()) {
+				if(Keyboard.isKeyDown(Keyboard.KEY_RETURN)) {
 					state = State.GAME;
 				}
 			}
