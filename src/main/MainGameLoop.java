@@ -81,7 +81,7 @@ public class MainGameLoop {
 		TextMaster.init(loader);
 		
 		FontType font = new FontType(loader.loadTexture("tahoma"), new File("res/tahoma.fnt"));
-		GUIText text = new GUIText("This is a text test!", 1, font, new Vector2f(0, 0), 1f, true);
+		GUIText text = new GUIText("Tammo ist ein n00b LOL!", 1, font, new Vector2f(0, 0), 1f, true);
 
 		renderer = new MasterRenderer();
 		
@@ -107,7 +107,7 @@ public class MainGameLoop {
 		allentities = new ArrayList<>();
 
 		menuGuis = new ArrayList<GuiTexture>();
-		GuiTexture gui = new GuiTexture(loader.loadTexture("testMenu"), new Vector2f(0.0f, 0.0f),
+		GuiTexture gui = new GuiTexture(loader.loadTexture("intro2"), new Vector2f(0.0f, 0.0f),
 				new Vector2f(1f, 1f));
 		menuGuis.add(gui);
 		mouseCircle = new GuiTexture(loader.loadTexture("mouse"), new Vector2f(0.5f, 0.5f), new Vector2f(0.25f, 0.35f));
@@ -120,7 +120,7 @@ public class MainGameLoop {
 		picker = new MousePicker(camera, renderer.getProjectionMatrix(), terrain);
 
 		intro = new GuiTexture(loader.loadTexture("testIntro"), //needs to be squared and the pixel count must be 2^n
-				new Vector2f(0f/*(2.0f * -1f) / Display.getWidth() - 1f*/, 0f/*(2.0f * -1f) / Display.getHeight() - 1f*/),
+				new Vector2f(0f, 0f),
 				new Vector2f(Display.getWidth()/Display.getHeight(), 1f));
 		createRandomEntities(allentities,terrain, tree, 100, 300-150, -300,0f,0f,0f,0.5f);
 		lampTest = new Entity(lamp, new Vector3f(0, 0, 0), 0, 0, 0, 1);
@@ -133,7 +133,7 @@ public class MainGameLoop {
 	
 //		allentities.add(new Entity(lamp, new Vector3f(10, terrain.getHeightOfTerrain(10, 10), 10), 0, 0, 0, 1));
 		
-		button = new AbstractButton(loader, "null", new Vector2f(0,0), new Vector2f(0.2f, 0.2f)) {
+		button = new AbstractButton(loader, "intro2", new Vector2f(0,0), new Vector2f(0.2f, 0.2f)) {
 
 			@Override
 			public void onClick(Button button) {
@@ -194,12 +194,23 @@ public class MainGameLoop {
 			DisplayManager.updateDisplay();
 			break;
 		case INGAME_MENU:
+			/**
+			 * Resume button
+			 * Restart button
+			 * Options button
+			 * Concede button
+			 * Exit to Main menu button
+			 */
 			float x = (2.0f * Mouse.getX()) / Display.getWidth() - 1f;
 			float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1f;				
 			mouseCircle.setPosition(new Vector2f(x, y));
 			button.show(menuGuis);				
 			button.update();
-			renderer.render();	
+			renderer.processTerrain(terrain);
+			for (Entity entity : allentities) {
+				renderer.processEntity(entity);
+			}
+			renderer.render(lights, camera);	
 			guiRenderer.render(menuGuis);
 			TextMaster.render();
 			DisplayManager.updateDisplay();

@@ -34,7 +34,7 @@ public class DisplayManager {
     private static List<DisplayMode> dms;
 	private static Logger logger = LogManager.getLogger();
 	public static boolean fullscreen = false;
-	public static int dmi = 4;
+	public static int dmi = 0;
     
     private static long lastFrameTime;
     private static float delta;
