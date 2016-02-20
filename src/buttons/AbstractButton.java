@@ -29,8 +29,8 @@ public abstract class AbstractButton implements Button{
 			Vector2f location = guiTexture.getPosition();
 			Vector2f scale = guiTexture.getScale();
 			Vector2f mouseCoordinates = new Vector2f((2.0f * Mouse.getX()) / Display.getWidth() - 1f, (2.0f * Mouse.getY()) / Display.getHeight() - 1f);
-			if(location.y + scale.y > -mouseCoordinates.y 
-					&& location.y - scale.y < -mouseCoordinates.y 
+			if(location.y + scale.y > mouseCoordinates.y 
+					&& location.y - scale.y < mouseCoordinates.y 
 					&& location.x + scale.x > mouseCoordinates.x 
 					&& location.x - scale.x < mouseCoordinates.x) {
 				whileHovering(this);

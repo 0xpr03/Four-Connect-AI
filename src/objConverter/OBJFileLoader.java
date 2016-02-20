@@ -13,12 +13,13 @@ import org.apache.logging.log4j.Logger;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
+import main.MainGameLoop;
 import models.boxVerticies;
 
 public class OBJFileLoader {
 	
 	private static final String RES_LOC = "res/";
-	private static final Logger logger = LogManager.getLogger();
+	private static final Logger logger = LogManager.getLogger(MainGameLoop.class);
 
 	public static ModelData loadOBJ(String objFileName) {
 	/**

@@ -12,7 +12,7 @@ import renderEngine.Loader;
 
 public class TextMaster {
 	/***
-	 * fontRendering and fontMeshCreator packages ist just some basic java to get the fonts ready to render, 
+	 * fontRendering and fontMeshCreator packages its just some basic java to get the fonts ready to render, 
 	 * uninteresting for other use than printing letters on the screen
 	 */
 	private static Loader loader;

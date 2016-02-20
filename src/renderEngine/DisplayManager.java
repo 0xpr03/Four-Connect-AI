@@ -18,6 +18,8 @@ import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.PixelFormat;
 
+import main.MainGameLoop;
+
 /**
  *
  * @author Trist
@@ -32,7 +34,7 @@ public class DisplayManager {
      */
     private static DisplayMode[] adm;
     private static List<DisplayMode> dms;
-	private static Logger logger = LogManager.getLogger();
+	private static Logger logger = LogManager.getLogger(MainGameLoop.class);
 	public static boolean fullscreen = false;
 	public static int dmi = 0;
     
@@ -81,7 +83,7 @@ public class DisplayManager {
         	}
    	
         	for(DisplayMode md : dms){ // statt adm ein array was obbe erzeugt wird an if(fruq && width && height)`
-        		logger.debug("Height {} Width {} Freq {} {}", md.getHeight(),md.getWidth(),md.getFrequency(), calculateRatio(md));
+        		logger.trace("Height {} Width {} Freq {} {}", md.getHeight(),md.getWidth(),md.getFrequency(), calculateRatio(md));
         		// alternativ ein [print to screen zur auswahl]
         	}
             Display.setDisplayMode(dms.get(dmi));

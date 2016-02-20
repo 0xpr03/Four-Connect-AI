@@ -27,6 +27,7 @@ public class GUIText {
 	private FontType font;
 
 	private boolean centerText = false;
+	private boolean isHidden = true;
 
 	/**
 	 * Creates a new text, loads the text's quads into a VAO, and adds the text
@@ -52,18 +53,35 @@ public class GUIText {
 	 *            the line, based on this line length value.
 	 * @param centered
 	 *            - whether the text should be centered or not.
+	 * @param isHidden
+	 * 			  - whether the text should be hidden or not, can be changed with show() and hide()
 	 */
 	public GUIText(String text, float fontSize, FontType font, Vector2f position, float maxLineLength,
-			boolean centered) {
+			boolean centered, boolean isHidden) {
 		this.textString = text;
 		this.fontSize = fontSize;
 		this.font = font;
 		this.position = position;
 		this.lineMaxSize = maxLineLength;
 		this.centerText = centered;
+		this.isHidden = isHidden;
 		TextMaster.loadText(this);
 	}
 
+	/**
+	 * Show the text on the screen.
+	 */
+	public void show() {
+		this.isHidden = false;
+	}
+	
+	/**
+	 * Hide the text.
+	 */
+	public void hide() {
+		this.isHidden = true;
+	}
+	
 	/**
 	 * Remove the text from the screen.
 	 */
@@ -168,6 +186,10 @@ public class GUIText {
 	 */
 	protected boolean isCentered() {
 		return centerText;
+	}
+	
+	public boolean isHidden() {
+		return isHidden;
 	}
 
 	/**

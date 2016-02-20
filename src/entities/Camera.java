@@ -20,8 +20,8 @@ import terrain.Terrain;
  */
 public class Camera {
     
-	private static float RUN_SPEED_FORWARD;
-	private static float RUN_SPEED_STRAFE;
+	public static float RUN_SPEED_FORWARD;
+	public static float RUN_SPEED_STRAFE;
     private static float UP_DOWN_SPEED;
     	
 	private Vector3f position;
@@ -46,8 +46,8 @@ public class Camera {
         dz += (RUN_SPEED_STRAFE * (float)Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
         position.x += dx;
         position.z += dz;    
-        
-        
+        logger.debug("posX {}",position.x);
+        logger.debug("posZ {}",position.z);
         position.y += UP_DOWN_SPEED * DisplayManager.getFrameTimeSeconds();
         increasePosition(0, UP_DOWN_SPEED * DisplayManager.getFrameTimeSeconds(), 0);
         float terrainHeight = terrain.getHeightOfTerrain(position.x, position.z);
@@ -57,6 +57,25 @@ public class Camera {
             position.y = terrainHeight + 5;
         }
     }
+	
+	public void move() {
+		float dx = (RUN_SPEED_FORWARD * (float) Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        float dz = (-RUN_SPEED_FORWARD * (float) Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        dx += (RUN_SPEED_STRAFE * (float)Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        dz += (RUN_SPEED_STRAFE * (float)Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        position.x += dx;
+        position.z += dz;   
+        logger.debug("posX {}",position.x);
+        logger.debug("posZ {}",position.z);
+	}
+	
+	public void setPosition(Vector3f position) {
+		this.position = position;
+	}
+	
+	public void setRotY(float rotY) {
+		this.rotY = rotY;
+	}
     
     public Vector3f getPosition() {
         return position;
@@ -126,7 +145,7 @@ public class Camera {
     
     public void increaseRotation(float dy, float pitch) {
         this.rotY += dy;
-        this.pitch = pitch;
+        this.pitch += pitch;
     }
 }
 
