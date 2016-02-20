@@ -39,7 +39,7 @@ public class ControllerBase<E extends AI> {
 	protected E_GAME_MODE GAMEMODE = E_GAME_MODE.NONE;
 	protected E_GAME_STATE STATE = E_GAME_STATE.NONE;
 	protected int MOVES;
-	protected WinStore LASTWIN;
+	protected GameStore LAST_GAME;
 	protected E_FIELD_STATE[][] FIELD; // X Y
 	protected final int NEEDED_WIN_DIFFERENCE = 2; //declaration: > x = win
 	protected final Object lock = new Object(); // lock for synchronization
@@ -169,15 +169,17 @@ public class ControllerBase<E extends AI> {
 			sb.append(X+" ");
 		}
 		
-		if(LASTWIN != null){
-			sb.append("\nLast win from ");
-			sb.append(LASTWIN.getState());
-			if(LASTWIN.isCapitulation()){
-				sb.append(" By capitulation");
+		if(LAST_GAME != null){
+			sb.append("\nLast game end through ");
+			sb.append(LAST_GAME.getState());
+			if(LAST_GAME.isCapitulation()){
+				sb.append("win by capitulation");
+			}else if(LAST_GAME.isDraw()){
+				sb.append("DRAW");
 			}else{
-				Point a = LASTWIN.getPoint_a();
-				Point b = LASTWIN.getPoint_b();
-				sb.append(" at ");
+				Point a = LAST_GAME.getPoint_a();
+				Point b = LAST_GAME.getPoint_b();
+				sb.append("win at ");
 				sb.append(a.getX());
 				sb.append("|");
 				sb.append(a.getY());
@@ -215,11 +217,11 @@ public class ControllerBase<E extends AI> {
 	 * Check for win based on the current stone
 	 * @return
 	 */
-	protected synchronized WinStore checkWin(final int posx, final int posy){
+	protected synchronized GameStore checkWin(final int posx, final int posy){
 		logger.debug("Player: {}",STATE);
 		E_FIELD_STATE wstate = STATE == E_GAME_STATE.PLAYER_A ?  E_FIELD_STATE.STONE_A : E_FIELD_STATE.STONE_B;
 		logger.debug("wished state: {}",wstate);
-		WinStore wst = checkWin_Y(posx, posy, wstate);
+		GameStore wst = checkWin_Y(posx, posy, wstate);
 		if ( wst != null ){
 			return wst;
 		}
@@ -362,7 +364,7 @@ public class ControllerBase<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	protected WinStore checkWin_Y(final int posx,final int posy,final E_FIELD_STATE wstate) {
+	protected GameStore checkWin_Y(final int posx,final int posy,final E_FIELD_STATE wstate) {
 		logger.debug("posx:{} posy:{} wstate:{}",posx,posy,wstate);
 		Point a = getYmax(wstate,posx,posy,false);
 		Point b = getYmin(wstate,posx,posy,false);
@@ -370,7 +372,7 @@ public class ControllerBase<E extends AI> {
 		logger.debug("max_y:{} min_y:{}",a.getY(),b.getY());
 		if ( ( a.getY() - b.getY() ) > NEEDED_WIN_DIFFERENCE ) {
 			logger.debug("Winn Y");
-			return new WinStore(a,b, STATE);
+			return new GameStore(a,b, STATE);
 		}else{
 			return null;
 		}
@@ -426,14 +428,14 @@ public class ControllerBase<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	protected WinStore checkWin_X(final int posx,final int posy,final E_FIELD_STATE wstate) {
+	protected GameStore checkWin_X(final int posx,final int posy,final E_FIELD_STATE wstate) {
 		Point a = getXmax(wstate,posx, posy,false);
 		Point b = getXmin(wstate,posx,posy,false);
 		
 		logger.debug("max_x:{} min_x:{}",a.getX(),b.getX());
 		if ( ( a.getX() - b.getX())  > NEEDED_WIN_DIFFERENCE ) {
 			logger.debug("Winn X");
-			return new WinStore(a,b, STATE);
+			return new GameStore(a,b, STATE);
 		}else{
 			return null;
 		}
@@ -484,14 +486,14 @@ public class ControllerBase<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	protected WinStore checkWin_XYP(final int posx,final int posy,final E_FIELD_STATE wstate) {
+	protected GameStore checkWin_XYP(final int posx,final int posy,final E_FIELD_STATE wstate) {
 		Point a = getXmaxYmax(wstate,posx,posy,false);
 		Point b = getXminYmin(wstate,posx,posy,false);
 		
 		logger.debug("max_x:{} min_x:{}",a.getX(),b.getX());
 		if ( ( a.getX() - b.getX())  > NEEDED_WIN_DIFFERENCE ) {
 			logger.debug("Winn XYP");
-			return new WinStore(a,b, STATE);
+			return new GameStore(a,b, STATE);
 		}else{
 			return null;
 		}
@@ -548,7 +550,7 @@ public class ControllerBase<E extends AI> {
 	 * @return
 	 * @author Aron Heinecke
 	 */
-	protected WinStore checkWin_XYM(final int posx,final int posy,final E_FIELD_STATE wstate) {
+	protected GameStore checkWin_XYM(final int posx,final int posy,final E_FIELD_STATE wstate) {
 		
 		Point a = getXmaxYmin(wstate,posx,posy,false);
 		logger.debug("P1: {}|{}",a.getX(),a.getY());
@@ -560,7 +562,7 @@ public class ControllerBase<E extends AI> {
 		logger.debug("max_x:{} min_x:{}",a.getX(),b.getX());
 		if ( ( a.getX() - b.getX())  > NEEDED_WIN_DIFFERENCE ) {
 			logger.debug("Winn XYM");
-			return new WinStore(a,b, STATE);
+			return new GameStore(a,b, STATE);
 		}else{
 			return null;
 		}

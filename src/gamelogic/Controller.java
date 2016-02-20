@@ -55,7 +55,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 			if (gamemode == E_GAME_MODE.NONE){
 				logger.error("Wrong game mode! {}",gamemode);
 			}
-			LASTWIN = null;
+			LAST_GAME = null;
 			STATE = E_GAME_STATE.NONE;
 			FIELD = new E_FIELD_STATE[X_MAX][Y_MAX];
 			for(int i = 0; i < X_MAX; i++){
@@ -144,7 +144,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 		}
 		if(found_place != -1) {
 			MOVES++;
-			WinStore ws = checkWin(column,found_place);
+			GameStore ws = checkWin(column,found_place);
 			if(ws == null){ // no win
 				if(checkDraw()){ // is draw
 					ALLOW_BACK_BOTH = true; // we're on a state where the last move leaded to a gameEvent sit.
@@ -199,6 +199,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 		STATE = E_GAME_STATE.DRAW;
 		logger.debug("State: {}",STATE);
 		
+		super.LAST_GAME = new GameStore();
 		DRAW = true;
 		informAIs(true);
 	}
@@ -208,7 +209,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	 * @param ws
 	 * @author Aron Heinecke
 	 */
-	protected synchronized void handleWin(WinStore ws){
+	protected synchronized void handleWin(GameStore ws){
 		if(ws.isCapitulation()){
 			logger.debug("Capitulation");
 		}else{
@@ -226,7 +227,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 		}
 		
 		STATE = ws.getState();
-		LASTWIN = ws;
+		LAST_GAME = ws;
 		informAIs(true);
 		//TODO: run handle code for winner display etc
 	}
@@ -235,7 +236,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	 * Safe win_a/b for rollback events as highest outcome
 	 * @param ws
 	 */
-	private void safe_ki_values(WinStore ws) {
+	private void safe_ki_values(GameStore ws) {
 		if(ws.getState() == E_GAME_STATE.WIN_A){
 			WIN_A = true;
 		}else if(ws.getState() == E_GAME_STATE.WIN_B){
@@ -252,7 +253,8 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 		logger.debug(()->super.getprintedGameState());
 		
 		E_GAME_STATE state_cache = STATE;
-		E_GAME_STATE last_win = super.LASTWIN.getState();
+		// if rollback without move, there's no last win
+		E_GAME_STATE last_win = super.LAST_GAME == null ? E_GAME_STATE.NONE : super.LAST_GAME.getState();
 		go_back_history(true);
 		if(MOVES == 0){
 			logger.fatal("Shutting down, moves are {} \n{}",MOVES,GController.getprintedGameState());
@@ -389,7 +391,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 				}
 			}
 			FIELD = copyField(matchHistory.get(size));
-			super.LASTWIN = null;
+			super.LAST_GAME = null;
 		}else{
 			logger.fatal("No history ! {}",GController.getprintedGameState());
 			System.exit(1);
@@ -454,7 +456,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	
 	public synchronized void capitulate(E_PLAYER player){
 		synchronized (lock) {
-			WinStore ws = new WinStore(STATE);
+			GameStore ws = new GameStore(STATE);
 			handleWin(ws);
 		}
 	}

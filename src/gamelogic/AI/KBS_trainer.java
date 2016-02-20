@@ -69,7 +69,8 @@ public class KBS_trainer<E extends DB> implements AI {
 				}
 
 				lastField = db.getHash();
-				unused = new ArrayList<Move>(sel.getUnused());
+				unused = sel.getUnused();
+				MOVES = sel;
 				new_move = unused.get(0);
 				if(unused.size() != possibilities.size()){
 					logger.error("Wrong list size {} poss. {}",unused.size(),possibilities.size());
@@ -104,6 +105,7 @@ public class KBS_trainer<E extends DB> implements AI {
 	 * Sets the outcome of all possible moves for the current field
 	 */
 	public void getOutcome(){
+		logger.entry();
 		if(this.player == E_PLAYER.PLAYER_A){
 			GController.setWIN_A(!MOVES.getWins().isEmpty());
 			GController.setWIN_B(!MOVES.getLooses().isEmpty());
@@ -162,6 +164,14 @@ public class KBS_trainer<E extends DB> implements AI {
 			}
 			if(logger.isDebugEnabled())
 				logger.debug("Remoing {}",unused.get(0).toString());
+			
+			if(P_MOVE_CURRENT.isDraw()){
+				MOVES.addDraw(P_MOVE_CURRENT);
+			}else if(P_MOVE_CURRENT.isLoose()){
+				MOVES.addLoose(P_MOVE_CURRENT);
+			}else{
+				MOVES.addWin(P_MOVE_CURRENT);
+			}
 			unused.remove(0);
 		}else{
 			logger.debug("Not removing, empty unused index.");
@@ -199,48 +209,36 @@ public class KBS_trainer<E extends DB> implements AI {
 			return;
 		}
 		
-		E_GAME_STATE state;
-		if(rollback){
-			state = getState();
-		}else{
-			state = GController.getGameState();
-		}
-		switch(state){
-		case DRAW:
-			this.P_MOVE_CURRENT.setDraw(true);
-		case WIN_A:
-		case WIN_B:
-			if(checkLoose(GController.getGameState()))
+		if(rollback){ // no real move happened
+			if((GController.isWin_a() && this.player == E_PLAYER.PLAYER_B) || (GController.isWin_b() && this.player == E_PLAYER.PLAYER_A) ){
 				this.P_MOVE_CURRENT.setLoose(true);
-			this.P_MOVE_CURRENT.setUsed(true);
-			if(!db.setMove(P_MOVE_CURRENT)){
-				logger.error("Invalid set");
-				System.exit(1);
 			}
-			break;
-		default:
-			logger.error("Unknown case for gameEvent!");
-			break;
+			this.P_MOVE_CURRENT.setDraw(GController.isDRAW());
+		}else{
+			switch(GController.getGameState()){
+			case DRAW:
+				this.P_MOVE_CURRENT.setDraw(true);
+			case WIN_A:
+			case WIN_B:
+				if(checkLoose(GController.getGameState()))
+					this.P_MOVE_CURRENT.setLoose(true);
+				break;
+			default:
+				logger.error("Unknown case for gameEvent!");
+				return;
+			}
 		}
+		
+		this.P_MOVE_CURRENT.setUsed(true);
+		if(!db.setMove(P_MOVE_CURRENT)){
+			logger.error("Invalid set");
+			System.exit(1);
+		}
+		
 		P_MOVE_CURRENT = null;
 		if(logger.isDebugEnabled())
 			logger.debug("{} {}",this.player,printUnused());
 		logger.exit();
-	}
-	
-	/**
-	 * Retrieves the state based on the highest outcome
-	 * @return
-	 */
-	private E_GAME_STATE getState(){
-		logger.entry();
-		if(GController.isWin_a()){
-			return E_GAME_STATE.WIN_A;
-		} else if(GController.isWin_b()){
-			return E_GAME_STATE.WIN_B;
-		} else {
-			return E_GAME_STATE.DRAW;
-		}
 	}
 	
 	private void print_follow(){
