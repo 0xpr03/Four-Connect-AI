@@ -63,11 +63,27 @@ public class GController {
 	}
 
 	/**
-	 * 
-	 * @see gamelogic.ControllerBase#setDraw()
+	 * @param wIN_A
+	 * @see gamelogic.Controller#setWIN_A(boolean)
 	 */
-	public static void setDraw() {
-		controller.setDraw();
+	public static void setWIN_A(boolean wIN_A) {
+		controller.setWIN_A(wIN_A);
+	}
+
+	/**
+	 * @param wIN_B
+	 * @see gamelogic.Controller#setWIN_B(boolean)
+	 */
+	public static void setWIN_B(boolean wIN_B) {
+		controller.setWIN_B(wIN_B);
+	}
+
+	/**
+	 * @param dRAW
+	 * @see gamelogic.Controller#setDRAW(boolean)
+	 */
+	public static void setDRAW(boolean dRAW) {
+		controller.setDRAW(dRAW);
 	}
 
 	/**

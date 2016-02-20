@@ -198,6 +198,8 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 		checkHistory();
 		STATE = E_GAME_STATE.DRAW;
 		logger.debug("State: {}",STATE);
+		
+		DRAW = true;
 		informAIs(true);
 	}
 	
@@ -215,6 +217,10 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 		logger.debug("State: {}",ws.getState());
 		
 		if(GAMEMODE == E_GAME_MODE.KI_TRAINING){
+			if(ws.getState() == E_GAME_STATE.WIN_A)
+				WIN_A = true;
+			else if(ws.getState() == E_GAME_STATE.WIN_B)
+				WIN_B = true;
 			checkHistory();
 			safe_ki_values(ws);
 		}
@@ -308,8 +314,10 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	 */
 	public void moveAI_A(){
 		if(!AI_a.getMove()){
-			if(GAMEMODE == E_GAME_MODE.KI_TRAINING)
+			if(GAMEMODE == E_GAME_MODE.KI_TRAINING){
+				AI_a.getOutcome();
 				informAIs(false);
+			}
 		}
 	}
 	
@@ -318,8 +326,10 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	 */
 	public void moveAI_B(){
 		if(!AI_b.getMove()){
-			if(GAMEMODE == E_GAME_MODE.KI_TRAINING)
+			if(GAMEMODE == E_GAME_MODE.KI_TRAINING){
+				AI_b.getOutcome();
 				informAIs(false);
+			}
 		}
 	}
 	
@@ -442,17 +452,6 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 		STATE = E_GAME_STATE.RESTART;
 	}
 	
-	/**
-	 * Set draw for game, for KI internal/training only
-	 */
-	public void setDraw(){
-		if(GAMEMODE == E_GAME_MODE.KI_INTERNAL || GAMEMODE == E_GAME_MODE.KI_TRAINING){
-			handelDraw();
-		}else{
-			logger.error("Not allowed in this mode!");
-		}
-	}
-	
 	public synchronized void capitulate(E_PLAYER player){
 		synchronized (lock) {
 			WinStore ws = new WinStore(STATE);
@@ -465,6 +464,27 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	 */
 	public synchronized boolean isWin_a() {
 		return WIN_A;
+	}
+
+	/**
+	 * @param wIN_A the wIN_A to set
+	 */
+	public synchronized void setWIN_A(boolean wIN_A) {
+		WIN_A = wIN_A;
+	}
+
+	/**
+	 * @param wIN_B the wIN_B to set
+	 */
+	public synchronized void setWIN_B(boolean wIN_B) {
+		WIN_B = wIN_B;
+	}
+
+	/**
+	 * @param dRAW the dRAW to set
+	 */
+	public synchronized void setDRAW(boolean dRAW) {
+		DRAW = dRAW;
 	}
 
 	/**

@@ -23,7 +23,7 @@ public class KBS_trainer<E extends DB> implements AI {
 	private Logger logger = LogManager.getLogger("AI");
 	private E db;
 	private E_PLAYER player;
-	private SelectResult moves;
+	private SelectResult MOVES;
 	private byte[] lastField = null;
 	private Move P_MOVE_CURRENT; // pointer to last moveHistory element
 	private List<Move> unused;
@@ -67,7 +67,7 @@ public class KBS_trainer<E extends DB> implements AI {
 					System.exit(1);
 					return true;
 				}
-				
+
 				lastField = db.getHash();
 				unused = new ArrayList<Move>(sel.getUnused());
 				new_move = unused.get(0);
@@ -75,6 +75,7 @@ public class KBS_trainer<E extends DB> implements AI {
 					logger.error("Wrong list size {} poss. {}",unused.size(),possibilities.size());
 				}
 			}else{
+				MOVES = moves;
 				if(!moves.getUnused().isEmpty()){
 					lastField = db.getHash();
 					unused = new ArrayList<Move>(moves.getUnused());
@@ -97,6 +98,20 @@ public class KBS_trainer<E extends DB> implements AI {
 		}
 		logger.exit();
 		return true;
+	}
+	
+	/**
+	 * Sets the outcome of all possible moves for the current field
+	 */
+	public void getOutcome(){
+		if(this.player == E_PLAYER.PLAYER_A){
+			GController.setWIN_A(!MOVES.getWins().isEmpty());
+			GController.setWIN_B(!MOVES.getLooses().isEmpty());
+		}else{
+			GController.setWIN_B(!MOVES.getWins().isEmpty());
+			GController.setWIN_A(!MOVES.getLooses().isEmpty());
+		}
+		GController.setDRAW(!MOVES.getDraws().isEmpty());
 	}
 	
 	/**
@@ -184,7 +199,13 @@ public class KBS_trainer<E extends DB> implements AI {
 			return;
 		}
 		
-		switch(GController.getGameState()){
+		E_GAME_STATE state;
+		if(rollback){
+			state = getState();
+		}else{
+			state = GController.getGameState();
+		}
+		switch(state){
 		case DRAW:
 			this.P_MOVE_CURRENT.setDraw(true);
 		case WIN_A:
@@ -205,6 +226,21 @@ public class KBS_trainer<E extends DB> implements AI {
 		if(logger.isDebugEnabled())
 			logger.debug("{} {}",this.player,printUnused());
 		logger.exit();
+	}
+	
+	/**
+	 * Retrieves the state based on the highest outcome
+	 * @return
+	 */
+	private E_GAME_STATE getState(){
+		logger.entry();
+		if(GController.isWin_a()){
+			return E_GAME_STATE.WIN_A;
+		} else if(GController.isWin_b()){
+			return E_GAME_STATE.WIN_B;
+		} else {
+			return E_GAME_STATE.DRAW;
+		}
 	}
 	
 	private void print_follow(){
@@ -230,6 +266,7 @@ public class KBS_trainer<E extends DB> implements AI {
 	public void start(E_PLAYER player) {
 		logger.entry(player);
 		P_MOVE_CURRENT = null;
+		MOVES = null;
 		moveHistory = new ArrayList<Move>( (GController.getX_MAX() * GController.getY_MAX()) /2 );
 		this.player = player;
 	}

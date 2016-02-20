@@ -81,7 +81,7 @@ public class mariaDB implements DB {
 			stmInsFID = connection.prepareStatement("INSERT INTO `fields` (`field`) VALUES (?);", Statement.RETURN_GENERATED_KEYS);
 			stmSelFID = connection.prepareStatement("SELECT `fid` FROM `fields` WHERE `field` = ?;");
 			
-			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`fid`,`move`,`player_a`,`used`,`loose`,`draw`) VALUES (?,?,?,?,?);");
+			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`fid`,`move`,`player_a`,`used`,`loose`,`draw`) VALUES (?,?,?,?,?,?);");
 			stmSelect = connection.prepareStatement("SELECT `move`,`used`,`loose`,`draw` FROM `moves` USE INDEX(`fid`,`player_a`) WHERE `fid` = ? AND `player_a` = ?;");
 			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ?, `loose` = ?, `draw` = ? WHERE `fid` = ? AND `move` = ? AND `player_a` = ? ;");
 			

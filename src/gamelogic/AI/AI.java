@@ -43,4 +43,9 @@ public interface AI {
 	 * @return
 	 */
 	public abstract boolean hasMoreMoves();
+	/**
+	 * Request AI to set the possible outcomes of the current Field
+	 * via setWIN_A setWIN_B, setDRAW used for rollback gamevents
+	 */
+	public void getOutcome();
 }

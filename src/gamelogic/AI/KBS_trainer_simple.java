@@ -168,7 +168,7 @@ public class KBS_trainer_simple<E extends DB> implements AI {
 	
 	
 	@Override
-	public void gameEvent() {
+	public void gameEvent(boolean _rollback_) {
 		logger.entry(player);
 		if(SHUTDOWN){
 			logger.debug("Shutdown set");
@@ -232,6 +232,12 @@ public class KBS_trainer_simple<E extends DB> implements AI {
 
 	@Override
 	public void preProcessing() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void getOutcome() {
 		// TODO Auto-generated method stub
 		
 	}
