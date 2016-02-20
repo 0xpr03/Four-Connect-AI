@@ -70,12 +70,14 @@ public class KBS_trainer<E extends DB> implements AI {
 
 				lastField = db.getHash();
 				unused = sel.getUnused();
+				MOVES = null;
 				MOVES = sel;
 				new_move = unused.get(0);
 				if(unused.size() != possibilities.size()){
 					logger.error("Wrong list size {} poss. {}",unused.size(),possibilities.size());
 				}
 			}else{
+				MOVES = null;
 				MOVES = moves;
 				if(!moves.getUnused().isEmpty()){
 					lastField = db.getHash();
@@ -280,6 +282,7 @@ public class KBS_trainer<E extends DB> implements AI {
 	}
 	
 	@Override
+	@Deprecated
 	public void preProcessing() {
 		// TODO Auto-generated method stub
 		

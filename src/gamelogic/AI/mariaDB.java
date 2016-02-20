@@ -326,6 +326,37 @@ public class mariaDB implements DB {
 		}
 		return true;
 	}
+	
+	public SelectResult testField(E_FIELD_STATE[][] field_in,boolean player_a) {
+		logger.entry(player_a);
+		try {
+			SelectResult sel = new SelectResult();
+			byte[] field = lib.field2sha(field_in);
+			long fID = getFieldID(field);
+			if(fID == -2) // error check
+				return null;
+			
+			if(fID != -1){
+				stmSelect.setLong(1, fID);
+				stmSelect.setBoolean(2, player_a);
+				ResultSet rs = stmSelect.executeQuery();
+				while(rs.next()){
+					Move move = new Move(field,fID,rs.getInt(1),rs.getBoolean(3),rs.getBoolean(4),rs.getBoolean(2),player_a);
+					if(move.isUsed()){
+						sel.addWin(move);
+					}else{
+						sel.addUnused(move);
+					}
+				}
+				rs.close();
+			}
+			return sel;
+		} catch (SQLException e) {
+			logger.error("getMoves {}",e);
+			return null;
+		}
+	}
+	
 	public byte[] getHash(){
 		 return lib.field2sha(GController.getFieldState());
 	}

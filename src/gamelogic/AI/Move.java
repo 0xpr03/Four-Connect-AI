@@ -11,9 +11,10 @@ public class Move {
 	private boolean loose;
 	private boolean used;
 	private byte[] field;
+	private boolean win;
 	private long fid;
 	private boolean player_a;
-	public Move(byte[] field,long fid, int move, boolean loose,boolean draw, boolean used,boolean player_a) {
+	public Move(byte[] field,long fid, int move, boolean loose,boolean draw, boolean win, boolean used,boolean player_a) {
 		this.field = field;
 		this.move = move;
 		this.draw = draw;
@@ -21,9 +22,10 @@ public class Move {
 		this.used = used;
 		this.player_a = player_a;
 		this.fid = fid;
+		this.win = win;
 	}
 	public Move(byte[] field,long fid, int move,boolean player_a) {
-		this(field,fid, move, false, false, false,player_a);
+		this(field,fid, move, false,false, false, false,player_a);
 	}
 	
 	@Override
@@ -104,5 +106,17 @@ public class Move {
 	 */
 	public byte[] getField() {
 		return field;
+	}
+	/**
+	 * @return the win
+	 */
+	public synchronized boolean isWin() {
+		return win;
+	}
+	/**
+	 * @param win the win to set
+	 */
+	public synchronized void setWin(boolean win) {
+		this.win = win;
 	}
 }

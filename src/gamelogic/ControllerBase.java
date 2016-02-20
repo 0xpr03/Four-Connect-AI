@@ -18,7 +18,7 @@ import gamelogic.AI.AI;
  * @param <E>
  *
  */
-public class ControllerBase<E extends AI> {
+public class ControllerBase {
 	public enum E_GAME_MODE {
 		NONE, SINGLE_PLAYER, MULTIPLAYER, KI_INTERNAL,KI_TRAINING, FUZZING, TESTING
 	}
@@ -43,8 +43,8 @@ public class ControllerBase<E extends AI> {
 	protected E_FIELD_STATE[][] FIELD; // X Y
 	protected final int NEEDED_WIN_DIFFERENCE = 2; //declaration: > x = win
 	protected final Object lock = new Object(); // lock for synchronization
-	protected E AI_a = null; // primary AI
-	protected E AI_b = null; // secondary for KI internal
+	protected AI AI_a = null; // primary AI
+	protected AI AI_b = null; // secondary for KI internal
 	protected int X_MAX = 4;
 	protected int Y_MAX = 4;
 	
@@ -52,7 +52,7 @@ public class ControllerBase<E extends AI> {
 		checkBasics();
 	}
 	
-	public ControllerBase(E ai_a, E ai_b){
+	public ControllerBase(AI ai_a, AI ai_b){
 		logger.entry();
 		if(AI_a == null)
 			AI_a = ai_a;

@@ -18,11 +18,11 @@ import gamelogic.AI.AI;
  * @author Aron Heinecke
  * @param <E>
  */
-public final class Controller<E extends AI> extends ControllerBase<E> {
+public final class Controller extends ControllerBase {
 	
 	private Logger logger = LogManager.getLogger("Controller");
 	
-	public Controller(E kbs_trainer, E kbs_trainer2) {
+	public Controller(AI kbs_trainer, AI kbs_trainer2) {
 		super(kbs_trainer, kbs_trainer2);
 	}
 	
@@ -104,8 +104,10 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 				logger.warn("Using hard coded state!");
 				STATE = E_GAME_STATE.PLAYER_A;
 				break;
-			case MULTIPLAYER:
 			case SINGLE_PLAYER:
+				STATE = E_GAME_STATE.PLAYER_B;
+				break;
+			case MULTIPLAYER:
 			case KI_INTERNAL:
 			case FUZZING:
 				STATE = getRandomBoolean() ? E_GAME_STATE.PLAYER_A : E_GAME_STATE.PLAYER_B;
@@ -267,6 +269,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 		if(ALLOW_BACK_BOTH){
 			MOVES -= 2;
 			// if last player, then no rollback info
+			
 			AI_a.gameEvent(state_cache != E_GAME_STATE.PLAYER_A);
 			AI_b.gameEvent(state_cache != E_GAME_STATE.PLAYER_B);
 			AI_a.goBackHistory(MOVES < 3);

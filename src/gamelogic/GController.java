@@ -8,6 +8,7 @@ import gamelogic.ControllerBase.E_FIELD_STATE;
 import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.ControllerBase.E_PLAYER;
+import gamelogic.AI.KBS_player;
 import gamelogic.AI.KBS_trainer;
 import gamelogic.AI.mariaDB;
 
@@ -19,13 +20,16 @@ import gamelogic.AI.mariaDB;
  */
 public class GController {
 	
-	private static Controller<KBS_trainer<mariaDB>> controller = null;
+	private static Controller controller = null;
 	
-	public static void init(String address, int port, String user, String pw, String db){
-		controller = new Controller<KBS_trainer<mariaDB>>(new KBS_trainer<mariaDB>(new mariaDB(address,3306,user,pw,db)), new KBS_trainer<mariaDB>(new mariaDB(address,3306,user,pw,db)));
+	public static void init(String address, int port, String user, String pw, String db, boolean use_player_ki){
+		if(use_player_ki){
+			controller = new Controller(new KBS_player<mariaDB>(new mariaDB(address,3306,user,pw,db)), new KBS_player<mariaDB>(new mariaDB(address,3306,user,pw,db)));
+		}else{
+			controller = new Controller(new KBS_trainer<mariaDB>(new mariaDB(address,3306,user,pw,db)), new KBS_trainer<mariaDB>(new mariaDB(address,3306,user,pw,db)));
+		}
 	}
 	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static void init(){
 		controller = new Controller();
 	}

@@ -9,9 +9,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 
-import gamelogic.GController;
 import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
+import gamelogic.GController;
 
 /**
  * Interactive test Player vs AI of type KBS
@@ -24,7 +24,7 @@ public class AITest_Interact {
 	private static Logger logger = LogManager.getLogger();
 	
 	private static void init(){
-		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
+		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai", true);
 		Level level_db = Level.TRACE;
 		Level level_ai = Level.TRACE;
 		Configurator.setLevel("DB", level_db);
@@ -34,7 +34,7 @@ public class AITest_Interact {
 	
 	public static void main(String[] args){
 		init();
-		GController.initGame(E_GAME_MODE.SINGLE_PLAYER,Level.TRACE);
+		GController.initGame(E_GAME_MODE.SINGLE_PLAYER,Level.INFO);
 		GController.startGame();
 		logger.info("Gamemode: {}",GController.getGamemode());
 		E_GAME_STATE state = E_GAME_STATE.NONE;

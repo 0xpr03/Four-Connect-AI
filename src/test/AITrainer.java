@@ -33,9 +33,9 @@ public class AITrainer {
 				context.setConfigLocation(file.toURI());
 			}
 		}
-		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
+		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai",false);
 		
-		Level level_db = Level.TRACE;
+		Level level_db = Level.WARN;
 		Level level_ai = Level.TRACE;
 		int games = 1;
 		
@@ -49,7 +49,7 @@ public class AITrainer {
 			// protection from running invalid field evaluations on the server
 			logger.error("Stopping, field size modified!");
 		}
-		E_GAME_STATE player = E_GAME_STATE.PLAYER_A;
+		E_GAME_STATE player = E_GAME_STATE.PLAYER_B;
 		if(args.length > 2){
 			switch(args[2]){
 			case "a":
@@ -75,7 +75,7 @@ public class AITrainer {
 		Level logcontroller = Level.WARN;
 		Configurator.setLevel("DB", level_db);
 		Configurator.setLevel("AI", level_ai);
-		Configurator.setLevel("Controller", Level.TRACE);
+		Configurator.setLevel("Controller", Level.DEBUG);
 		
 		start_time=System.currentTimeMillis();
 		GController.initGame(E_GAME_MODE.KI_TRAINING,logcontroller);

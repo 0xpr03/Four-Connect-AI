@@ -27,6 +27,7 @@ import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.GController;
 import gamelogic.AI.Move;
 import gamelogic.AI.lib;
+import gamelogic.AI.mariaDB;
 import gamelogic.AI.mariaDB_simple;
 
 public class gameControllerTester {
@@ -162,11 +163,24 @@ public class gameControllerTester {
 	@Test
 	public void test_AI(){ // 4*4
 		if(GController.getY_MAX() == 4 && GController.getX_MAX() == 4){
-			String[] fields_used = {"----\n----\nOXOX\nXXOO",""};
-			mariaDB_simple mdb = new mariaDB_simple("localhost", 3306, "ai", "", "ai");
+			GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai", false);
+			String[] fields_used = {"----\n----\nOXOX\nXXOO","XO--\nOX--\nOO--\nOXXX"};
+			mariaDB mdb = new mariaDB("localhost", 3306, "ai", "", "ai");
+			GController.initGame(E_GAME_MODE.TESTING);
+			GController.startGame();
 			lib lib = new lib();
 			for(String s : fields_used){
-				
+				GController.D_setField(GController.D_parseField(s));
+				boolean not_found = true;
+				if(!mdb.testField(GController.getFieldState(), true).isEmpty()){
+					not_found = false;
+				}
+				if(!mdb.testField(GController.getFieldState(), false).isEmpty()){
+					not_found = false;
+				}
+				if(not_found){
+					logger.error("Field {} not found!",s);
+				}
 			}
 		}
 	}
