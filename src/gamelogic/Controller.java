@@ -33,6 +33,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	// for ki training
 	private List<E_FIELD_STATE[][]> matchHistory;
 	private E_GAME_STATE LAST_PLAYER;
+	private boolean WIN_A = false, WIN_B = false, DRAW = false;
 	
 	/**
 	 * If player x does a move, leading to a game end, we've to go back two times
@@ -95,6 +96,9 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 			STATE = E_GAME_STATE.START;
 			switch(GAMEMODE){
 			case KI_TRAINING:
+				WIN_A = false;
+				WIN_B = false;
+				DRAW = false;
 				addHistory(); // add empty field
 				ALLOW_BACK_BOTH = false;
 				logger.warn("Using hard coded state!");
@@ -210,7 +214,10 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 		}
 		logger.debug("State: {}",ws.getState());
 		
-		checkHistory();
+		if(GAMEMODE == E_GAME_MODE.KI_TRAINING){
+			checkHistory();
+			safe_ki_values(ws);
+		}
 		
 		STATE = ws.getState();
 		LASTWIN = ws;
@@ -219,48 +226,55 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 	}
 	
 	/**
+	 * Safe win_a/b for rollback events as highest outcome
+	 * @param ws
+	 */
+	private void safe_ki_values(WinStore ws) {
+		if(ws.getState() == E_GAME_STATE.WIN_A){
+			WIN_A = true;
+		}else if(ws.getState() == E_GAME_STATE.WIN_B){
+			WIN_B = true;
+		}
+	}
+
+	/**
 	 * Curent KI is finished with a all moves
 	 * Go back & lat KI before move
 	 */
 	private void handle_KI_moveless(){
 		logger.entry(ALLOW_BACK_BOTH);
 		logger.debug(()->super.getprintedGameState());
+		
+		E_GAME_STATE state_cache = STATE;
+		E_GAME_STATE last_win = super.LASTWIN.getState();
 		go_back_history(true);
 		if(MOVES == 0){
 			logger.fatal("Shutting down, moves are {} \n{}",MOVES,GController.getprintedGameState());
 			System.exit(0);
 		}
 		
-		E_GAME_STATE state_cache = STATE;
 		//TODO: change to represent current gamestate
 		//logger.warn("Using default win state to inform!");
-		STATE = E_GAME_STATE.WIN_A;
+		STATE = last_win;
 		if(ALLOW_BACK_BOTH){
 			MOVES -= 2;
-			AI_a.gameEvent();
-			AI_b.gameEvent();
+			// if last player, then no rollback info
+			AI_a.gameEvent(state_cache != E_GAME_STATE.PLAYER_A);
+			AI_b.gameEvent(state_cache != E_GAME_STATE.PLAYER_B);
 			AI_a.goBackHistory(MOVES < 3);
 			AI_b.goBackHistory(MOVES < 3);
 			
-			if(state_cache == E_GAME_STATE.PLAYER_A){
-				STATE = E_GAME_STATE.PLAYER_B;
-			}else if(state_cache == E_GAME_STATE.PLAYER_B){
-				STATE = E_GAME_STATE.PLAYER_A;
-			}else{
-				logger.error("No state!");
-				return;
-			}
 			ALLOW_BACK_BOTH = false;
 		}else{
 			MOVES--;
 			switch(state_cache){
 			case PLAYER_A:
-				AI_b.gameEvent();
+				AI_b.gameEvent(true);
 				//AI_a.goBackHistory(MOVES < 3);
 				AI_b.goBackHistory(MOVES < 3);
 				break;
 			case PLAYER_B:
-				AI_a.gameEvent();
+				AI_a.gameEvent(true);
 				//AI_b.goBackHistory(MOVES < 3);
 				AI_a.goBackHistory(MOVES < 3);
 				break;
@@ -269,14 +283,20 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 				break;
 			}
 			
-			if(state_cache == E_GAME_STATE.PLAYER_A){
-				STATE = E_GAME_STATE.PLAYER_B;
-			}else if(state_cache == E_GAME_STATE.PLAYER_B){
-				STATE = E_GAME_STATE.PLAYER_A;
-			}else{
-				logger.error("No state!");
-				return;
-			}
+		}
+		
+		// reset highest outcome
+		WIN_A = false;
+		WIN_B = false;
+		DRAW = false;
+		
+		if(state_cache == E_GAME_STATE.PLAYER_A){
+			STATE = E_GAME_STATE.PLAYER_B;
+		}else if(state_cache == E_GAME_STATE.PLAYER_B){
+			STATE = E_GAME_STATE.PLAYER_A;
+		}else{
+			logger.error("No state!");
+			return;
 		}
 		
 		logger.debug(()->super.getprintedGameState());
@@ -359,6 +379,7 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 				}
 			}
 			FIELD = copyField(matchHistory.get(size));
+			super.LASTWIN = null;
 		}else{
 			logger.fatal("No history ! {}",GController.getprintedGameState());
 			System.exit(1);
@@ -378,14 +399,14 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 				case PLAYER_A:
 					has_moves = AI_a.hasMoreMoves();
 					if(has_moves){
-						AI_a.gameEvent();
+						AI_a.gameEvent(false);
 						AI_a.goBackHistory(MOVES < 3);
 					}
 					break;
 				case PLAYER_B:
 					has_moves = AI_b.hasMoreMoves();
 					if(has_moves){
-						AI_b.gameEvent();
+						AI_b.gameEvent(false);
 						AI_b.goBackHistory(MOVES < 3);
 					}
 					break;
@@ -405,10 +426,10 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 				handle_KI_moveless();
 			}
 		}else if(GAMEMODE == E_GAME_MODE.KI_INTERNAL){
-			AI_a.gameEvent();
-			AI_b.gameEvent();
+			AI_a.gameEvent(false);
+			AI_b.gameEvent(false);
 		}else if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
-			AI_a.gameEvent();
+			AI_a.gameEvent(false);
 		}
 	}
 	
@@ -437,5 +458,26 @@ public final class Controller<E extends AI> extends ControllerBase<E> {
 			WinStore ws = new WinStore(STATE);
 			handleWin(ws);
 		}
+	}
+
+	/**
+	 * @return the win_a
+	 */
+	public synchronized boolean isWin_a() {
+		return WIN_A;
+	}
+
+	/**
+	 * @return the win_b
+	 */
+	public synchronized boolean isWin_b() {
+		return WIN_B;
+	}
+
+	/**
+	 * @return the dRAW
+	 */
+	public synchronized boolean isDRAW() {
+		return DRAW;
 	}
 }

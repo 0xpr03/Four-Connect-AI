@@ -169,7 +169,7 @@ public class KBS_trainer<E extends DB> implements AI {
 	
 	
 	@Override
-	public void gameEvent() {
+	public void gameEvent(boolean rollback) {
 		logger.entry(player);
 		if(SHUTDOWN){
 			logger.debug("Shutdown set");
@@ -186,8 +186,11 @@ public class KBS_trainer<E extends DB> implements AI {
 		
 		switch(GController.getGameState()){
 		case DRAW:
+			this.P_MOVE_CURRENT.setDraw(true);
 		case WIN_A:
 		case WIN_B:
+			if(checkLoose(GController.getGameState()))
+				this.P_MOVE_CURRENT.setLoose(true);
 			this.P_MOVE_CURRENT.setUsed(true);
 			if(!db.setMove(P_MOVE_CURRENT)){
 				logger.error("Invalid set");
@@ -231,10 +234,10 @@ public class KBS_trainer<E extends DB> implements AI {
 		this.player = player;
 	}
 	
-	private boolean checkWinnerMatch(E_GAME_STATE state){
-		if(this.player == E_PLAYER.PLAYER_A && state == E_GAME_STATE.WIN_A){
+	private boolean checkLoose(E_GAME_STATE state){
+		if(this.player == E_PLAYER.PLAYER_A && state == E_GAME_STATE.WIN_B){
 			return true;
-		}else if(this.player == E_PLAYER.PLAYER_B && state == E_GAME_STATE.WIN_B){
+		}else if(this.player == E_PLAYER.PLAYER_B && state == E_GAME_STATE.WIN_A){
 			return true;
 		}else{
 			return false;

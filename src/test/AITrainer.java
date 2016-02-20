@@ -35,8 +35,8 @@ public class AITrainer {
 		}
 		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
 		
-		Level level_db = Level.WARN;
-		Level level_ai = Level.WARN;
+		Level level_db = Level.TRACE;
+		Level level_ai = Level.TRACE;
 		int games = 1;
 		
 		if(args.length > 1){
@@ -75,7 +75,7 @@ public class AITrainer {
 		Level logcontroller = Level.WARN;
 		Configurator.setLevel("DB", level_db);
 		Configurator.setLevel("AI", level_ai);
-		Configurator.setLevel("Controller", Level.WARN);
+		Configurator.setLevel("Controller", Level.TRACE);
 		
 		start_time=System.currentTimeMillis();
 		GController.initGame(E_GAME_MODE.KI_TRAINING,logcontroller);
@@ -83,7 +83,7 @@ public class AITrainer {
 		GController.setState(starting_pl);
 		logger.info("Starting player: {}",starting_pl);
 		while(gameRunning()){
-			//logger.info(GController.getprintedGameState());
+			logger.info(GController.getprintedGameState());
 			moves++;
 			lastmatch = System.currentTimeMillis();
 			switch(GController.getGameState()){

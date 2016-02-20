@@ -15,8 +15,9 @@ public interface AI {
 	public abstract boolean getMove();
 	/**
 	 * Event if the game is ended by loose/win/draw/cancel
+	 * @param rollback if set true, this gameEvent comes from an rollback
 	 */
-	public abstract void gameEvent();
+	public abstract void gameEvent(boolean rollback);
 	/**
 	 * Event call on system shutdown.
 	 */

@@ -39,6 +39,30 @@ public class GController {
 	}
 
 	/**
+	 * @return
+	 * @see gamelogic.Controller#isWin_a()
+	 */
+	public static boolean isWin_a() {
+		return controller.isWin_a();
+	}
+
+	/**
+	 * @return
+	 * @see gamelogic.Controller#isWin_b()
+	 */
+	public static boolean isWin_b() {
+		return controller.isWin_b();
+	}
+
+	/**
+	 * @return
+	 * @see gamelogic.Controller#isDRAW()
+	 */
+	public static boolean isDRAW() {
+		return controller.isDRAW();
+	}
+
+	/**
 	 * 
 	 * @see gamelogic.ControllerBase#setDraw()
 	 */
