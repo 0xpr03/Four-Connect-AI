@@ -106,7 +106,7 @@ public class mariaDB_simple implements DB {
 				stmSelect.setBoolean(2, player_a);
 				ResultSet rs = stmSelect.executeQuery();
 				while(rs.next()){
-					Move move = new Move(field,fID,rs.getInt(1),false,false,false,rs.getBoolean(2),player_a);
+					Move move = new Move(fID,rs.getInt(1),false,false,false,rs.getBoolean(2),player_a);
 					if(move.isUsed()){
 						sel.addWin(move);
 					}else{
@@ -184,7 +184,7 @@ public class mariaDB_simple implements DB {
 				logger.debug("Inserting {} {} {}",fID,move,player_a);
 				stmInsert.setInt(2, move);
 				stmInsert.executeUpdate();
-				sel.addUnused(new Move(sha, fID, move, player_a));
+				sel.addUnused(new Move(fID, move, player_a));
 			}
 			inserts++;
 			return sel;

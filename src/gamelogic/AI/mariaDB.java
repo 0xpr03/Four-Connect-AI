@@ -97,8 +97,7 @@ public class mariaDB implements DB {
 		logger.entry(player_a);
 		try {
 			SelectResult sel = new SelectResult();
-			byte[] field = lib.field2sha(field_in);
-			long fID = getFieldID(field);
+			long fID = getFieldID(lib.field2sha(field_in));
 			if(fID == -2) // error check
 				return null;
 			
@@ -107,7 +106,7 @@ public class mariaDB implements DB {
 				stmSelect.setBoolean(2, player_a);
 				ResultSet rs = stmSelect.executeQuery();
 				while(rs.next()){
-					Move move = new Move(field,fID,rs.getInt(1),rs.getBoolean(2),rs.getBoolean(3),rs.getBoolean(4),rs.getBoolean(5),player_a);
+					Move move = new Move(fID,rs.getInt(1),rs.getBoolean(2),rs.getBoolean(3),rs.getBoolean(4),rs.getBoolean(5),player_a);
 					if(move.isUsed()){
 						if(move.isLoose())
 							sel.addLoose(move);
@@ -199,10 +198,9 @@ public class mariaDB implements DB {
 			stmInsert.setBoolean(2, player_a);
 			SelectResult sel = new SelectResult();
 			for(int move : moves){
-				logger.debug("Inserting {} {} pla:{}",fID,move,player_a);
 				stmInsert.setInt(3, move);
 				stmInsert.executeUpdate();
-				sel.addUnused(new Move(sha, fID, move, player_a));
+				sel.addUnused(new Move(fID, move, player_a));
 			}
 			inserts++;
 			return sel;
@@ -359,7 +357,7 @@ public class mariaDB implements DB {
 					stmSelect.setBoolean(2, false);
 					ResultSet rs = stmSelect.executeQuery();
 					while(rs.next()){
-						Move move = new Move(field,fID,rs.getInt(1),rs.getBoolean(2),rs.getBoolean(3),rs.getBoolean(4),rs.getBoolean(5),false);
+						Move move = new Move(fID,rs.getInt(1),rs.getBoolean(2),rs.getBoolean(3),rs.getBoolean(4),rs.getBoolean(5),false);
 						sel.addUnused(move);
 					}
 					rs.close();
@@ -368,7 +366,7 @@ public class mariaDB implements DB {
 					stmSelect.setBoolean(2, true);
 					ResultSet rs = stmSelect.executeQuery();
 					while(rs.next()){
-						Move move = new Move(field,fID,rs.getInt(1),rs.getBoolean(2),rs.getBoolean(3),rs.getBoolean(4),rs.getBoolean(5),true);
+						Move move = new Move(fID,rs.getInt(1),rs.getBoolean(2),rs.getBoolean(3),rs.getBoolean(4),rs.getBoolean(5),true);
 						sel.addUnused(move);
 					}
 					rs.close();

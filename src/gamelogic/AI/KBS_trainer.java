@@ -70,7 +70,7 @@ public class KBS_trainer implements AI {
 				SelectResult sel = db.insertMoves(GController.getFieldState(), possibilities,player==E_PLAYER.PLAYER_A);
 				if(sel == null){ // can happen on concurrency
 					logger.error("Error on insert!");
-					System.exit(1);
+					GController.restart();
 					return true;
 				}
 
@@ -105,7 +105,18 @@ public class KBS_trainer implements AI {
 								logger.info("Done with branch!");
 								return false;
 							}
-							new_move = unused.get(first_move);
+							Move chosen_move = null;
+							for(Move move_int : unused){
+								if(move_int.getMove() == first_move){
+									chosen_move = move_int;
+								}
+							}
+							if( chosen_move != null ){
+								new_move = chosen_move;
+							}else{
+								logger.error("specified first move not found ! {}",first_move);
+								return false;
+							}
 							first_move_done = true;
 						}else{
 							new_move = unused.get(0);
@@ -271,7 +282,8 @@ public class KBS_trainer implements AI {
 		this.P_MOVE_CURRENT.setUsed(true);
 		if(!db.setMove(P_MOVE_CURRENT)){
 			logger.error("Invalid set");
-			System.exit(1);
+			GController.restart();
+			return;
 		}
 		logger.debug("After event: {}",P_MOVE_CURRENT.toString());
 		if(P_MOVE_CURRENT.isLoose()){
@@ -317,6 +329,7 @@ public class KBS_trainer implements AI {
 		logger.entry(player);
 		P_MOVE_CURRENT = null;
 		MOVES = null;
+		first_move_done = false;
 		moveHistory = new ArrayList<Move>( (GController.getX_MAX() * GController.getY_MAX()) /2 );
 		this.player = player;
 	}

@@ -67,7 +67,7 @@ public class gameControllerTester {
 		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
 		GController.startGame();
 		GController.D_setField(GController.D_parseField(input));
-		Move move = new Move(lib.field2sha(GController.getFieldState()),1L, 1, true);
+		Move move = new Move(1L, 1, true);
 		logger.info("Hash: {}",move.toString());
 		assertTrue(E_GAME_STATE.NONE != GController.getGameState());
 	}
@@ -169,7 +169,7 @@ public class gameControllerTester {
 			mariaDB mdb = new mariaDB("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
 			GController.initGame(E_GAME_MODE.TESTING);
 			GController.startGame();
-			Move move = new Move(null,1L,1,false);
+			Move move = new Move(1L,1,false);
 			lib lib = new lib();
 			for(String s : fields_used){
 				GController.D_setField(GController.D_parseField(s));

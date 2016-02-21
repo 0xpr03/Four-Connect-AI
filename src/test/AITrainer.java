@@ -9,7 +9,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 
 import gamelogic.Controller;
@@ -30,6 +29,7 @@ public class AITrainer {
 	private static long lastmatch;
 	private static long start_time;
 	
+	private static long restarts = 0;
 	private static long moves = 0;
 	
 	public static void main(String[] args){ // external logger, starting player [a,b], first move
@@ -44,7 +44,7 @@ public class AITrainer {
 			// protection from running invalid field evaluations on the server
 			logger.error("Stopping, field size modified!");
 		}
-		E_GAME_STATE player = E_GAME_STATE.PLAYER_A;
+		E_GAME_STATE player = E_GAME_STATE.PLAYER_B;
 		if(args.length > 2){
 			switch(args[2]){
 			case "a":
@@ -92,31 +92,28 @@ public class AITrainer {
 		Configurator.setLevel("Controller", Level.INFO);
 		
 		start_time=System.currentTimeMillis();
-		GController.initGame(E_GAME_MODE.KI_TRAINING,logcontroller);
-		GController.startGame();
-		GController.setState(starting_pl);
+		initGame(logcontroller, starting_pl);
 		logger.info("Starting player: {}",starting_pl);
 		
 		@SuppressWarnings("unused")
 		boolean runthrough = false;
 		while(gameRunning()){
-			
 			moves++;
-			logger.info(GController.getprintedGameState());
-			try {
-				if(runthrough = false){
-					String l = readLine("Insert 1 to continue");
-					if(l.equals("C")){
-						runthrough = true;
-					}
-					if(!l.equals("1")){
-						continue;
-					}
-				}
-			} catch (IOException e) {
-				logger.error("{}",e);
-				e.printStackTrace();
-			}
+//			try {
+//				if(runthrough == false){
+//					logger.info(GController.getprintedGameState());
+//					String l = readLine("Insert 1 to continue");
+//					if(l.equals("C")){
+//						runthrough = true;
+//					}
+//					if(!l.equals("1")){
+//						continue;
+//					}
+//				}
+//			} catch (IOException e) {
+//				logger.error("{}",e);
+//				e.printStackTrace();
+//			}
 			lastmatch = System.currentTimeMillis();
 			switch(GController.getGameState()){
 			case PLAYER_A:
@@ -125,12 +122,27 @@ public class AITrainer {
 			case PLAYER_B:
 				GController.moveAI_B();
 				break;
+			case RESTART:
+				try {
+					Thread.sleep(50);
+				} catch (InterruptedException e) {
+					logger.error("{}",e);
+				}
+				initGame(logcontroller, starting_pl);
+				restarts++;
+				break;
 			default:
 				logger.info(GController.getGameState());
 				break;
 			}
 		}
 		logger.info(GController.getprintedGameState());
+	}
+	
+	private static void initGame(Level logcontroller, E_GAME_STATE starting_pl){
+		GController.initGame(E_GAME_MODE.KI_TRAINING,logcontroller);
+		GController.startGame();
+		GController.setState(starting_pl);
 	}
 	
 	private static void initController(String address, int port, String user, String pw, String db, boolean player_a, int first_move){
@@ -150,13 +162,14 @@ public class AITrainer {
 				}catch(Exception e){
 					logger.error("Trying to get state: {}",e);
 				}
-				logger.info("Took {}ms and {} moves including re-moves",System.currentTimeMillis()-start_time,moves);
+				logger.info("Took {}ms and {} moves including {} restart and re-moves",System.currentTimeMillis()-start_time,moves,restarts);
 				GController.shutdown();
 				logger.exit();
 			}
 		});
 	}
 	
+	@SuppressWarnings("unused")
 	private static String readLine(String format, Object... args) throws IOException {
 	    if (System.console() != null) {
 	        return System.console().readLine(format, args);

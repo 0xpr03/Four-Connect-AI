@@ -10,12 +10,10 @@ public class Move {
 	private boolean draw;
 	private boolean loose;
 	private boolean used;
-	private byte[] field;
 	private boolean win;
 	private long fid;
 	private boolean player_a;
-	public Move(byte[] field,long fid, int move,boolean used,boolean loose, boolean draw, boolean win, boolean player_a) {
-		this.field = field;
+	public Move(long fid, int move,boolean used,boolean loose, boolean draw, boolean win, boolean player_a) {
 		this.move = move;
 		this.draw = draw;
 		this.loose = loose;
@@ -24,13 +22,13 @@ public class Move {
 		this.fid = fid;
 		this.win = win;
 	}
-	public Move(byte[] field,long fid, int move,boolean player_a) {
-		this(field,fid, move, false,false, false, false,player_a);
+	public Move(long fid, int move,boolean player_a) {
+		this(fid, move, false,false, false, false,player_a);
 	}
 	
 	@Override
 	public String toString(){
-		return "fid:"+this.fid+" pla:"+this.player_a+" m:"+this.move+" d:"+draw+" l:"+loose+" u:"+used+" w:"+win+" "+bytesToHex(this.field);
+		return "fid:"+this.fid+" pla:"+this.player_a+" m:"+this.move+" d:"+draw+" l:"+loose+" u:"+used+" w:"+win;
 	}
 	
 	/**
@@ -100,12 +98,6 @@ public class Move {
 	 */
 	public int getMove() {
 		return move;
-	}
-	/**
-	 * @return the field
-	 */
-	public byte[] getField() {
-		return field;
 	}
 	/**
 	 * @return the win
