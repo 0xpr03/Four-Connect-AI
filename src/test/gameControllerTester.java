@@ -195,36 +195,43 @@ public class gameControllerTester {
 	
 	@Test
 	public void test_draw(){
+//		{
+//		String input = "XXX-OOO\nOOO-XXX\nXXX-OXO\nOXO-OOX\nXOO-XXX\nXOO-OOX";
+//		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
+//		GController.startGame();
+//		GController.D_setField(GController.D_parseField(input));
+//		assertEquals("no draw check",false,GController.D_analyzeField());
+//		}
+//		{
+//		String input = "X-OOX--\nXXXOX--\nOOOXOOO\nOXOOOXX\nOXOXXOO\nXXXOXXX";
+//		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
+//		GController.startGame();
+//		GController.D_setField(GController.D_parseField(input));
+//		assertEquals("no draw check",false,GController.D_analyzeField());
+//		}
+//		{
+//		String input = "--OOX--\nX-XOXX-\nOOXXOOO\nOXOXOXX\nOXOXXOO\nXXXOXXX";
+//		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
+//		GController.startGame();
+//		GController.D_setField(GController.D_parseField(input));
+//		assertEquals("no draw check",false,GController.D_analyzeField());
+//		}
+//		{
+//		String input = "OX--OX-\nOO--OO-\nXXXOXXX\nOOOXXOO\nXXXOOOX\nXOOOXXX";
+//		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
+//		GController.startGame();
+//		GController.D_setField(GController.D_parseField(input));
+//		assertEquals("no draw check",false,GController.D_analyzeField());
+//		}
+//		{
+//		String input = "-------\n--OXO-X\nXXOOOXX\nOOXXXOO\nXOOOXXX\nOXXXOXX";
+//		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
+//		GController.startGame();
+//		GController.D_setField(GController.D_parseField(input));
+//		assertEquals("no draw check",false,GController.D_analyzeField());
+//		}
 		{
-		String input = "XXX-OOO\nOOO-XXX\nXXX-OXO\nOXO-OOX\nXOO-XXX\nXOO-OOX";
-		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
-		GController.startGame();
-		GController.D_setField(GController.D_parseField(input));
-		assertEquals("no draw check",false,GController.D_analyzeField());
-		}
-		{
-		String input = "X-OOX--\nXXXOX--\nOOOXOOO\nOXOOOXX\nOXOXXOO\nXXXOXXX";
-		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
-		GController.startGame();
-		GController.D_setField(GController.D_parseField(input));
-		assertEquals("no draw check",false,GController.D_analyzeField());
-		}
-		{
-		String input = "--OOX--\nX-XOXX-\nOOXXOOO\nOXOXOXX\nOXOXXOO\nXXXOXXX";
-		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
-		GController.startGame();
-		GController.D_setField(GController.D_parseField(input));
-		assertEquals("no draw check",false,GController.D_analyzeField());
-		}
-		{
-		String input = "OX--OX-\nOO--OO-\nXXXOXXX\nOOOXXOO\nXXXOOOX\nXOOOXXX";
-		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
-		GController.startGame();
-		GController.D_setField(GController.D_parseField(input));
-		assertEquals("no draw check",false,GController.D_analyzeField());
-		}
-		{
-		String input = "-------\n--OXO-X\nXXOOOXX\nOOXXXOO\nXOOOXXX\nOXXXOXX";
+		String input = "XOX-\nOXO-\nOOXX\nOXXO";
 		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
 		GController.startGame();
 		GController.D_setField(GController.D_parseField(input));

@@ -270,21 +270,18 @@ public class ControllerBase {
 			}
 			logger.debug("XY: {}|{}",x,y);
 			// check for edges (1down, 1left/right)
-			if(x > 1 && y < Y_MAX){
+			if(x > 0 && y < Y_MAX){
 				if(FIELD[x-1][y] != E_FIELD_STATE.NONE){ // left of space = stone
 					if (!checkDrawPos(x-1,y-1, true,false)){ // check 1left,1down for diag. wins
 						return false;
 					}
-					if (!checkDrawPos(x-1,y, false,true)){ // check 1left for horiz/vert wins
-						return false;
+					for(int y_sec = Y_MAX-1; FIELD[x][y_sec] == E_FIELD_STATE.NONE && y > 0 ;y_sec--) {
+						if(FIELD[x-1][y_sec] != E_FIELD_STATE.NONE){
+							if (!checkDrawPos(x-1,y_sec, false,false)){ // check 1left for horiz/vert wins
+								return false;
+							}
+						}
 					}
-//					for(int y_sec = Y_MAX; FIELD[x][y_sec] == E_FIELD_STATE.NONE && y > 0 ;y_sec++) {
-//						if(FIELD[x-1][y_sec-1] != E_FIELD_STATE.NONE){
-//							if (!checkDrawPos(x-1,y_sec-1, true,false)){ // check 1left for horiz/vert wins
-//								return false;
-//							}
-//						}
-//					}
 				}
 			}
 			if(x < (X_MAX-1)  && y < Y_MAX){
@@ -292,8 +289,12 @@ public class ControllerBase {
 					if (!checkDrawPos(x+1,y-1, true,false)){ // check 1right,1down for diag. wins
 						return false;
 					}
-					if (!checkDrawPos(x+1,y, false,true)){ // check 1right for horiz/vert wins
-						return false;
+					for(int y_sec = Y_MAX-1; FIELD[x][y_sec] == E_FIELD_STATE.NONE && y > 0 ;y_sec--) {
+						if(FIELD[x+1][y_sec] != E_FIELD_STATE.NONE){
+							if (!checkDrawPos(x+1,y_sec, false,false)){ // check 1right for horiz/vert wins
+								return false;
+							}
+						}
 					}
 				}
 			}
