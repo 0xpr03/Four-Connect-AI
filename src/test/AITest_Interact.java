@@ -24,7 +24,7 @@ public class AITest_Interact {
 	private static Logger logger = LogManager.getLogger();
 	
 	private static void init(){
-		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai", true);
+		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
 		Level level_db = Level.TRACE;
 		Level level_ai = Level.TRACE;
 		Configurator.setLevel("DB", level_db);

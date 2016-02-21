@@ -9,10 +9,7 @@ import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.ControllerBase.E_PLAYER;
 import gamelogic.AI.KBS_player;
-import gamelogic.AI.KBS_trainer;
-import gamelogic.AI.KBS_trainer_simple;
 import gamelogic.AI.mariaDB;
-import gamelogic.AI.mariaDB_simple;
 
 /**
  * The MAIN controller of the game four connect
@@ -22,14 +19,14 @@ import gamelogic.AI.mariaDB_simple;
  */
 public class GController {
 	
-	private static Controller controller = null;
+	private static Controller controller;
 	
-	public static void init(String address, int port, String user, String pw, String db, boolean use_player_ki){
-		if(use_player_ki){
-			controller = new Controller(new KBS_player<mariaDB>(new mariaDB(address,3306,user,pw,db)), new KBS_player<mariaDB>(new mariaDB(address,3306,user,pw,db)));
-		}else{
-			controller = new Controller(new KBS_trainer<mariaDB>(new mariaDB(address,3306,user,pw,db)), new KBS_trainer<mariaDB>(new mariaDB(address,3306,user,pw,db)));
-		}
+	public static void init(String address, int port, String user, String pw, String db){
+		controller = new Controller(new KBS_player<mariaDB>(new mariaDB(address,3306,user,pw,db)), new KBS_player<mariaDB>(new mariaDB(address,3306,user,pw,db)));
+	}
+	
+	public static void init(Controller cont){
+		controller = cont;
 	}
 	
 	public static void init(){

@@ -4,22 +4,20 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.AppenderRef;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
-import org.apache.logging.log4j.core.config.LoggerConfig;
 
+import gamelogic.Controller;
 import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.GController;
+import gamelogic.AI.KBS_trainer;
+import gamelogic.AI.mariaDB;
 
 /**
  * AI tester & trainer
@@ -34,7 +32,7 @@ public class AITrainer {
 	
 	private static long moves = 0;
 	
-	public static void main(String[] args){ // external logger, length, starting player [a,b]
+	public static void main(String[] args){ // external logger, starting player [a,b], first move
 		if(args.length > 1){
 			if(!args[0].equals("none")){
 				LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
@@ -42,8 +40,6 @@ public class AITrainer {
 				context.setConfigLocation(file.toURI());
 			}
 		}
-		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai",false);
-		
 		if(args.length > 1 &&  (GController.getX_MAX() != 7 || GController.getY_MAX() != 6)){
 			// protection from running invalid field evaluations on the server
 			logger.error("Stopping, field size modified!");
@@ -61,16 +57,26 @@ public class AITrainer {
 				logger.warn("Unknown input for starting player: {}",args[2]);
 			}
 		}
-		run(player);
+		
+		int first_move = 3;
+		if(args.length > 3){
+			try{
+				first_move = Integer.valueOf(args[2]);
+			}catch(NumberFormatException e){
+				logger.error("Invalid first move!");
+			}
+		}
+		initController("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai", player == E_GAME_STATE.PLAYER_A, first_move);
+		run(player,first_move);
 		
 		GController.shutdown();
 		logger.exit();
 	}
 	
-	private static void run(E_GAME_STATE starting_pl){
+	private static void run(E_GAME_STATE starting_pl, int first_move){
 		logger.entry();
-		final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-		final Configuration config = ctx.getConfiguration();
+//		final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+//		final Configuration config = ctx.getConfiguration();
 //		Map<String, LoggerConfig> appenders = config.getLoggers();
 //		if(appenders.containsKey("Root")){
 //			List<AppenderRef> j = appenders.get("Console").getAppenderRefs();
@@ -90,18 +96,27 @@ public class AITrainer {
 		GController.startGame();
 		GController.setState(starting_pl);
 		logger.info("Starting player: {}",starting_pl);
+		
+		@SuppressWarnings("unused")
+		boolean runthrough = false;
 		while(gameRunning()){
-			//logger.info(GController.getprintedGameState());
+			
 			moves++;
-//			try {
-//				String l = readLine("Insert 1 to continue");
-//				if(!l.equals("1")){
-//					continue;
-//				}
-//			} catch (IOException e) {
-//				logger.error("{}",e);
-//				e.printStackTrace();
-//			}
+			logger.info(GController.getprintedGameState());
+			try {
+				if(runthrough = false){
+					String l = readLine("Insert 1 to continue");
+					if(l.equals("C")){
+						runthrough = true;
+					}
+					if(!l.equals("1")){
+						continue;
+					}
+				}
+			} catch (IOException e) {
+				logger.error("{}",e);
+				e.printStackTrace();
+			}
 			lastmatch = System.currentTimeMillis();
 			switch(GController.getGameState()){
 			case PLAYER_A:
@@ -116,6 +131,13 @@ public class AITrainer {
 			}
 		}
 		logger.info(GController.getprintedGameState());
+	}
+	
+	private static void initController(String address, int port, String user, String pw, String db, boolean player_a, int first_move){
+		KBS_trainer AIA = new KBS_trainer(new mariaDB(address, port, user, pw, db),player_a == true ? first_move : -1);
+		KBS_trainer AIB = new KBS_trainer(new mariaDB(address, port, user, pw, db),player_a == false ? first_move : -1);
+		Controller controller = new Controller(AIA, AIB);
+		GController.init(controller);
 	}
 	
 	private static void registerExitFunction() {

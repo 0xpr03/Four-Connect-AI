@@ -18,10 +18,10 @@ import gamelogic.GController;
  * 
  * @param <E> needs a DB handler
  */
-public class KBS_trainer<E extends DB> implements AI {
+public class KBS_trainer implements AI {
 	
 	private Logger logger = LogManager.getLogger("AI");
-	private E db;
+	private DB db;
 	private E_PLAYER player;
 	private SelectResult MOVES;
 	private byte[] lastField = null;
@@ -33,9 +33,15 @@ public class KBS_trainer<E extends DB> implements AI {
 	private boolean follow_unused = false;
 	private List<Move> follow = new ArrayList<Move>();
 	
-	public KBS_trainer(E db){
+	private final boolean use_first_move;
+	private final int first_move;
+	private boolean first_move_done = false;
+	
+	public KBS_trainer(DB db, int first_move){
+		this.use_first_move = first_move == -1 ? false : true;
+		this.first_move = first_move;
 		this.db = db;
-		logger.info("Knowledge based system initializing..");
+		logger.info("Knowledge based trainer system initializing..\nusing first move:{} {}",use_first_move, first_move);
 	}
 	
 	@Override
@@ -72,9 +78,19 @@ public class KBS_trainer<E extends DB> implements AI {
 				unused = sel.getUnused();
 				MOVES = null; // needed ?
 				MOVES = sel;
-				new_move = unused.get(0);
-				if(unused.size() != possibilities.size()){
-					logger.error("Wrong list size {} poss. {}",unused.size(),possibilities.size());
+				if(use_first_move){
+					if(GController.getMoves() == 0){
+						if(first_move_done){
+							logger.info("Done with branch!");
+							return false;
+						}
+						new_move = unused.get(first_move);
+						first_move_done = true;
+					}else{
+						new_move = unused.get(0);
+					}
+				}else{
+					new_move = unused.get(0);
 				}
 			}else{
 				MOVES = null;
@@ -82,11 +98,26 @@ public class KBS_trainer<E extends DB> implements AI {
 				if(!moves.getUnused().isEmpty()){
 					lastField = db.getHash();
 					unused = new ArrayList<Move>(moves.getUnused());
-					new_move = unused.get(0);
+					
+					if(use_first_move){
+						if(GController.getMoves() == 0){
+							if(first_move_done){
+								logger.info("Done with branch!");
+								return false;
+							}
+							new_move = unused.get(first_move);
+							first_move_done = true;
+						}else{
+							new_move = unused.get(0);
+						}
+					}else{
+						new_move = unused.get(0);
+					}
 				}
 			}
 		}
-		logger.debug("MOVES pla:{} win:{} loose:{} draw:{} unused:{}",this.player,MOVES.getWins().size(),MOVES.getLooses().size(),MOVES.getDraws().size(),MOVES.getUnused().size());
+		if(logger.isDebugEnabled())
+			logger.debug("MOVES pla:{} win:{} loose:{} draw:{} unused:{}",this.player,MOVES.getWins().size(),MOVES.getLooses().size(),MOVES.getDraws().size(),MOVES.getUnused().size());
 		if(new_move == null){
 			logger.debug("No new moves");
 			logger.debug(()->printUnused());
