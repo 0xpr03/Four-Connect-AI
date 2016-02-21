@@ -33,20 +33,16 @@ public class AITrainer {
 	private static long moves = 0;
 	
 	public static void main(String[] args){ // external logger, starting player [a,b], first move
-		if(args.length > 1){
+		if(args.length > 0){
 			if(!args[0].equals("none")){
 				LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
 				File file = new File(args[0]);
 				context.setConfigLocation(file.toURI());
 			}
 		}
-		if(args.length > 1 &&  (GController.getX_MAX() != 7 || GController.getY_MAX() != 6)){
-			// protection from running invalid field evaluations on the server
-			logger.error("Stopping, field size modified!");
-		}
-		E_GAME_STATE player = E_GAME_STATE.PLAYER_B;
-		if(args.length > 2){
-			switch(args[2]){
+		E_GAME_STATE player = E_GAME_STATE.PLAYER_A;
+		if(args.length > 1){
+			switch(args[1]){
 			case "a":
 				player = E_GAME_STATE.PLAYER_A;
 				break;
@@ -58,8 +54,8 @@ public class AITrainer {
 			}
 		}
 		
-		int first_move = 3;
-		if(args.length > 3){
+		int first_move = -1;
+		if(args.length > 2){
 			try{
 				first_move = Integer.valueOf(args[2]);
 			}catch(NumberFormatException e){
@@ -67,6 +63,11 @@ public class AITrainer {
 			}
 		}
 		initController("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai", player == E_GAME_STATE.PLAYER_A, first_move);
+		if(args.length > 1 &&  (GController.getX_MAX() != 7 || GController.getY_MAX() != 6)){
+			// protection from running invalid field evaluations on the server
+			logger.error("Stopping, field size modified!");
+			System.exit(1);
+		}
 		run(player,first_move);
 		
 		GController.shutdown();
@@ -104,6 +105,7 @@ public class AITrainer {
 //					logger.info(GController.getprintedGameState());
 //					String l = readLine("Insert 1 to continue");
 //					if(l.equals("C")){
+//						System.out.println("Disabling manual mode!");
 //						runthrough = true;
 //					}
 //					if(!l.equals("1")){
@@ -162,7 +164,7 @@ public class AITrainer {
 				}catch(Exception e){
 					logger.error("Trying to get state: {}",e);
 				}
-				logger.info("Took {}ms and {} moves including {} restart and re-moves",System.currentTimeMillis()-start_time,moves,restarts);
+				logger.info("Took {}ms and {} moves including re-moves and {} restarts",System.currentTimeMillis()-start_time,moves,restarts);
 				GController.shutdown();
 				logger.exit();
 			}

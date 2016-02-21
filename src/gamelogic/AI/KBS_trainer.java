@@ -75,9 +75,9 @@ public class KBS_trainer implements AI {
 				}
 
 				lastField = db.getHash();
-				unused = sel.getUnused();
 				MOVES = null; // needed ?
 				MOVES = sel;
+				unused = MOVES.getUnused();
 				if(use_first_move){
 					if(GController.getMoves() == 0){
 						if(first_move_done){
@@ -97,7 +97,7 @@ public class KBS_trainer implements AI {
 				MOVES = moves;
 				if(!moves.getUnused().isEmpty()){
 					lastField = db.getHash();
-					unused = new ArrayList<Move>(moves.getUnused());
+					unused = MOVES.getUnused();
 					
 					if(use_first_move){
 						if(GController.getMoves() == 0){

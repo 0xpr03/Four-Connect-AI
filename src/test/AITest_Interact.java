@@ -52,6 +52,9 @@ public class AITest_Interact {
 					input = readLine("");
 					int in = Integer.parseInt(input);
 					logger.debug("Player using {}",in);
+					if(in >= GController.getX_MAX() || in < 0){
+						System.out.println("Not in range!");
+					}
 					if(!GController.insertStone(in)){
 						System.out.println("Not in range!");
 					}
