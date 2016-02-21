@@ -69,7 +69,7 @@ public class KBS_trainer implements AI {
 				logger.debug("Possibilities: {}",possibilities);
 				SelectResult sel = db.insertMoves(GController.getFieldState(), possibilities,player==E_PLAYER.PLAYER_A);
 				if(sel == null){ // can happen on concurrency
-					logger.error("Error on insert!");
+					logger.debug("Error on insert");
 					GController.restart();
 					return true;
 				}

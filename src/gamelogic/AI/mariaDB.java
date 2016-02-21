@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.SQLNonTransientConnectionException;
 import java.sql.SQLTransactionRollbackException;
 import java.sql.Statement;
@@ -163,9 +164,11 @@ public class mariaDB implements DB {
 			if(rs.next()){
 				return rs.getLong(1);
 			}
-		} catch (SQLException e) {
-			logger.error("stmInsFID {}",e);
-			logger.error("fieldHash: {}",bytesToHex(fieldHash));
+		} catch (SQLException e){
+			if(!e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class)){
+				logger.error("stmInsFID {}",e);
+				logger.error("fieldHash: {}",bytesToHex(fieldHash));
+			}
 		}
 		return -1;
 	}
@@ -193,26 +196,39 @@ public class mariaDB implements DB {
 			}
 			if(fID == -1){
 				fID = insertFieldID(sha);
+				if(fID == -1){
+					return null;
+				}
 			}
 			stmInsert.setLong(1, fID);
 			stmInsert.setBoolean(2, player_a);
 			SelectResult sel = new SelectResult();
 			for(int move : moves){
-				stmInsert.setInt(3, move);
-				stmInsert.executeUpdate();
-				sel.addUnused(new Move(fID, move, player_a));
+				try{
+					stmInsert.setInt(3, move);
+					stmInsert.executeUpdate();
+					if(sel != null)
+						sel.addUnused(new Move(fID, move, player_a));
+				}catch(SQLException e){
+					if(e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class)){
+						sel = null;
+						connection.clearWarnings();
+					}else{
+						throw e;
+					}
+				}
 			}
 			inserts++;
 			return sel;
 		} catch (SQLException e) {
-//			if(e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class) || e.getCause().getClass().equals(SQLTransactionRollbackException.class)){
-//				logger.error("Ignoring duplicate insertion exception");
-//			}else{
+			if(e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class) || e.getCause().getClass().equals(SQLTransactionRollbackException.class)){
+				logger.debug("Ignoring duplicate insertion exception");
+			}else{
 				logger.error("insertMoves {}",e);
 				logger.error("field:{} pla:{} moves:{}",this.bytesToHex(lib.field2sha(field)),player_a,moves);
-//			}
-			return null;
+			}
 		}
+		return null;
 	}
 
 	@Override
@@ -234,11 +250,11 @@ public class mariaDB implements DB {
 			updates++;
 			return true;
 		} catch (SQLException e) {
-//			if(e.getCause().getClass() == SQLTransactionRollbackException.class){
-//				logger.debug("Ignoring datarace exception");
-//			}else{
+			if(e.getCause().getClass() == SQLTransactionRollbackException.class){
+				logger.debug("Ignoring datarace exception");
+			}else{
 				logger.error("updateMove {}",e);
-//			}
+			}
 			return false;
 		}
 	}

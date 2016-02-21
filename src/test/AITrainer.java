@@ -124,7 +124,7 @@ public class AITrainer {
 				break;
 			case RESTART:
 				try {
-					Thread.sleep(50);
+					Thread.sleep(200);
 				} catch (InterruptedException e) {
 					logger.error("{}",e);
 				}

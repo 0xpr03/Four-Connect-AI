@@ -100,12 +100,12 @@ public final class Controller extends ControllerBase {
 				DRAW = false;
 				addHistory(); // add empty field
 				ALLOW_BACK_BOTH = false;
-				logger.warn("Using hard coded state!");
+				logger.debug("Using hard coded state!");
 				STATE = E_GAME_STATE.PLAYER_A;
 				break;
 			case SINGLE_PLAYER:
-				STATE = E_GAME_STATE.PLAYER_B;
-				break;
+//				STATE = E_GAME_STATE.PLAYER_B;
+//				break;
 			case MULTIPLAYER:
 			case KI_INTERNAL:
 			case FUZZING:
@@ -472,7 +472,7 @@ public final class Controller extends ControllerBase {
 	 * This is used only for KI internals where dataraces are comming
 	 */
 	public void restart(){
-		logger.info("Restarting");
+		logger.debug("Restarting");
 		STATE = E_GAME_STATE.RESTART;
 	}
 	
