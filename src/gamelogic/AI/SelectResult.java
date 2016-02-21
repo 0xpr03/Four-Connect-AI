@@ -65,7 +65,7 @@ public class SelectResult {
 	 * @see java.util.List#add(java.lang.Object)
 	 */
 	public boolean addDraw(Move e) {
-		return looses.add(e);
+		return draws.add(e);
 	}
 
 	/**

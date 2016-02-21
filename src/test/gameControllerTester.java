@@ -165,7 +165,7 @@ public class gameControllerTester {
 	public void test_AI(){ // 4*4
 		if(GController.getY_MAX() == 4 && GController.getX_MAX() == 4){
 			GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai", false);
-			String[] fields_used = {"X-O-\nO-X-\nOOX-\nOXXO"};
+			String[] fields_used = {"XOX-\nOXO-\nOOXX\nOXXO","X-O-\nO-XO\nO-OX\nOXXX","X-OX\nO-XO\nO-OX\nO-XX"};
 			mariaDB mdb = new mariaDB("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
 			GController.initGame(E_GAME_MODE.TESTING);
 			GController.startGame();

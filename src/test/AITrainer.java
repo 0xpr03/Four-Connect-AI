@@ -1,6 +1,9 @@
 package test;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 
@@ -45,7 +48,7 @@ public class AITrainer {
 			// protection from running invalid field evaluations on the server
 			logger.error("Stopping, field size modified!");
 		}
-		E_GAME_STATE player = E_GAME_STATE.PLAYER_B;
+		E_GAME_STATE player = E_GAME_STATE.PLAYER_A;
 		if(args.length > 2){
 			switch(args[2]){
 			case "a":
@@ -90,6 +93,15 @@ public class AITrainer {
 		while(gameRunning()){
 			//logger.info(GController.getprintedGameState());
 			moves++;
+//			try {
+//				String l = readLine("Insert 1 to continue");
+//				if(!l.equals("1")){
+//					continue;
+//				}
+//			} catch (IOException e) {
+//				logger.error("{}",e);
+//				e.printStackTrace();
+//			}
 			lastmatch = System.currentTimeMillis();
 			switch(GController.getGameState()){
 			case PLAYER_A:
@@ -121,6 +133,16 @@ public class AITrainer {
 				logger.exit();
 			}
 		});
+	}
+	
+	private static String readLine(String format, Object... args) throws IOException {
+	    if (System.console() != null) {
+	        return System.console().readLine(format, args);
+	    }
+	    System.out.print(String.format(format, args));
+	    BufferedReader reader = new BufferedReader(new InputStreamReader(
+	            System.in));
+	    return reader.readLine();
 	}
 	
 	/**

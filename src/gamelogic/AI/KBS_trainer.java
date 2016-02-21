@@ -86,6 +86,7 @@ public class KBS_trainer<E extends DB> implements AI {
 				}
 			}
 		}
+		logger.debug("MOVES pla:{} win:{} loose:{} draw:{} unused:{}",this.player,MOVES.getWins().size(),MOVES.getLooses().size(),MOVES.getDraws().size(),MOVES.getUnused().size());
 		if(new_move == null){
 			logger.debug("No new moves");
 			logger.debug(()->printUnused());
@@ -173,6 +174,7 @@ public class KBS_trainer<E extends DB> implements AI {
 			logger.debug("Not removing, empty unused index.");
 		}
 		if(logger.isDebugEnabled()){
+			logger.debug("MOVES pla:{} win:{} loose:{} draw:{} unused:{}",this.player,MOVES.getWins().size(),MOVES.getLooses().size(),MOVES.getDraws().size(),MOVES.getUnused().size());
 			logger.debug("{} {}",this.player,printHistory());
 		}
 	}
@@ -205,6 +207,10 @@ public class KBS_trainer<E extends DB> implements AI {
 			return;
 		}
 		
+		if(logger.isDebugEnabled()){
+			logger.debug("rollback: {} state:{}",rollback,GController.getGameState());
+			logger.debug("Before event: {}",P_MOVE_CURRENT.toString());
+		}
 		if(rollback){ // no real move happened
 			if((GController.isWin_a() && this.player == E_PLAYER.PLAYER_B) || (GController.isWin_b() && this.player == E_PLAYER.PLAYER_A) ){
 				this.P_MOVE_CURRENT.setLoose(true);
@@ -236,16 +242,20 @@ public class KBS_trainer<E extends DB> implements AI {
 			logger.error("Invalid set");
 			System.exit(1);
 		}
-		
+		logger.debug("After event: {}",P_MOVE_CURRENT.toString());
 		if(P_MOVE_CURRENT.isLoose()){
+			logger.debug("Adding to loose");
 			MOVES.addLoose(P_MOVE_CURRENT);
 		}else if(P_MOVE_CURRENT.isWin()){
+			logger.debug("Adding to win");
 			MOVES.addWin(P_MOVE_CURRENT);
 		}
 		if(P_MOVE_CURRENT.isDraw()){
+			logger.debug("Adding to draw");
 			MOVES.addDraw(P_MOVE_CURRENT);
 		}
-		
+		if(logger.isDebugEnabled())
+			logger.debug("MOVES pla:{} win:{} loose:{} draw:{} unused:{}",this.player,MOVES.getWins().size(),MOVES.getLooses().size(),MOVES.getDraws().size(),MOVES.getUnused().size());
 		P_MOVE_CURRENT = null;
 		if(logger.isDebugEnabled())
 			logger.debug("{} {}",this.player,printUnused());

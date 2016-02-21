@@ -30,7 +30,7 @@ public class Move {
 	
 	@Override
 	public String toString(){
-		return bytesToHex(this.field)+" fid:"+this.fid+" pla:"+this.player_a+" m:"+this.move+" d:"+draw+" l:"+loose+" u:"+used;
+		return "fid:"+this.fid+" pla:"+this.player_a+" m:"+this.move+" d:"+draw+" l:"+loose+" u:"+used+" w:"+win+" "+bytesToHex(this.field);
 	}
 	
 	/**
