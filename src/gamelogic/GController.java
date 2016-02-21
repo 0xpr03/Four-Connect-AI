@@ -10,7 +10,9 @@ import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.ControllerBase.E_PLAYER;
 import gamelogic.AI.KBS_player;
 import gamelogic.AI.KBS_trainer;
+import gamelogic.AI.KBS_trainer_simple;
 import gamelogic.AI.mariaDB;
+import gamelogic.AI.mariaDB_simple;
 
 /**
  * The MAIN controller of the game four connect

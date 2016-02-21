@@ -70,7 +70,7 @@ public class KBS_trainer<E extends DB> implements AI {
 
 				lastField = db.getHash();
 				unused = sel.getUnused();
-				MOVES = null;
+				MOVES = null; // needed ?
 				MOVES = sel;
 				new_move = unused.get(0);
 				if(unused.size() != possibilities.size()){
@@ -167,10 +167,10 @@ public class KBS_trainer<E extends DB> implements AI {
 			if(logger.isDebugEnabled())
 				logger.debug("Remoing {}",unused.get(0).toString());
 			
-			if(P_MOVE_CURRENT.isDraw()){
-				MOVES.addDraw(P_MOVE_CURRENT);
-			}else if(P_MOVE_CURRENT.isLoose()){
+			if(P_MOVE_CURRENT.isLoose()){
 				MOVES.addLoose(P_MOVE_CURRENT);
+			}else if(P_MOVE_CURRENT.isDraw()){
+				MOVES.addDraw(P_MOVE_CURRENT);
 			}else{
 				MOVES.addWin(P_MOVE_CURRENT);
 			}
@@ -197,7 +197,7 @@ public class KBS_trainer<E extends DB> implements AI {
 	
 	@Override
 	public void gameEvent(boolean rollback) {
-		logger.entry(player);
+		logger.entry(player, rollback);
 		if(SHUTDOWN){
 			logger.debug("Shutdown set");
 			return;
@@ -214,19 +214,25 @@ public class KBS_trainer<E extends DB> implements AI {
 		if(rollback){ // no real move happened
 			if((GController.isWin_a() && this.player == E_PLAYER.PLAYER_B) || (GController.isWin_b() && this.player == E_PLAYER.PLAYER_A) ){
 				this.P_MOVE_CURRENT.setLoose(true);
+			}else if(GController.isWin_a() || GController.isWin_b()){
+				this.P_MOVE_CURRENT.setWin(true);
 			}
 			this.P_MOVE_CURRENT.setDraw(GController.isDRAW());
 		}else{
 			switch(GController.getGameState()){
 			case DRAW:
 				this.P_MOVE_CURRENT.setDraw(true);
+				break;
 			case WIN_A:
 			case WIN_B:
-				if(checkLoose(GController.getGameState()))
+				if(checkLoose(GController.getGameState())){
 					this.P_MOVE_CURRENT.setLoose(true);
+				}else{
+					this.P_MOVE_CURRENT.setWin(true);
+				}
 				break;
 			default:
-				logger.error("Unknown case for gameEvent!");
+				logger.error("Unknown case for gameEvent! {}",GController.getGameState());
 				return;
 			}
 		}

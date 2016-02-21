@@ -9,10 +9,10 @@ import java.util.List;
  *
  */
 public class SelectResult {
-	private List<Move> wins = new ArrayList<Move>(2);
-	private List<Move> draws = new ArrayList<Move>(2);
-	private List<Move> looses = new ArrayList<Move>(2);
-	private List<Move> unused = new ArrayList<Move>(2);
+	private List<Move> wins = new ArrayList<Move>(5);
+	private List<Move> draws = new ArrayList<Move>(5);
+	private List<Move> looses = new ArrayList<Move>(5);
+	private List<Move> unused = new ArrayList<Move>(5);
 	
 	public SelectResult(){
 	}

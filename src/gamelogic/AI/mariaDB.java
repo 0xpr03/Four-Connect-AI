@@ -81,9 +81,9 @@ public class mariaDB implements DB {
 			stmInsFID = connection.prepareStatement("INSERT INTO `fields` (`field`) VALUES (?);", Statement.RETURN_GENERATED_KEYS);
 			stmSelFID = connection.prepareStatement("SELECT `fid` FROM `fields` WHERE `field` = ?;");
 			
-			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`fid`,`move`,`player_a`,`used`,`loose`,`draw`) VALUES (?,?,?,?,?,?);");
-			stmSelect = connection.prepareStatement("SELECT `move`,`used`,`loose`,`draw` FROM `moves` USE INDEX(`fid`,`player_a`) WHERE `fid` = ? AND `player_a` = ?;");
-			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ?, `loose` = ?, `draw` = ? WHERE `fid` = ? AND `move` = ? AND `player_a` = ? ;");
+			stmInsert = connection.prepareStatement("INSERT INTO `moves` (`fid`,`player_a`,`move`,`used`,`loose`,`draw`,`win`) VALUES (?,?,?,0,0,0,0);");
+			stmSelect = connection.prepareStatement("SELECT `move`,`used`,`loose`,`draw`,`win` FROM `moves` USE INDEX(`fid`,`player_a`) WHERE `fid` = ? AND `player_a` = ?;");
+			stmUpdate = connection.prepareStatement("UPDATE `moves` SET `used` = ?, `loose` = ?, `draw` = ?, `win` = ? WHERE `fid` = ? AND `move` = ? AND `player_a` = ? ;");
 			
 			stmDelAll = connection.prepareStatement("DELETE FROM `moves` WHERE `fid` = ? AND `player_a` = ?;");
 			stmDelLooses = connection.prepareStatement("DELETE FROM `moves` WHERE `fid` = ? AND `loose` = 1 AND `player_a` = ?;");
@@ -107,9 +107,14 @@ public class mariaDB implements DB {
 				stmSelect.setBoolean(2, player_a);
 				ResultSet rs = stmSelect.executeQuery();
 				while(rs.next()){
-					Move move = new Move(field,fID,rs.getInt(1),rs.getBoolean(3),rs.getBoolean(4),rs.getBoolean(2),player_a);
+					Move move = new Move(field,fID,rs.getInt(1),rs.getBoolean(2),rs.getBoolean(3),rs.getBoolean(4),rs.getBoolean(5),player_a);
 					if(move.isUsed()){
-						sel.addWin(move);
+						if(move.isLoose())
+							sel.addLoose(move);
+						if(move.isWin())
+							sel.addWin(move);
+						if(move.isDraw())
+							sel.addDraw(move);
 					}else{
 						sel.addUnused(move);
 					}
@@ -178,14 +183,11 @@ public class mariaDB implements DB {
 				fID = insertFieldID(sha);
 			}
 			stmInsert.setLong(1, fID);
-			stmInsert.setBoolean(3, player_a);
-			stmInsert.setBoolean(4, false);
-			stmInsert.setBoolean(5, false);
-			stmInsert.setBoolean(6, false);
+			stmInsert.setBoolean(2, player_a);
 			SelectResult sel = new SelectResult();
 			for(int move : moves){
 				logger.debug("Inserting {} {} pla:{}",fID,move,player_a);
-				stmInsert.setInt(2, move);
+				stmInsert.setInt(3, move);
 				stmInsert.executeUpdate();
 				sel.addUnused(new Move(sha, fID, move, player_a));
 			}
@@ -211,9 +213,10 @@ public class mariaDB implements DB {
 			stmUpdate.setBoolean(1, move.isUsed());
 			stmUpdate.setBoolean(2, move.isLoose());
 			stmUpdate.setBoolean(3, move.isDraw());
-			stmUpdate.setLong(4, move.getFID());
-			stmUpdate.setInt(5, move.getMove());
-			stmUpdate.setBoolean(6, move.isPlayer_a());
+			stmUpdate.setBoolean(4, move.isWin());
+			stmUpdate.setLong(5, move.getFID());
+			stmUpdate.setInt(6, move.getMove());
+			stmUpdate.setBoolean(7, move.isPlayer_a());
 			stmUpdate.executeUpdate();
 			//stmUpdate.clearParameters();
 			updates++;
@@ -327,8 +330,8 @@ public class mariaDB implements DB {
 		return true;
 	}
 	
-	public SelectResult testField(E_FIELD_STATE[][] field_in,boolean player_a) {
-		logger.entry(player_a);
+	public SelectResult testField(E_FIELD_STATE[][] field_in) {
+		logger.entry();
 		try {
 			SelectResult sel = new SelectResult();
 			byte[] field = lib.field2sha(field_in);
@@ -338,17 +341,24 @@ public class mariaDB implements DB {
 			
 			if(fID != -1){
 				stmSelect.setLong(1, fID);
-				stmSelect.setBoolean(2, player_a);
-				ResultSet rs = stmSelect.executeQuery();
-				while(rs.next()){
-					Move move = new Move(field,fID,rs.getInt(1),rs.getBoolean(3),rs.getBoolean(4),rs.getBoolean(2),player_a);
-					if(move.isUsed()){
-						sel.addWin(move);
-					}else{
+				{
+					stmSelect.setBoolean(2, false);
+					ResultSet rs = stmSelect.executeQuery();
+					while(rs.next()){
+						Move move = new Move(field,fID,rs.getInt(1),rs.getBoolean(2),rs.getBoolean(3),rs.getBoolean(4),rs.getBoolean(5),false);
 						sel.addUnused(move);
 					}
+					rs.close();
 				}
-				rs.close();
+				{
+					stmSelect.setBoolean(2, true);
+					ResultSet rs = stmSelect.executeQuery();
+					while(rs.next()){
+						Move move = new Move(field,fID,rs.getInt(1),rs.getBoolean(2),rs.getBoolean(3),rs.getBoolean(4),rs.getBoolean(5),true);
+						sel.addUnused(move);
+					}
+					rs.close();
+				}
 			}
 			return sel;
 		} catch (SQLException e) {

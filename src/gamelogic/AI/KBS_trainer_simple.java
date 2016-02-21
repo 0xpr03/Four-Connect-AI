@@ -183,6 +183,13 @@ public class KBS_trainer_simple<E extends DB> implements AI {
 			return;
 		}
 		
+		if(_rollback_){
+			this.P_MOVE_CURRENT.setUsed(true);
+			if(!db.setMove(P_MOVE_CURRENT)){
+				logger.error("Invalid set");
+				System.exit(1);
+			}
+		}else{
 		switch(GController.getGameState()){
 		case DRAW:
 		case WIN_A:
@@ -196,6 +203,7 @@ public class KBS_trainer_simple<E extends DB> implements AI {
 		default:
 			logger.error("Unknown case for gameEvent!");
 			break;
+		}
 		}
 		P_MOVE_CURRENT = null;
 		if(logger.isDebugEnabled())

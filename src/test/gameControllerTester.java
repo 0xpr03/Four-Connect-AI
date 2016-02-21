@@ -26,6 +26,7 @@ import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.GController;
 import gamelogic.AI.Move;
+import gamelogic.AI.SelectResult;
 import gamelogic.AI.lib;
 import gamelogic.AI.mariaDB;
 import gamelogic.AI.mariaDB_simple;
@@ -164,22 +165,29 @@ public class gameControllerTester {
 	public void test_AI(){ // 4*4
 		if(GController.getY_MAX() == 4 && GController.getX_MAX() == 4){
 			GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai", false);
-			String[] fields_used = {"----\n----\nOXOX\nXXOO","XO--\nOX--\nOO--\nOXXX"};
-			mariaDB mdb = new mariaDB("localhost", 3306, "ai", "", "ai");
+			String[] fields_used = {"XO--\nOX--\nOO--\nOXXX","X---\nOOX-\nOXO-\nXOXO","XO--\nOOX-\nOXOX\nXOXO"};
+			mariaDB mdb = new mariaDB("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
 			GController.initGame(E_GAME_MODE.TESTING);
 			GController.startGame();
+			Move move = new Move(null,1L,1,false);
 			lib lib = new lib();
 			for(String s : fields_used){
 				GController.D_setField(GController.D_parseField(s));
+				logger.info("field hash {}",move.bytesToHex(lib.field2sha(GController.getFieldState())));
 				boolean not_found = true;
-				if(!mdb.testField(GController.getFieldState(), true).isEmpty()){
+				StringBuilder sb = new StringBuilder();
+				SelectResult sr = mdb.testField(GController.getFieldState());
+				if(!sr.isEmpty()){
 					not_found = false;
-				}
-				if(!mdb.testField(GController.getFieldState(), false).isEmpty()){
-					not_found = false;
+					for(Move m : sr.getUnused()){
+						sb.append(m.toString());
+						sb.append("\n");
+					}
 				}
 				if(not_found){
 					logger.error("Field {} not found!",s);
+				}else{
+					logger.info("Found: \n{} for {}",sb.toString(),GController.getprintedGameState());
 				}
 			}
 		}
