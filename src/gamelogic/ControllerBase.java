@@ -278,6 +278,13 @@ public class ControllerBase {
 					if (!checkDrawPos(x-1,y, false,true)){ // check 1left for horiz/vert wins
 						return false;
 					}
+//					for(int y_sec = Y_MAX; FIELD[x][y_sec] == E_FIELD_STATE.NONE && y > 0 ;y_sec++) {
+//						if(FIELD[x-1][y_sec-1] != E_FIELD_STATE.NONE){
+//							if (!checkDrawPos(x-1,y_sec-1, true,false)){ // check 1left for horiz/vert wins
+//								return false;
+//							}
+//						}
+//					}
 				}
 			}
 			if(x < (X_MAX-1)  && y < Y_MAX){

@@ -1,12 +1,18 @@
 package test;
 
 import java.io.File;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.AppenderRef;
+import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 
 import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
@@ -35,21 +41,11 @@ public class AITrainer {
 		}
 		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai",false);
 		
-		Level level_db = Level.WARN;
-		Level level_ai = Level.INFO;
-		int games = 1;
-		
-		if(args.length > 1){
-			games = Integer.parseInt(args[1]);
-		}else if(args.length > 0){
-			games = Integer.parseInt(args[0]);
-		}
-		logger.info("Games {}",games);
 		if(args.length > 1 &&  (GController.getX_MAX() != 7 || GController.getY_MAX() != 6)){
 			// protection from running invalid field evaluations on the server
 			logger.error("Stopping, field size modified!");
 		}
-		E_GAME_STATE player = E_GAME_STATE.PLAYER_A;
+		E_GAME_STATE player = E_GAME_STATE.PLAYER_B;
 		if(args.length > 2){
 			switch(args[2]){
 			case "a":
@@ -62,19 +58,28 @@ public class AITrainer {
 				logger.warn("Unknown input for starting player: {}",args[2]);
 			}
 		}
-		run(level_db,level_ai,games,player);
+		run(player);
 		
 		GController.shutdown();
 		logger.exit();
 	}
 	
-	private static void run(Level level_db, Level level_ai, int games,E_GAME_STATE starting_pl){
+	private static void run(E_GAME_STATE starting_pl){
 		logger.entry();
-		
+		final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+		final Configuration config = ctx.getConfiguration();
+//		Map<String, LoggerConfig> appenders = config.getLoggers();
+//		if(appenders.containsKey("Root")){
+//			List<AppenderRef> j = appenders.get("Console").getAppenderRefs();
+//			for(AppenderRef x : j){
+//				if(x.getRef().equals("Console"))
+//					x.
+//			}
+//		}
 		registerExitFunction();
 		Level logcontroller = Level.WARN;
-		Configurator.setLevel("DB", level_db);
-		Configurator.setLevel("AI", level_ai);
+		Configurator.setLevel("DB", Level.INFO);
+		Configurator.setLevel("AI", Level.INFO);
 		Configurator.setLevel("Controller", Level.INFO);
 		
 		start_time=System.currentTimeMillis();

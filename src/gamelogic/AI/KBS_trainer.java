@@ -150,6 +150,7 @@ public class KBS_trainer<E extends DB> implements AI {
 		if(logger.isDebugEnabled()){
 			logger.debug("{} {}",this.player,printHistory());
 		}
+		
 		if(moveHistory.size() > 1){
 			moveHistory.remove(moveHistory.size() - 1);
 			updatePointer();
@@ -164,16 +165,9 @@ public class KBS_trainer<E extends DB> implements AI {
 				logger.error("Unused not used! {}\n{}",unused.get(0).toString(),printUnused());
 				System.exit(1);
 			}
+			
 			if(logger.isDebugEnabled())
 				logger.debug("Remoing {}",unused.get(0).toString());
-			
-			if(P_MOVE_CURRENT.isLoose()){
-				MOVES.addLoose(P_MOVE_CURRENT);
-			}else if(P_MOVE_CURRENT.isDraw()){
-				MOVES.addDraw(P_MOVE_CURRENT);
-			}else{
-				MOVES.addWin(P_MOVE_CURRENT);
-			}
 			unused.remove(0);
 		}else{
 			logger.debug("Not removing, empty unused index.");
@@ -241,6 +235,15 @@ public class KBS_trainer<E extends DB> implements AI {
 		if(!db.setMove(P_MOVE_CURRENT)){
 			logger.error("Invalid set");
 			System.exit(1);
+		}
+		
+		if(P_MOVE_CURRENT.isLoose()){
+			MOVES.addLoose(P_MOVE_CURRENT);
+		}else if(P_MOVE_CURRENT.isWin()){
+			MOVES.addWin(P_MOVE_CURRENT);
+		}
+		if(P_MOVE_CURRENT.isDraw()){
+			MOVES.addDraw(P_MOVE_CURRENT);
 		}
 		
 		P_MOVE_CURRENT = null;

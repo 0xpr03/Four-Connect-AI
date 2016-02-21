@@ -166,8 +166,21 @@ public class mariaDB implements DB {
 			}
 		} catch (SQLException e) {
 			logger.error("stmInsFID {}",e);
+			logger.error("fieldHash: {}",bytesToHex(fieldHash));
 		}
 		return -1;
+	}
+	
+	/**
+	 * Bytes to hex for sha ASCII representation
+	 * @param bytes
+	 * @return
+	 */
+	public String bytesToHex(byte[] bytes) {
+		StringBuffer result = new StringBuffer();
+		for (byte byt : bytes)
+			result.append(Integer.toString((byt & 0xff) + 0x100, 16).substring(1));
+		return result.toString();
 	}
 
 	@Override
@@ -198,6 +211,7 @@ public class mariaDB implements DB {
 //				logger.error("Ignoring duplicate insertion exception");
 //			}else{
 				logger.error("insertMoves {}",e);
+				logger.error("field:{} pla:{} moves:{}",this.bytesToHex(lib.field2sha(field)),player_a,moves);
 //			}
 			return null;
 		}

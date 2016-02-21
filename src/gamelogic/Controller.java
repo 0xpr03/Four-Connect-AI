@@ -42,7 +42,6 @@ public final class Controller extends ControllerBase {
 	 */
 	private boolean ALLOW_BACK_BOTH = false;
 	
-	
 	/**
 	 * Initialize a new Game
 	 * @param gamemode on multiplayer / singleplayer the starting player will be selected randomly
@@ -267,13 +266,29 @@ public final class Controller extends ControllerBase {
 		//logger.warn("Using default win state to inform!");
 		STATE = last_win;
 		if(ALLOW_BACK_BOTH){
+			logger.debug("state; {}",STATE);
 			MOVES -= 2;
 			// if last player, then no rollback info
 			
-			AI_a.gameEvent(state_cache != E_GAME_STATE.PLAYER_A);
-			AI_b.gameEvent(state_cache != E_GAME_STATE.PLAYER_B);
-			AI_a.goBackHistory(MOVES < 3);
-			AI_b.goBackHistory(MOVES < 3);
+			switch(state_cache){
+			case PLAYER_A:
+				AI_a.gameEvent(false);
+				AI_a.getOutcome();
+				AI_b.gameEvent(true);
+				AI_a.goBackHistory(MOVES < 3);
+				AI_b.goBackHistory(MOVES < 3);
+				break;
+			case PLAYER_B:
+				AI_b.gameEvent(false);
+				AI_b.getOutcome();
+				AI_a.gameEvent(true);
+				AI_b.goBackHistory(MOVES < 3);
+				AI_a.goBackHistory(MOVES < 3);
+				break;
+			default:
+				logger.error("Not supported case! {}",GController.getprintedGameState());
+				break;
+			}
 			
 			ALLOW_BACK_BOTH = false;
 		}else{
@@ -416,6 +431,8 @@ public final class Controller extends ControllerBase {
 					if(has_moves){
 						AI_a.gameEvent(false);
 						AI_a.goBackHistory(MOVES < 3);
+					}else{
+						AI_a.getOutcome();
 					}
 					break;
 				case PLAYER_B:
@@ -423,6 +440,8 @@ public final class Controller extends ControllerBase {
 					if(has_moves){
 						AI_b.gameEvent(false);
 						AI_b.goBackHistory(MOVES < 3);
+					}else{
+						AI_b.getOutcome();
 					}
 					break;
 				default:

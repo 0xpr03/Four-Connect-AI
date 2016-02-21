@@ -62,6 +62,7 @@ public class AITest_Interact {
 					logger.error(e1);
 				}
 			}else if(GController.getGameState() == E_GAME_STATE.PLAYER_B){
+				logger.info(GController.getprintedGameState());
 				GController.moveAI_A();
 			}
 		}
