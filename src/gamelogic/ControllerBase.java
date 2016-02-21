@@ -377,7 +377,7 @@ public class ControllerBase {
 		Point a = getYmax(wstate,posx,posy,false);
 		Point b = getYmin(wstate,posx,posy,false);
 		
-		logger.debug("max_y:{} min_y:{}",a.getY(),b.getY());
+		logger.debug("max_y:{} min_y:{}",()->a.getY(),()->b.getY());
 		if ( ( a.getY() - b.getY() ) > NEEDED_WIN_DIFFERENCE ) {
 			logger.debug("Winn Y");
 			return new GameStore(a,b, STATE);
@@ -440,7 +440,7 @@ public class ControllerBase {
 		Point a = getXmax(wstate,posx, posy,false);
 		Point b = getXmin(wstate,posx,posy,false);
 		
-		logger.debug("max_x:{} min_x:{}",a.getX(),b.getX());
+		logger.debug("max_x:{} min_x:{}",()->a.getX(),()->b.getX());
 		if ( ( a.getX() - b.getX())  > NEEDED_WIN_DIFFERENCE ) {
 			logger.debug("Winn X");
 			return new GameStore(a,b, STATE);
@@ -498,7 +498,7 @@ public class ControllerBase {
 		Point a = getXmaxYmax(wstate,posx,posy,false);
 		Point b = getXminYmin(wstate,posx,posy,false);
 		
-		logger.debug("max_x:{} min_x:{}",a.getX(),b.getX());
+		logger.debug("max_x:{} min_x:{}",()->a.getX(),()->b.getX());
 		if ( ( a.getX() - b.getX())  > NEEDED_WIN_DIFFERENCE ) {
 			logger.debug("Winn XYP");
 			return new GameStore(a,b, STATE);
@@ -561,13 +561,13 @@ public class ControllerBase {
 	protected GameStore checkWin_XYM(final int posx,final int posy,final E_FIELD_STATE wstate) {
 		
 		Point a = getXmaxYmin(wstate,posx,posy,false);
-		logger.debug("P1: {}|{}",a.getX(),a.getY());
+		logger.debug("P1: {}|{}",()->a.getX(),()->a.getY());
 		
 		Point b = getXminYmax(wstate,posx,posy,false);
-		logger.debug("PNEEDED_WIN_DIFFERENCE: {}|{}",b.getX(),b.getY());
+		logger.debug("PNEEDED_WIN_DIFFERENCE: {}|{}",()->b.getX(),()->b.getY());
 		
 		//remove possible 0
-		logger.debug("max_x:{} min_x:{}",a.getX(),b.getX());
+		logger.debug("max_x:{} min_x:{}",()->a.getX(),()->b.getX());
 		if ( ( a.getX() - b.getX())  > NEEDED_WIN_DIFFERENCE ) {
 			logger.debug("Winn XYM");
 			return new GameStore(a,b, STATE);

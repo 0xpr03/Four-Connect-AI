@@ -214,9 +214,9 @@ public final class Controller extends ControllerBase {
 		if(ws.isCapitulation()){
 			logger.debug("Capitulation");
 		}else{
-			logger.debug("Point A:{}|{} B:{}|{}",ws.getPoint_a().getX(),ws.getPoint_a().getY(),ws.getPoint_b().getX(),ws.getPoint_b().getY());
+			logger.debug("Point A:{}|{} B:{}|{}",()->ws.getPoint_a().getX(),()->ws.getPoint_a().getY(),()->ws.getPoint_b().getX(),()->ws.getPoint_b().getY());
 		}
-		logger.debug("State: {}",ws.getState());
+		logger.debug("State: {}",()->ws.getState());
 		
 		if(GAMEMODE == E_GAME_MODE.KI_TRAINING){
 			if(ws.getState() == E_GAME_STATE.WIN_A)
@@ -357,7 +357,7 @@ public final class Controller extends ControllerBase {
 		synchronized (lock) {
 			if(!matchHistory.add(copyField(FIELD))){
 				logger.error("Couldn't insert into list");
-				logger.debug(getPrintedHistory());
+				logger.debug(()->getPrintedHistory());
 			}
 		}
 	}
