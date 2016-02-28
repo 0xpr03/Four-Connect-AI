@@ -58,14 +58,14 @@ public final class Controller extends ControllerBase {
 			}
 			LAST_GAME = null;
 			STATE = E_GAME_STATE.NONE;
+			super.X_MAX = x_max;
+			super.Y_MAX = y_max;
 			FIELD = new E_FIELD_STATE[X_MAX][Y_MAX];
 			for(int i = 0; i < X_MAX; i++){
 				for (int j = 0; j < Y_MAX; j++){
 					FIELD[i][j] = E_FIELD_STATE.NONE;
 				}
 			}
-			super.X_MAX = x_max;
-			super.Y_MAX = y_max;
 			GAMEMODE = gamemode;
 			
 			if(GAMEMODE == E_GAME_MODE.KI_TRAINING){
