@@ -45,8 +45,8 @@ public class ControllerBase {
 	protected final Object lock = new Object(); // lock for synchronization
 	protected AI AI_a = null; // primary AI
 	protected AI AI_b = null; // secondary for KI internal
-	protected int X_MAX = 7;
-	protected int Y_MAX = 6;
+	protected int X_MAX = 4;
+	protected int Y_MAX = 4;
 	
 	public ControllerBase(){
 		checkBasics();
@@ -737,7 +737,7 @@ public class ControllerBase {
 	 */
 	public List<Integer> getPossibilities(){
 		logger.entry();
-		List<Integer> possibilities = new ArrayList<Integer>();
+		List<Integer> possibilities = new ArrayList<Integer>(X_MAX);
 		int ymax = getY_MAX()-1;
 		synchronized (lock){
 			for(int x = 0; x < getX_MAX(); x++){

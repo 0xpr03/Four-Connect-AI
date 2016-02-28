@@ -34,7 +34,7 @@ public class AITest_Interact {
 	
 	public static void main(String[] args){
 		init();
-		GController.initGame(E_GAME_MODE.SINGLE_PLAYER,Level.INFO);
+		GController.initGame(E_GAME_MODE.SINGLE_PLAYER,Level.INFO, 4,4);
 		GController.startGame();
 		logger.info("Gamemode: {}",GController.getGamemode());
 		E_GAME_STATE state = E_GAME_STATE.NONE;

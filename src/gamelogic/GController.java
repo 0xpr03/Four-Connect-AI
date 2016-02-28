@@ -1,5 +1,6 @@
 package gamelogic;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 
 import org.apache.logging.log4j.Level;
@@ -9,6 +10,7 @@ import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.ControllerBase.E_PLAYER;
 import gamelogic.AI.KBS_player;
+import gamelogic.AI.MemCache;
 import gamelogic.AI.mariaDB;
 
 /**
@@ -22,7 +24,8 @@ public class GController {
 	private static Controller controller;
 	
 	public static void init(String address, int port, String user, String pw, String db){
-		controller = new Controller(new KBS_player<mariaDB>(new mariaDB(address,3306,user,pw,db)), new KBS_player<mariaDB>(new mariaDB(address,3306,user,pw,db)));
+		MemCache<ByteBuffer,Long> cache = new MemCache<ByteBuffer, Long>(300, 300, 50000);
+		controller = new Controller(new KBS_player<mariaDB>(new mariaDB(address,3306,user,pw,db,cache)), new KBS_player<mariaDB>(new mariaDB(address,3306,user,pw,db,cache)));
 	}
 	
 	public static void init(Controller cont){
@@ -142,16 +145,16 @@ public class GController {
 	 * @param loglevel
 	 * @see gamelogic.ControllerBase#initGame(gamelogic.ControllerBase.E_GAME_MODE, org.apache.logging.log4j.Level)
 	 */
-	public static void initGame(E_GAME_MODE gamemode, Level loglevel) {
-		controller.initGame(gamemode, loglevel);
+	public static void initGame(E_GAME_MODE gamemode, Level loglevel, int x_max,int y_max) {
+		controller.initGame(gamemode, loglevel, x_max, y_max);
 	}
 
 	/**
 	 * @param gamemode
 	 * @see gamelogic.ControllerBase#initGame(gamelogic.ControllerBase.E_GAME_MODE)
 	 */
-	public static void initGame(E_GAME_MODE gamemode) {
-		controller.initGame(gamemode);
+	public static void initGame(E_GAME_MODE gamemode, int x_max, int y_max) {
+		controller.initGame(gamemode, x_max, y_max);
 	}
 
 	/**

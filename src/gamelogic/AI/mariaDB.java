@@ -1,5 +1,6 @@
 package gamelogic.AI;
 
+import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -24,20 +25,23 @@ import gamelogic.GController;
  */
 public class mariaDB implements DB {
 	
-	private Logger logger = LogManager.getLogger("DB");
-	private String address;
-	private String user;
-	private String pw;
-	private String db;
+	private final Logger logger = LogManager.getLogger("DB");
+	private final String address;
+	private final String user;
+	private final String pw;
+	private final String db;
 	
 	private long deletes = 0;
 	private long inserts = 0;
 	private long updates = 0;
 	private long deletesAll = 0;
 	
-	private lib lib = new lib();
-	int port;
+	private final lib lib = new lib();
+	private final int port;
 	private Connection connection;
+	private final MemCache<ByteBuffer,Long> cache;
+	
+	private final boolean USE_CACHE = true;
 	
 	PreparedStatement stmSelFID;
 	PreparedStatement stmInsFID;
@@ -49,17 +53,18 @@ public class mariaDB implements DB {
 	PreparedStatement stmDelAll;
 	PreparedStatement stmDelLooses;
 	
-	public mariaDB(String address, int port, String user, String pw, String db){
+	public mariaDB(String address, int port, String user, String pw, String db, MemCache<ByteBuffer, Long> cache){
 		this.address = address;
 		this.port = port;
 		this.user = user;
 		this.pw = pw;
 		this.db = db;
 		connect();
+		this.cache = cache;// = new MemCache<ByteBuffer,Long>(20, 30, 50000);
 	}
 	
 	private void connect(){
-		logger.info("Connecting to mariDB");
+		logger.info("Connecting to mariDB, using cache: {}",USE_CACHE);
 		String base = "jdbc:mariadb://";
 		base = base+address+":"+port;
 		base += "/"+db;
@@ -137,9 +142,18 @@ public class mariaDB implements DB {
 	private long getFieldID(byte[] fieldHash){
 		logger.entry();
 		try {
+			if(USE_CACHE){
+				Long id = cache.get(ByteBuffer.wrap(fieldHash));
+				if(id != null){
+					return id;
+				}
+			}
+			
 			stmSelFID.setBytes(1, fieldHash);
 			ResultSet rs = stmSelFID.executeQuery();
 			if(rs.next()){
+				if(USE_CACHE)
+					cache.put(ByteBuffer.wrap(fieldHash), rs.getLong(1));
 				return rs.getLong(1);
 			}else{
 				return -1;
@@ -162,6 +176,8 @@ public class mariaDB implements DB {
 			stmInsFID.executeUpdate();
 			ResultSet rs = stmInsFID.getGeneratedKeys();
 			if(rs.next()){
+				if(USE_CACHE)
+					cache.put(ByteBuffer.wrap(fieldHash), rs.getLong(1));
 				return rs.getLong(1);
 			}
 		} catch (SQLException e){

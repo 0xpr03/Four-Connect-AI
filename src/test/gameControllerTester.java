@@ -3,6 +3,7 @@ package test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -25,6 +26,7 @@ import gamelogic.Controller;
 import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.GController;
+import gamelogic.AI.MemCache;
 import gamelogic.AI.Move;
 import gamelogic.AI.SelectResult;
 import gamelogic.AI.lib;
@@ -46,14 +48,14 @@ public class gameControllerTester {
 	}
 	
 	public void test_init(E_GAME_MODE gamemode){
-		GController.initGame(gamemode);
+		GController.initGame(gamemode,7,6);
 		GController.startGame();
 		assertTrue("controller start state",E_GAME_STATE.START != GController.getGameState());
 		assertTrue("controller start state",E_GAME_STATE.NONE != GController.getGameState());
 	}
 	
 	private void init_test(){
-		GController.initGame(E_GAME_MODE.TESTING,Level.TRACE);
+		GController.initGame(E_GAME_MODE.TESTING,Level.TRACE,7,6);
 		GController.startGame();
 		GController.setState(E_GAME_STATE.PLAYER_A);
 		logger.info(GController.getGameState());
@@ -64,7 +66,7 @@ public class gameControllerTester {
 	public void get_hash(){
 		lib lib = new lib();
 		String input = "----\n----\nOXOX\nXXOO";
-		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
+		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE,4,4);
 		GController.startGame();
 		GController.D_setField(GController.D_parseField(input));
 		Move move = new Move(1L, 1, true);
@@ -155,7 +157,7 @@ public class gameControllerTester {
 		Configurator.setLevel("DB", Level.WARN);
 		Configurator.setLevel("AI", Level.WARN);
 		String input = "-OOXXOO\n-XXOOXX\n-OOXXOO\n-XXOOXX\n-OOOXOO\n-XXOXXX";
-		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
+		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE,7,6);
 		GController.startGame();
 		GController.D_setField(GController.D_parseField(input));
 		assertEquals("no draw check",false,GController.D_analyzeField());
@@ -163,32 +165,31 @@ public class gameControllerTester {
 	
 	@Test
 	public void test_AI(){ // 4*4
-		if(GController.getY_MAX() == 4 && GController.getX_MAX() == 4){
-			GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
-			String[] fields_used = {"XOX-\nOXO-\nOOXX\nOXXO","X-O-\nO-XO\nO-OX\nOXXX","X-OX\nO-XO\nO-OX\nO-XX"};
-			mariaDB mdb = new mariaDB("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
-			GController.initGame(E_GAME_MODE.TESTING);
-			GController.startGame();
-			Move move = new Move(1L,1,false);
-			lib lib = new lib();
-			for(String s : fields_used){
-				GController.D_setField(GController.D_parseField(s));
-				logger.info("field hash {}",move.bytesToHex(lib.field2sha(GController.getFieldState())));
-				boolean not_found = true;
-				StringBuilder sb = new StringBuilder();
-				SelectResult sr = mdb.testField(GController.getFieldState());
-				if(!sr.isEmpty()){
-					not_found = false;
-					for(Move m : sr.getUnused()){
-						sb.append(m.toString());
-						sb.append("\n");
-					}
+		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
+		String[] fields_used = {"XOX-\nOXO-\nOOXX\nOXXO","X-O-\nO-XO\nO-OX\nOXXX","X-OX\nO-XO\nO-OX\nO-XX"};
+		MemCache<ByteBuffer,Long> cache = new MemCache<ByteBuffer,Long>(5, 5, 10000);
+		mariaDB mdb = new mariaDB("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai",cache);
+		GController.initGame(E_GAME_MODE.TESTING,4,4);
+		GController.startGame();
+		Move move = new Move(1L,1,false);
+		lib lib = new lib();
+		for(String s : fields_used){
+			GController.D_setField(GController.D_parseField(s));
+			logger.info("field hash {}",move.bytesToHex(lib.field2sha(GController.getFieldState())));
+			boolean not_found = true;
+			StringBuilder sb = new StringBuilder();
+			SelectResult sr = mdb.testField(GController.getFieldState());
+			if(!sr.isEmpty()){
+				not_found = false;
+				for(Move m : sr.getUnused()){
+					sb.append(m.toString());
+					sb.append("\n");
 				}
-				if(not_found){
-					logger.error("Field {} not found!",s);
-				}else{
-					logger.info("Found: \n{} for {}",sb.toString(),GController.getprintedGameState());
-				}
+			}
+			if(not_found){
+				logger.error("Field {} not found!",s);
+			}else{
+				logger.info("Found: \n{} for {}",sb.toString(),GController.getprintedGameState());
 			}
 		}
 	}
@@ -232,7 +233,7 @@ public class gameControllerTester {
 //		}
 		{
 		String input = "XOX-\nOXO-\nOOXX\nOXXO";
-		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE);
+		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE,4,4);
 		GController.startGame();
 		GController.D_setField(GController.D_parseField(input));
 		assertEquals("no draw check",false,GController.D_analyzeField());
@@ -290,7 +291,7 @@ public class gameControllerTester {
 				for(int x = 0; x < games_per_thread; x++){
 					@SuppressWarnings({ "rawtypes" })
 					Controller controller = new Controller();
-					controller.initGame(gamemode, Level.WARN);
+					controller.initGame(gamemode, Level.WARN,7,6);
 					controller.startGame();
 					Random rand = new Random(System.nanoTime());
 					while(controller.getGameState() == E_GAME_STATE.PLAYER_A || controller.getGameState() == E_GAME_STATE.PLAYER_B){

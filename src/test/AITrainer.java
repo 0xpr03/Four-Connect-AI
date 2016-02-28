@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -16,6 +17,7 @@ import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.GController;
 import gamelogic.AI.KBS_trainer;
+import gamelogic.AI.MemCache;
 import gamelogic.AI.mariaDB;
 
 /**
@@ -54,7 +56,16 @@ public class AITrainer {
 			}
 		}
 		
-		int first_move = -1;
+		int X_MAX = 4;
+		int Y_MAX = 4;
+		
+		int first_move = 3;
+		if(args.length > 1){
+			X_MAX = 5;
+			Y_MAX = 5;
+			first_move = -1;
+			logger.warn("Detected args, using {}*{} field!",X_MAX,Y_MAX);
+		}
 		if(args.length > 2){
 			try{
 				first_move = Integer.valueOf(args[2]);
@@ -63,18 +74,17 @@ public class AITrainer {
 			}
 		}
 		initController("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai", player == E_GAME_STATE.PLAYER_A, first_move);
-		if(args.length > 1 &&  (GController.getX_MAX() != 7 || GController.getY_MAX() != 6)){
-			// protection from running invalid field evaluations on the server
-			logger.error("Stopping, field size modified!");
-			System.exit(1);
+		try{
+			run(player,first_move,X_MAX, Y_MAX);
+		} catch(Exception e){
+			logger.fatal("Error on run: {}",e);
 		}
-		run(player,first_move);
 		
 		GController.shutdown();
 		logger.exit();
 	}
 	
-	private static void run(E_GAME_STATE starting_pl, int first_move){
+	private static void run(E_GAME_STATE starting_pl, int first_move, int x_max, int y_max){
 		logger.entry();
 //		final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
 //		final Configuration config = ctx.getConfiguration();
@@ -88,12 +98,12 @@ public class AITrainer {
 //		}
 		registerExitFunction();
 		Level logcontroller = Level.WARN;
-		Configurator.setLevel("DB", Level.INFO);
+		Configurator.setLevel("DB", Level.DEBUG);
 		Configurator.setLevel("AI", Level.INFO);
 		Configurator.setLevel("Controller", Level.INFO);
 		
 		start_time=System.currentTimeMillis();
-		initGame(logcontroller, starting_pl);
+		initGame(logcontroller, starting_pl, x_max, y_max);
 		logger.info("Starting player: {}",starting_pl);
 		
 		@SuppressWarnings("unused")
@@ -130,7 +140,7 @@ public class AITrainer {
 				} catch (InterruptedException e) {
 					logger.error("{}",e);
 				}
-				initGame(logcontroller, starting_pl);
+				initGame(logcontroller, starting_pl, x_max, y_max);
 				restarts++;
 				break;
 			default:
@@ -141,15 +151,16 @@ public class AITrainer {
 		logger.info(GController.getprintedGameState());
 	}
 	
-	private static void initGame(Level logcontroller, E_GAME_STATE starting_pl){
-		GController.initGame(E_GAME_MODE.KI_TRAINING,logcontroller);
+	private static void initGame(Level logcontroller, E_GAME_STATE starting_pl,int x_max,int y_max){
+		GController.initGame(E_GAME_MODE.KI_TRAINING,logcontroller,x_max, y_max);
 		GController.startGame();
 		GController.setState(starting_pl);
 	}
 	
 	private static void initController(String address, int port, String user, String pw, String db, boolean player_a, int first_move){
-		KBS_trainer AIA = new KBS_trainer(new mariaDB(address, port, user, pw, db),player_a == true ? first_move : -1);
-		KBS_trainer AIB = new KBS_trainer(new mariaDB(address, port, user, pw, db),player_a == false ? first_move : -1);
+		MemCache<ByteBuffer,Long> cache = new MemCache<ByteBuffer, Long>(20, 30, 50000);
+		KBS_trainer AIA = new KBS_trainer(new mariaDB(address, port, user, pw, db,cache),player_a == true ? first_move : -1);
+		KBS_trainer AIB = new KBS_trainer(new mariaDB(address, port, user, pw, db,cache),player_a == false ? first_move : -1);
 		Controller controller = new Controller(AIA, AIB);
 		GController.init(controller);
 	}
@@ -161,10 +172,10 @@ public class AITrainer {
 				logger.info("Last move {}ms ago",System.currentTimeMillis() - lastmatch);
 				try{
 					logger.info("Current state: {}",GController.getGameState());
+					logger.info("Took {}ms and {} moves including re-moves and {} restarts",System.currentTimeMillis()-start_time,moves,restarts);
 				}catch(Exception e){
 					logger.error("Trying to get state: {}",e);
 				}
-				logger.info("Took {}ms and {} moves including re-moves and {} restarts",System.currentTimeMillis()-start_time,moves,restarts);
 				GController.shutdown();
 				logger.exit();
 			}

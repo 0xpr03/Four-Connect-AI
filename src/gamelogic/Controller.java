@@ -47,8 +47,10 @@ public final class Controller extends ControllerBase {
 	 * @param gamemode on multiplayer / singleplayer the starting player will be selected randomly
 	 * @param loglevel define a loglevel used for this game
 	 * everthing else it'll be player a
+	 * @param x_max x size of the field
+	 * @param y_max y size of the field
 	 */
-	public synchronized void initGame(E_GAME_MODE gamemode, Level loglevel) {
+	public synchronized void initGame(E_GAME_MODE gamemode, Level loglevel, int x_max, int y_max) {
 		synchronized(lock){
 			Configurator.setLevel(LogManager.getLogger(ControllerBase.class).getName(), loglevel);
 			if (gamemode == E_GAME_MODE.NONE){
@@ -62,6 +64,8 @@ public final class Controller extends ControllerBase {
 					FIELD[i][j] = E_FIELD_STATE.NONE;
 				}
 			}
+			super.X_MAX = x_max;
+			super.Y_MAX = y_max;
 			GAMEMODE = gamemode;
 			
 			if(GAMEMODE == E_GAME_MODE.KI_TRAINING){
@@ -79,8 +83,8 @@ public final class Controller extends ControllerBase {
 	 * Initialize a new game
 	 * @param gamemode
 	 */
-	public void initGame(E_GAME_MODE gamemode){
-		initGame(gamemode, LogManager.getRootLogger().getLevel());
+	public void initGame(E_GAME_MODE gamemode,int x_max,int y_max){
+		initGame(gamemode, LogManager.getRootLogger().getLevel(), x_max, y_max);
 	}
 	
 	/**
@@ -109,7 +113,7 @@ public final class Controller extends ControllerBase {
 			case MULTIPLAYER:
 			case KI_INTERNAL:
 			case FUZZING:
-				STATE = getRandomBoolean() ? E_GAME_STATE.PLAYER_A : E_GAME_STATE.PLAYER_B;
+				STATE = Math.random() < 0.5 ? E_GAME_STATE.PLAYER_A : E_GAME_STATE.PLAYER_B;
 				break;
 			default:
 				STATE = E_GAME_STATE.PLAYER_A;
