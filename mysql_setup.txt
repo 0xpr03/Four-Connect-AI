@@ -1,0 +1,31 @@
+CREATE TABLE `fields` (
+ `field` binary(20) NOT NULL,
+ `fid` int(10) unsigned NOT NULL AUTO_INCREMENT,
+ PRIMARY KEY (`fid`),
+ UNIQUE KEY `field` (`field`)
+) ENGINE=InnoDB;
+
+CREATE TABLE `moves` (
+ `fid` int(10) unsigned NOT NULL,
+ `player_a` bit(1) NOT NULL,
+ `move` tinyint(4) NOT NULL,
+ `used` bit(1) NOT NULL,
+ `loose` bit(1) NOT NULL,
+ `draw` bit(1) NOT NULL,
+ `win` bit(1) NOT NULL,
+ PRIMARY KEY (`fid`,`player_a`,`move`) USING BTREE,
+ KEY `player_a` (`player_a`),
+ KEY `fid` (`fid`) USING BTREE
+) ENGINE=InnoDB COMMENT='moves table, partitioned'
+PARTITION BY RANGE (`fid`)
+(
+	PARTITION p0 VALUES LESS THAN (50000000),
+	PARTITION p1 VALUES LESS THAN (100000000),
+	PARTITION p2 VALUES LESS THAN (150000000),
+	PARTITION p3 VALUES LESS THAN (200000000),
+	PARTITION p4 VALUES LESS THAN (250000000),
+	PARTITION p5 VALUES LESS THAN (300000000),
+	PARTITION p6 VALUES LESS THAN (350000000),
+	PARTITION p7 VALUES LESS THAN (400000000),
+	PARTITION p8 VALUES LESS THAN (MAXVALUE)
+);

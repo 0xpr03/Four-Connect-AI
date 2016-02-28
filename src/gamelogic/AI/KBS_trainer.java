@@ -287,21 +287,18 @@ public class KBS_trainer implements AI {
 		}
 		logger.debug("After event: {}",P_MOVE_CURRENT.toString());
 		if(P_MOVE_CURRENT.isLoose()){
-			logger.debug("Adding to loose");
 			MOVES.addLoose(P_MOVE_CURRENT);
 		}else if(P_MOVE_CURRENT.isWin()){
-			logger.debug("Adding to win");
 			MOVES.addWin(P_MOVE_CURRENT);
 		}
 		if(P_MOVE_CURRENT.isDraw()){
-			logger.debug("Adding to draw");
 			MOVES.addDraw(P_MOVE_CURRENT);
 		}
-		if(logger.isDebugEnabled())
+		if(logger.isDebugEnabled()){
 			logger.debug("MOVES pla:{} win:{} loose:{} draw:{} unused:{}",this.player,MOVES.getWins().size(),MOVES.getLooses().size(),MOVES.getDraws().size(),MOVES.getUnused().size());
-		P_MOVE_CURRENT = null;
-		if(logger.isDebugEnabled())
 			logger.debug("{} {}",this.player,printUnused());
+		}
+		P_MOVE_CURRENT = null;
 		logger.exit();
 	}
 	
