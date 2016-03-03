@@ -1,8 +1,6 @@
 package test;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -29,12 +27,12 @@ public class AITest_Interact {
 		Level level_ai = Level.TRACE;
 		Configurator.setLevel("DB", level_db);
 		Configurator.setLevel("AI", level_ai);
-		registerExitFunction();
+		lib.registerExitFunction(logger);
 	}
 	
 	public static void main(String[] args){
 		init();
-		GController.initGame(E_GAME_MODE.SINGLE_PLAYER,Level.INFO, 4,4);
+		GController.initGame(E_GAME_MODE.SINGLE_PLAYER,Level.INFO, 5,5);
 		GController.startGame();
 		logger.info("Gamemode: {}",GController.getGamemode());
 		E_GAME_STATE state = E_GAME_STATE.NONE;
@@ -49,7 +47,10 @@ public class AITest_Interact {
 				System.out.println("Please select a column, 0-"+GController.getX_MAX());
 				String input;
 				try{
-					input = readLine("");
+					input = lib.readLine("");
+					if(input.equals("exit")){
+						System.exit(1);
+					}
 					int in = Integer.parseInt(input);
 					logger.debug("Player using {}",in);
 					if(in >= GController.getX_MAX() || in < 0){
@@ -70,31 +71,18 @@ public class AITest_Interact {
 			}
 		}
 		System.out.println(GController.getprintedGameState());
+		if(GController.getGameState() == E_GAME_STATE.WIN_B){
+			System.err.println("You loose!");
+		}else if(GController.getGameState() == E_GAME_STATE.WIN_A){
+			System.err.print("You win!");
+		}else if(GController.getGameState() == E_GAME_STATE.DRAW){
+			System.err.println("Draw !");
+		}
 		try {
 			Thread.sleep(10);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-	}
-	
-	private static String readLine(String format, Object... args) throws IOException {
-	    if (System.console() != null) {
-	        return System.console().readLine(format, args);
-	    }
-	    System.out.print(String.format(format, args));
-	    BufferedReader reader = new BufferedReader(new InputStreamReader(
-	            System.in));
-	    return reader.readLine();
-	}
-	
-	private static void registerExitFunction() {
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			@Override
-			public void run() {
-				logger.info("State: {}",GController.getGameState());
-				GController.shutdown();
-			}
-		});
 	}
 	
 	/**

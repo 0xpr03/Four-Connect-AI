@@ -1,9 +1,6 @@
 package test;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 
 import org.apache.logging.log4j.Level;
@@ -56,8 +53,8 @@ public class AITrainer {
 			}
 		}
 		
-		int X_MAX = 4;
-		int Y_MAX = 4;
+		int X_MAX = 5;
+		int Y_MAX = 5;
 		
 		int first_move = 3;
 		if(args.length > 1){
@@ -113,7 +110,7 @@ public class AITrainer {
 //			try {
 //				if(runthrough == false){
 //					logger.info(GController.getprintedGameState());
-//					String l = readLine("Insert 1 to continue");
+//					String l = lib.readLine("Insert 1 to continue");
 //					if(l.equals("C")){
 //						System.out.println("Disabling manual mode!");
 //						runthrough = true;
@@ -181,18 +178,7 @@ public class AITrainer {
 			}
 		});
 	}
-	
-	@SuppressWarnings("unused")
-	private static String readLine(String format, Object... args) throws IOException {
-	    if (System.console() != null) {
-	        return System.console().readLine(format, args);
-	    }
-	    System.out.print(String.format(format, args));
-	    BufferedReader reader = new BufferedReader(new InputStreamReader(
-	            System.in));
-	    return reader.readLine();
-	}
-	
+
 	/**
 	 * Returns false if draw,win_a,win_b is the current gamestate
 	 * true otherwise
