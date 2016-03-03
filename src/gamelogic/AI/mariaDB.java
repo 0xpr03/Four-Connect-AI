@@ -64,7 +64,7 @@ public class mariaDB implements DB {
 	}
 	
 	private void connect(){
-		logger.info("Connecting to mariDB, using cache: {}",USE_CACHE);
+		logger.info("Connecting to mariaDB, using cache: {}",USE_CACHE);
 		String base = "jdbc:mariadb://";
 		base = base+address+":"+port;
 		base += "/"+db;
@@ -113,18 +113,15 @@ public class mariaDB implements DB {
 				ResultSet rs = stmSelect.executeQuery();
 				while(rs.next()){
 					Move move = new Move(fID,rs.getInt(1),rs.getBoolean(2),rs.getBoolean(3),rs.getBoolean(4),rs.getBoolean(5),player_a);
-					if(move.isUsed()){
-						if(move.isLoose())
-							sel.addLoose(move);
-						if(move.isWin())
-							sel.addWin(move);
-						if(move.isDraw())
-							sel.addDraw(move);
-					}else{
+					if(move.isLoose())
+						sel.addLoose(move);
+					if(move.isWin())
+						sel.addWin(move);
+					if(move.isDraw())
+						sel.addDraw(move);
+					if(!move.isUsed())
 						sel.addUnused(move);
-					}
 				}
-				rs.close();
 			}
 			return sel;
 		} catch (SQLException e) {
@@ -171,19 +168,21 @@ public class mariaDB implements DB {
 	 */
 	private long insertFieldID(byte[] fieldHash){
 		logger.entry();
-		try {
-			stmInsFID.setBytes(1, fieldHash);
-			stmInsFID.executeUpdate();
-			ResultSet rs = stmInsFID.getGeneratedKeys();
-			if(rs.next()){
-				if(USE_CACHE)
-					cache.put(ByteBuffer.wrap(fieldHash), rs.getLong(1));
-				return rs.getLong(1);
-			}
-		} catch (SQLException e){
-			if(!e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class)){
-				logger.error("stmInsFID {}",e);
-				logger.error("fieldHash: {}",bytesToHex(fieldHash));
+		for(int x = 0; x < 3; x++){
+			try {
+				stmInsFID.setBytes(1, fieldHash);
+				stmInsFID.executeUpdate();
+				ResultSet rs = stmInsFID.getGeneratedKeys();
+				if(rs.next()){
+					if(USE_CACHE)
+						cache.put(ByteBuffer.wrap(fieldHash), rs.getLong(1));
+					return rs.getLong(1);
+				}
+			} catch (SQLException e){
+				if(!e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class)){
+					logger.error("stmInsFID {}",e);
+					logger.error("fieldHash: {}",bytesToHex(fieldHash));
+				}
 			}
 		}
 		return -1;
@@ -228,13 +227,13 @@ public class mariaDB implements DB {
 				}catch(SQLException e){
 					if(e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class)){
 						sel = null;
-						connection.clearWarnings();
 					}else{
 						throw e;
 					}
 				}
 			}
 			inserts++;
+			connection.clearWarnings();
 			return sel;
 		} catch (SQLException e) {
 			if(e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class) || e.getCause().getClass().equals(SQLTransactionRollbackException.class)){
@@ -250,40 +249,43 @@ public class mariaDB implements DB {
 	@Override
 	public boolean setMove(Move move) {
 		logger.entry();
-		try {
-			if( (move.isDraw() || move.isLoose() ) && !move.isUsed()){ // test that no invalid move is inserted
-				logger.warn("Probably invalid move! {}",()->move.toString());
+		for(int i = 0; i < 3; i++){
+			try {
+				if( (move.isDraw() || move.isLoose() ) && !move.isUsed()){ // test that no invalid move is inserted
+					logger.warn("Probably invalid move! {}",()->move.toString());
+				}
+				stmUpdate.setBoolean(1, move.isUsed());
+				stmUpdate.setBoolean(2, move.isLoose());
+				stmUpdate.setBoolean(3, move.isDraw());
+				stmUpdate.setBoolean(4, move.isWin());
+				stmUpdate.setLong(5, move.getFID());
+				stmUpdate.setInt(6, move.getMove());
+				stmUpdate.setBoolean(7, move.isPlayer_a());
+				stmUpdate.executeUpdate();
+				//stmUpdate.clearParameters();
+				updates++;
+				return true;
+			} catch (SQLException e) {
+				if(e.getCause().getClass() == SQLTransactionRollbackException.class){
+					logger.debug("Ignoring datarace exception");
+				}else{
+					logger.error("updateMove {}",e);
+				}
 			}
-			stmUpdate.setBoolean(1, move.isUsed());
-			stmUpdate.setBoolean(2, move.isLoose());
-			stmUpdate.setBoolean(3, move.isDraw());
-			stmUpdate.setBoolean(4, move.isWin());
-			stmUpdate.setLong(5, move.getFID());
-			stmUpdate.setInt(6, move.getMove());
-			stmUpdate.setBoolean(7, move.isPlayer_a());
-			stmUpdate.executeUpdate();
-			//stmUpdate.clearParameters();
-			updates++;
-			return true;
-		} catch (SQLException e) {
-			if(e.getCause().getClass() == SQLTransactionRollbackException.class){
-				logger.debug("Ignoring datarace exception");
-			}else{
-				logger.error("updateMove {}",e);
-			}
-			return false;
 		}
+		return false;
 	}
 
 	@Override
 	public void shutdown() {
-		logger.entry();
+		Logger exitLogger = LogManager.getLogger();
+		exitLogger.entry();
 		{
 			try {
 				stmInsFID.cancel();
 				stmInsFID.close();
 			} catch (SQLException e) {
-				logger.error("stmInsFID shutdown {}", e);
+				exitLogger.error("stmInsFID shutdown {}", e);
 			}
 		}
 		{
@@ -291,7 +293,7 @@ public class mariaDB implements DB {
 				stmSelFID.cancel();
 				stmSelFID.close();
 			} catch (SQLException e) {
-				logger.error("stmSelFID shutdown {}", e);
+				exitLogger.error("stmSelFID shutdown {}", e);
 			}
 		}
 		{
@@ -299,7 +301,7 @@ public class mariaDB implements DB {
 				stmInsert.cancel();
 				stmInsert.close();
 			} catch (SQLException e) {
-				logger.error("stmInsert shutdown {}", e);
+				exitLogger.error("stmInsert shutdown {}", e);
 			}
 		}
 		{
@@ -307,7 +309,7 @@ public class mariaDB implements DB {
 				stmSelect.cancel();
 				stmSelect.close();
 			} catch (SQLException e) {
-				logger.error("stmSelect shutdown {}", e);
+				exitLogger.error("stmSelect shutdown {}", e);
 			}
 		}
 		{
@@ -315,7 +317,7 @@ public class mariaDB implements DB {
 				stmUpdate.cancel();
 				stmUpdate.close();
 			} catch (SQLException e) {
-				logger.error("stmUpdate shutdown {}", e);
+				exitLogger.error("stmUpdate shutdown {}", e);
 			}
 		}
 		{
@@ -323,7 +325,7 @@ public class mariaDB implements DB {
 				stmDelAll.cancel();
 				stmDelAll.close();
 			} catch (SQLException e) {
-				logger.error("stmDelAll shutdown {}", e);
+				exitLogger.error("stmDelAll shutdown {}", e);
 			}
 		}
 		{
@@ -331,15 +333,15 @@ public class mariaDB implements DB {
 				stmDelLooses.cancel();
 				stmDelLooses.close();
 			} catch (SQLException e) {
-				logger.error("stmDelLooses shutdown {}", e);
+				exitLogger.error("stmDelLooses shutdown {}", e);
 			}
 		}
 		try {
 			connection.close();
 		} catch (SQLException e) {
-			logger.error("mariaDB shutdown {}", e);
+			exitLogger.error("mariaDB shutdown {}", e);
 		}
-		logger.info("Stats: Deletes:{} DelAlls:{} Inserts:{} Updates:{}",deletes,deletesAll,inserts, updates);
+		exitLogger.info("Stats: Deletes:{} DelAlls:{} Inserts:{} Updates:{}",deletes,deletesAll,inserts, updates);
 	}
 
 	@Override

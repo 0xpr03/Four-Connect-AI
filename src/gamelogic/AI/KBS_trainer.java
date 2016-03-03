@@ -46,6 +46,10 @@ public class KBS_trainer implements AI {
 	
 	@Override
 	public boolean getMove() {
+		return getMove(true);
+	}
+	
+	public boolean getMove(boolean allowrecusion) {
 		logger.entry(player);
 		
 		if(SHUTDOWN){
@@ -70,8 +74,13 @@ public class KBS_trainer implements AI {
 				SelectResult sel = db.insertMoves(GController.getFieldState(), possibilities,player==E_PLAYER.PLAYER_A);
 				if(sel == null){ // can happen on concurrency
 					logger.debug("Error on insert");
-					GController.restart();
-					return true;
+					if(allowrecusion){
+						return getMove(false);
+					}else{
+						logger.error("Avoided deadlock!");
+						GController.restart();
+						return true;
+					}
 				}
 
 				lastField = db.getHash();
