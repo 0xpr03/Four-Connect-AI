@@ -35,6 +35,7 @@ public class mariaDB implements DB {
 	private long inserts = 0;
 	private long updates = 0;
 	private long deletesAll = 0;
+	private long retries = 0;
 	
 	private final lib lib = new lib();
 	private final int port;
@@ -184,6 +185,7 @@ public class mariaDB implements DB {
 					logger.error("fieldHash: {}",bytesToHex(fieldHash));
 				}
 			}
+			retries++;
 		}
 		return -1;
 	}
@@ -227,6 +229,7 @@ public class mariaDB implements DB {
 				}catch(SQLException e){
 					if(e.getCause().getClass().equals(SQLIntegrityConstraintViolationException.class)){
 						sel = null;
+						retries++;
 					}else{
 						throw e;
 					}
@@ -272,14 +275,20 @@ public class mariaDB implements DB {
 					logger.error("updateMove {}",e);
 				}
 			}
+			retries++;
 		}
 		return false;
 	}
 
 	@Override
 	public void shutdown() {
-		Logger exitLogger = LogManager.getLogger();
-		exitLogger.entry();
+		Logger exitLogger = null;
+		try{
+			exitLogger = LogManager.getLogger();
+			exitLogger.entry();
+		}catch(Exception e){
+			System.err.println(e);
+		}
 		{
 			try {
 				stmInsFID.cancel();
@@ -341,7 +350,7 @@ public class mariaDB implements DB {
 		} catch (SQLException e) {
 			exitLogger.error("mariaDB shutdown {}", e);
 		}
-		exitLogger.info("Stats: Deletes:{} DelAlls:{} Inserts:{} Updates:{}",deletes,deletesAll,inserts, updates);
+		exitLogger.info("Stats: Deletes:{} DelAlls:{} Inserts:{} Updates:{} Retries: {}",deletes,deletesAll,inserts, updates,retries);
 	}
 
 	@Override

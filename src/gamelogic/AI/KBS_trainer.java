@@ -75,6 +75,11 @@ public class KBS_trainer implements AI {
 				if(sel == null){ // can happen on concurrency
 					logger.debug("Error on insert");
 					if(allowrecusion){
+						try {
+							Thread.sleep(50);
+						} catch (InterruptedException e) {
+							logger.error("{}",e);
+						}
 						return getMove(false);
 					}else{
 						logger.error("Avoided deadlock!");
