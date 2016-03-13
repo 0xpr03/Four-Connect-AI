@@ -1,4 +1,4 @@
-package gamelogic.AI;
+package gamelogic.AI.learning;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,6 +10,10 @@ import org.apache.logging.log4j.Logger;
 import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.ControllerBase.E_PLAYER;
 import gamelogic.GController;
+import gamelogic.AI.AI;
+import gamelogic.AI.DB;
+import gamelogic.AI.Move;
+import gamelogic.AI.SelectResult;
 
 /**
  * Knowledge based AI system

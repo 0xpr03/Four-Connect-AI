@@ -1,4 +1,4 @@
-package gamelogic.AI;
+package gamelogic.AI.learning;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -14,6 +14,10 @@ import org.apache.logging.log4j.Logger;
 
 import gamelogic.ControllerBase.E_FIELD_STATE;
 import gamelogic.GController;
+import gamelogic.AI.DB;
+import gamelogic.AI.Move;
+import gamelogic.AI.SelectResult;
+import gamelogic.AI.lib;
 
 /**
  * MariaDB DB handler for KBS

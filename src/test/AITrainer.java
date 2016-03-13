@@ -2,6 +2,8 @@ package test;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -13,9 +15,9 @@ import gamelogic.Controller;
 import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.GController;
-import gamelogic.AI.KBS_trainer;
 import gamelogic.AI.MemCache;
 import gamelogic.AI.mariaDB;
+import gamelogic.AI.learning.KBS_trainer;
 
 /**
  * AI tester & trainer
@@ -31,7 +33,7 @@ public class AITrainer {
 	private static long restarts = 0;
 	private static long moves = 0;
 	
-	public static void main(String[] args){ // external logger, starting player [a,b], first move
+	public static void main(String[] args){ // external logger, starting player [a,b], first move, [non-allowed moves]
 		if(args.length > 0){
 			if(!args[0].equals("none")){
 				LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
@@ -70,7 +72,19 @@ public class AITrainer {
 				logger.error("Invalid first move!");
 			}
 		}
-		initController("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai", player == E_GAME_STATE.PLAYER_A, first_move);
+		ArrayList<Integer> forbiddenMoves = new ArrayList<Integer>();
+		if(args.length > 3 ) {
+			String[] forbidden_moves = args[3].split(",");
+			for(String s : forbidden_moves){
+				try{
+					forbiddenMoves.add(Integer.valueOf(s));
+				}catch(NumberFormatException e){
+					logger.error("Invalid forbidden move! {}",s);
+				}
+			}
+		}
+		
+		initController("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai", player == E_GAME_STATE.PLAYER_A, first_move,forbiddenMoves);
 		try{
 			run(player,first_move,X_MAX, Y_MAX);
 		} catch(Exception e){
@@ -154,10 +168,10 @@ public class AITrainer {
 		GController.setState(starting_pl);
 	}
 	
-	private static void initController(String address, int port, String user, String pw, String db, boolean player_a, int first_move){
+	private static void initController(String address, int port, String user, String pw, String db, boolean player_a, int first_move, List<Integer> forbiddenMoves){
 		MemCache<ByteBuffer,Long> cache = new MemCache<ByteBuffer, Long>(20, 30, 50000);
-		KBS_trainer AIA = new KBS_trainer(new mariaDB(address, port, user, pw, db,cache),player_a == true ? first_move : -1);
-		KBS_trainer AIB = new KBS_trainer(new mariaDB(address, port, user, pw, db,cache),player_a == false ? first_move : -1);
+		KBS_trainer AIA = new KBS_trainer(new mariaDB(address, port, user, pw, db,cache),player_a == true ? first_move : -1,forbiddenMoves);
+		KBS_trainer AIB = new KBS_trainer(new mariaDB(address, port, user, pw, db,cache),player_a == false ? first_move : -1,forbiddenMoves);
 		Controller controller = new Controller(AIA, AIB);
 		GController.init(controller);
 	}

@@ -1,4 +1,4 @@
-package gamelogic.AI;
+package gamelogic.AI.learning;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,6 +10,10 @@ import org.apache.logging.log4j.Logger;
 import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.ControllerBase.E_PLAYER;
 import gamelogic.GController;
+import gamelogic.AI.AI;
+import gamelogic.AI.DB;
+import gamelogic.AI.Move;
+import gamelogic.AI.SelectResult;
 
 /**
  * Knowledge based AI system
@@ -33,15 +37,17 @@ public class KBS_trainer implements AI {
 	private boolean follow_unused = false;
 	private List<Move> follow = new ArrayList<Move>();
 	
-	private final boolean use_first_move;
-	private final int first_move;
+	private final boolean USE_FIRST_MOVE;
+	private final int FIRST_MOVE;
+	private final List<Integer> DISALLOWED_MOVES;
 	private boolean first_move_done = false;
 	
-	public KBS_trainer(DB db, int first_move){
-		this.use_first_move = first_move == -1 ? false : true;
-		this.first_move = first_move;
+	public KBS_trainer(DB db, int first_move, List<Integer> disallowedMoves){
+		this.DISALLOWED_MOVES = disallowedMoves;
+		this.USE_FIRST_MOVE = first_move == -1 ? false : true;
+		this.FIRST_MOVE = first_move;
 		this.db = db;
-		logger.info("Knowledge based trainer system initializing..\nusing first move:{} {}",use_first_move, first_move);
+		logger.info("Knowledge based trainer system initializing..\nusing first move:{} {}",USE_FIRST_MOVE, first_move);
 	}
 	
 	@Override
@@ -92,16 +98,14 @@ public class KBS_trainer implements AI {
 				MOVES = null; // needed ?
 				MOVES = sel;
 				unused = MOVES.getUnused();
-				if(use_first_move){
-					if(GController.getMoves() == 0){
+				if(GController.getMoves() == 0){
+					if(USE_FIRST_MOVE) {
 						if(first_move_done){
 							logger.info("Done with branch!");
 							return false;
 						}
-						new_move = unused.get(first_move);
+						new_move = unused.get(FIRST_MOVE);
 						first_move_done = true;
-					}else{
-						new_move = unused.get(0);
 					}
 				}else{
 					new_move = unused.get(0);
@@ -113,26 +117,38 @@ public class KBS_trainer implements AI {
 					lastField = db.getHash();
 					unused = MOVES.getUnused();
 					
-					if(use_first_move){
-						if(GController.getMoves() == 0){
+					if(GController.getMoves() == 0){
+						if(USE_FIRST_MOVE){ // use specified move
 							if(first_move_done){
 								logger.info("Done with branch!");
 								return false;
 							}
 							Move chosen_move = null;
 							for(Move move_int : unused){
-								if(move_int.getMove() == first_move){
+								if(move_int.getMove() == FIRST_MOVE){
 									chosen_move = move_int;
 								}
 							}
 							if( chosen_move != null ){
 								new_move = chosen_move;
 							}else{
-								logger.error("specified first move not found ! {}",first_move);
+								logger.error("specified first move not found ! {}",FIRST_MOVE);
 								return false;
 							}
 							first_move_done = true;
-						}else{
+						}else if(!DISALLOWED_MOVES.isEmpty()){ // use non forbidden listed move
+							new_move = null;
+							for(int i = 0; i < unused.size(); i++){
+								if(!DISALLOWED_MOVES.contains(unused.get(i).getMove())){
+									new_move = unused.get(i);
+									break;
+								}
+							}
+							if(new_move == null){
+								logger.info("Done with branch!");
+								return false;
+							}
+						}else{ // or use first move
 							new_move = unused.get(0);
 						}
 					}else{

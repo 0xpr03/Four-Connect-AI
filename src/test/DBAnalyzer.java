@@ -57,7 +57,7 @@ public class DBAnalyzer {
 		long draws_a = -1;
 		long draws_b = -1;
 		{
-			ResultSet rs = execute("SELECT COUNT(fid) FROM moves WHERE used=0;");
+			ResultSet rs = execute("SELECT COUNT(fid) FROM moves WHERE `used`=0;");
 			if(rs != null){
 				if(rs.next()){
 					unused = rs.getLong(1);
@@ -73,7 +73,7 @@ public class DBAnalyzer {
 			}
 		}
 		{
-			ResultSet rs = execute("SELECT COUNT(fid) FROM moves WHERE used=0 AND (win=1 OR draw=1 OR loose=1);");
+			ResultSet rs = execute("SELECT COUNT(fid) FROM moves WHERE `used`=0 AND (`win`=1 OR `draw`=1 OR `loose`=1);");
 			if(rs != null){
 				if(rs.next()){
 					irregulars = rs.getLong(1);
@@ -81,7 +81,7 @@ public class DBAnalyzer {
 			}
 		}
 		{
-			ResultSet rs = execute("SELECT COUNT(fid) FROM moves WHERE win=1 player_a=1;");
+			ResultSet rs = execute("SELECT COUNT(`fid`) FROM moves WHERE `win`=1 AND `player_a`=1;");
 			if(rs != null){
 				if(rs.next()){
 					wins_a = rs.getLong(1);
@@ -89,7 +89,7 @@ public class DBAnalyzer {
 			}
 		}
 		{
-			ResultSet rs = execute("SELECT COUNT(fid) FROM moves WHERE win=1 player_a=0;");
+			ResultSet rs = execute("SELECT COUNT(`fid`) FROM moves WHERE `win`=1 AND `player_a`=0;");
 			if(rs != null){
 				if(rs.next()){
 					wins_b = rs.getLong(1);
@@ -97,7 +97,7 @@ public class DBAnalyzer {
 			}
 		}
 		{
-			ResultSet rs = execute("SELECT COUNT(fid) FROM moves WHERE draw=1 player_a=1;");
+			ResultSet rs = execute("SELECT COUNT(fid) FROM moves WHERE `draw`=1 AND `player_a`=1;");
 			if(rs != null){
 				if(rs.next()){
 					draws_a = rs.getLong(1);
@@ -105,7 +105,7 @@ public class DBAnalyzer {
 			}
 		}
 		{
-			ResultSet rs = execute("SELECT COUNT(fid) FROM moves WHERE draw=1 player_a=0;");
+			ResultSet rs = execute("SELECT COUNT(fid) FROM moves WHERE `draw`=1 AND `player_a`=0;");
 			if(rs != null){
 				if(rs.next()){
 					draws_b = rs.getLong(1);
