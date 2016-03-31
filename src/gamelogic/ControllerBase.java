@@ -626,7 +626,7 @@ public class ControllerBase {
 	 * @author Aron Heinecke
 	 */
 	public boolean D_setField(E_FIELD_STATE[][] field){
-		if(GAMEMODE == E_GAME_MODE.TESTING){
+		if(GAMEMODE == E_GAME_MODE.TESTING || GAMEMODE == E_GAME_MODE.KI_TRAINING){
 			FIELD = field;
 			return true;
 		}else{

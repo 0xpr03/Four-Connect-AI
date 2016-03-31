@@ -355,6 +355,10 @@ public final class Controller extends ControllerBase {
 		}
 	}
 	
+	/**
+	 * Add field history entry
+	 * AI training related
+	 */
 	private void addHistory(){
 		synchronized (lock) {
 			if(!matchHistory.add(copyField(FIELD))){
@@ -364,6 +368,10 @@ public final class Controller extends ControllerBase {
 		}
 	}
 	
+	/**
+	 * Go back in history and let player X move again
+	 * AI training related
+	 */
 	protected synchronized void moveAgain(){
 		logger.entry();
 		logger.debug(()->super.getprintedGameState());
@@ -376,6 +384,11 @@ public final class Controller extends ControllerBase {
 		logger.exit();
 	}
 	
+	/**
+	 * Returns the field history as printed string
+	 * AI training debug related
+	 * @return
+	 */
 	private String getPrintedHistory(){
 		StringBuilder sb = new StringBuilder();
 		sb.append("Match History:");
@@ -478,7 +491,11 @@ public final class Controller extends ControllerBase {
 		STATE = E_GAME_STATE.RESTART;
 	}
 	
-	public synchronized void capitulate(E_PLAYER player){
+	/**
+	 * Capitulate with current player
+	 * @param player
+	 */
+	public synchronized void capitulate(){
 		synchronized (lock) {
 			GameStore ws = new GameStore(STATE);
 			handleWin(ws);
@@ -486,6 +503,7 @@ public final class Controller extends ControllerBase {
 	}
 
 	/**
+	 * AI Training related only!
 	 * @return the win_a
 	 */
 	public synchronized boolean isWin_a() {
@@ -493,6 +511,7 @@ public final class Controller extends ControllerBase {
 	}
 
 	/**
+	 * AI Training related only!
 	 * @param wIN_A the wIN_A to set
 	 */
 	public synchronized void setWIN_A(boolean wIN_A) {
@@ -500,6 +519,7 @@ public final class Controller extends ControllerBase {
 	}
 
 	/**
+	 * AI Training related only!
 	 * @param wIN_B the wIN_B to set
 	 */
 	public synchronized void setWIN_B(boolean wIN_B) {
@@ -507,6 +527,7 @@ public final class Controller extends ControllerBase {
 	}
 
 	/**
+	 * AI Training related only!
 	 * @param dRAW the dRAW to set
 	 */
 	public synchronized void setDRAW(boolean dRAW) {
@@ -514,14 +535,16 @@ public final class Controller extends ControllerBase {
 	}
 
 	/**
-	 * @return the win_b
+	 * @return returns WIN_B
+	 * AI Training related only!
 	 */
 	public synchronized boolean isWin_b() {
 		return WIN_B;
 	}
 
 	/**
-	 * @return the dRAW
+	 * @return the dRAW,
+	 * AI Training related only!
 	 */
 	public synchronized boolean isDRAW() {
 		return DRAW;

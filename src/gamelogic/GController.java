@@ -8,7 +8,6 @@ import org.apache.logging.log4j.Level;
 import gamelogic.ControllerBase.E_FIELD_STATE;
 import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
-import gamelogic.ControllerBase.E_PLAYER;
 import gamelogic.AI.KBS_player;
 import gamelogic.AI.MemCache;
 import gamelogic.AI.mariaDB;
@@ -133,11 +132,10 @@ public class GController {
 	}
 
 	/**
-	 * @param player
 	 * @see gamelogic.ControllerBase#capitulate(gamelogic.ControllerBase.E_PLAYER)
 	 */
-	public static void capitulate(E_PLAYER player) {
-		controller.capitulate(player);
+	public static void capitulate() {
+		controller.capitulate();
 	}
 
 	/**
