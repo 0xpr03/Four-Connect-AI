@@ -18,6 +18,7 @@ import gamelogic.AI.SelectResult;
 /**
  * Knowledge based AI system
  * Training version
+ * This AI Version is supposed to run against itself and learn by this all possibilities & outcomes
  * @author Aron Heinecke
  * 
  * @param <E> needs a DB handler
@@ -41,6 +42,7 @@ public class KBS_trainer implements AI {
 	private final int FIRST_MOVE;
 	private final List<Integer> DISALLOWED_MOVES;
 	private boolean first_move_done = false;
+	private int retries = 0;
 	
 	public KBS_trainer(DB db, int first_move, List<Integer> disallowedMoves){
 		this.DISALLOWED_MOVES = disallowedMoves;
@@ -82,10 +84,11 @@ public class KBS_trainer implements AI {
 					logger.debug("Error on insert");
 					if(allowrecusion){
 						try {
-							Thread.sleep(50);
+							Thread.sleep(5);
 						} catch (InterruptedException e) {
 							logger.error("{}",e);
 						}
+						retries++;
 						return getMove(false);
 					}else{
 						logger.error("Avoided deadlock!");
@@ -177,21 +180,6 @@ public class KBS_trainer implements AI {
 	}
 	
 	/**
-	 * Sets the outcome of all possible moves for the current field
-	 */
-	public void getOutcome(){
-		logger.entry();
-		if(this.player == E_PLAYER.PLAYER_A){
-			GController.setWIN_A(!MOVES.getWins().isEmpty());
-			GController.setWIN_B(!MOVES.getLooses().isEmpty());
-		}else{
-			GController.setWIN_B(!MOVES.getWins().isEmpty());
-			GController.setWIN_A(!MOVES.getLooses().isEmpty());
-		}
-		GController.setDRAW(!MOVES.getDraws().isEmpty());
-	}
-	
-	/**
 	 * Returns true if the AI has more moves in store
 	 * Ignoring the first, as it's the latest used one
 	 * @see gamelogic.Controller#informAIs(boolean) code
@@ -202,8 +190,9 @@ public class KBS_trainer implements AI {
 	
 	private String printUnused(){
 		StringBuilder sb = new StringBuilder();
-		sb.append("Unused list:\n");
+		sb.append("Unused list:");
 		for(Move move : unused) {
+			sb.append("\n");
 			sb.append(move.toString());
 		}
 		return sb.toString();
@@ -240,7 +229,7 @@ public class KBS_trainer implements AI {
 			}
 			
 			if(logger.isDebugEnabled())
-				logger.debug("Remoing {}",unused.get(0).toString());
+				logger.debug("Removing {}",unused.get(0).toString());
 			unused.remove(0);
 		}else{
 			logger.debug("Not removing, empty unused index.");
@@ -283,14 +272,35 @@ public class KBS_trainer implements AI {
 			logger.debug("rollback: {} state:{}",rollback,GController.getGameState());
 			logger.debug("Before event: {}",P_MOVE_CURRENT.toString());
 		}
-		if(rollback){ // no real move happened
-			if((GController.isWin_a() && this.player == E_PLAYER.PLAYER_B) || (GController.isWin_b() && this.player == E_PLAYER.PLAYER_A) ){
-				this.P_MOVE_CURRENT.setLoose(true);
-			}else if(GController.isWin_a() || GController.isWin_b()){
+		/**
+		 * TODO: - leaving unused fields ?! => error on internal retry ?
+		 * TODO: - 5*4 field: move 1/3 are seen as direct win
+		 */
+		if(rollback){ // no real move happened, we're going back 1 move
+//			if((GController.isWin_a() && this.player == E_PLAYER.PLAYER_B) || (GController.isWin_b() && this.player == E_PLAYER.PLAYER_A) ){
+//				if(GController.isS_DRAW()) // one move leads to draw, avoiding loose
+//					this.P_MOVE_CURRENT.setDraw(true);
+//				else
+//					this.P_MOVE_CURRENT.setLoose(true);
+//			}else if(GController.isWin_a() || GController.isWin_b()){
+//				this.P_MOVE_CURRENT.setWin(true);
+//				if(GController.isDRAW())
+//					this.P_MOVE_CURRENT.setDraw(true);
+//			}else{
+//				if(GController.isDRAW())
+//					this.P_MOVE_CURRENT.setDraw(true);
+//			}
+			if(GController.isWin_a() && this.player == E_PLAYER.PLAYER_A || GController.isWin_b() && this.player == E_PLAYER.PLAYER_B){
 				this.P_MOVE_CURRENT.setWin(true);
+			}else if(GController.isDRAW()){
+				this.P_MOVE_CURRENT.setDraw(true);
+			}else if(GController.isWin_a() || GController.isWin_b()){
+				this.P_MOVE_CURRENT.setLoose(true);
+			}else{
+				logger.fatal("No win/loose data for rollback evaluation\n{}",this.P_MOVE_CURRENT.toString());
+				System.exit(1);
 			}
-			this.P_MOVE_CURRENT.setDraw(GController.isDRAW());
-		}else{
+		}else{ // real move
 			switch(GController.getGameState()){
 			case DRAW:
 				this.P_MOVE_CURRENT.setDraw(true);
@@ -308,13 +318,13 @@ public class KBS_trainer implements AI {
 				return;
 			}
 		}
-		
 		this.P_MOVE_CURRENT.setUsed(true);
 		if(!db.setMove(P_MOVE_CURRENT)){
 			logger.error("Invalid set");
 			GController.restart();
 			return;
 		}
+		
 		logger.debug("After event: {}",P_MOVE_CURRENT.toString());
 		if(P_MOVE_CURRENT.isLoose()){
 			MOVES.addLoose(P_MOVE_CURRENT);
@@ -332,6 +342,71 @@ public class KBS_trainer implements AI {
 		logger.exit();
 	}
 	
+	/**
+	 * Sets the outcome of all possible moves for the current field
+	 */
+	public void getOutcome(){
+		logger.entry();
+		boolean player_a = this.player == E_PLAYER.PLAYER_A;
+		if(!MOVES.getWins().isEmpty()){
+			GController.setWIN_A(player_a);
+			GController.setWIN_B(!player_a);
+			GController.setDRAW(false);
+		}else if(!MOVES.getDraws().isEmpty()){
+			GController.setWIN_A(false);
+			GController.setWIN_B(false);
+			GController.setDRAW(true);
+		}else if(!MOVES.getLooses().isEmpty()){
+			GController.setWIN_A(!player_a);
+			GController.setWIN_B(player_a);
+			GController.setDRAW(false);
+		}
+//		if(this.player == E_PLAYER.PLAYER_A){
+//			
+//			
+//			GController.setWIN_A(!MOVES.getWins().isEmpty());
+//			GController.setWIN_B(!MOVES.getLooses().isEmpty());
+//			loose = GController.isWin_b() && !GController.isWin_a(); // no possible win, only loose
+//		}else{
+//			GController.setWIN_B(!MOVES.getWins().isEmpty());
+//			GController.setWIN_A(!MOVES.getLooses().isEmpty());
+//			loose = GController.isWin_a() && !GController.isWin_b(); // no possible win, only loose
+//		}
+//		boolean draws;
+//		boolean s_draw;
+//		if(GController.isWin_a() || GController.isWin_b()){
+//			for(Move move: MOVES.getDraws()){
+//				if((!move.isLoose())){
+//					if(move.isWin() && (!move.isDraw())){ // possible direct win
+//						break;
+//					}else if(!move.isDraw()){
+//						logger.info("S_DRAW: {}",move.toString());
+//						s_draw = true;
+//						break;
+//					}
+//				}
+//			}
+//			if(loose){
+//			}else{
+//				for(Move move: MOVES.getWins()){
+//					if(move.isDraw()){
+//						draws = true;
+//					}
+//				}
+//				draws = false;
+//				s_draw = false;
+//			}
+//		}else{
+//			draws = !MOVES.getDraws().isEmpty();
+//			s_draw = draws; // just to be sure we get invalidate data if this error should happen
+//		}
+//		GController.setS_DRAW(s_draw);
+//		GController.setDRAW(draws);
+		if(logger.isDebugEnabled()){
+			logger.debug("pla:{} WIN_A:{} WIN_B:{} DRAW:{} S_DRAW:{}",this.player,GController.isWin_a(),GController.isWin_b(),GController.isDRAW(),GController.isS_DRAW());
+		}
+	}
+	
 	private void print_follow(){
 		StringBuilder sb = new StringBuilder();
 		for(Move move : follow){
@@ -347,6 +422,7 @@ public class KBS_trainer implements AI {
 		if(SHUTDOWN){
 			return;
 		}
+		logger.info("Retries for {}: {}", player, retries);
 		this.SHUTDOWN = true;
 		db.shutdown();
 	}

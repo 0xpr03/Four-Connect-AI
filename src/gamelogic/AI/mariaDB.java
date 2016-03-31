@@ -36,6 +36,7 @@ public class mariaDB implements DB {
 	private long updates = 0;
 	private long deletesAll = 0;
 	private long retries = 0;
+	private long fails = 0;
 	
 	private final lib lib = new lib();
 	private final int port;
@@ -43,6 +44,8 @@ public class mariaDB implements DB {
 	private final MemCache<ByteBuffer,Long> cache;
 	
 	private final boolean USE_CACHE = true;
+	
+	private boolean TRAINING_MODE = false;
 	
 	PreparedStatement stmSelFID;
 	PreparedStatement stmInsFID;
@@ -109,6 +112,7 @@ public class mariaDB implements DB {
 				return null;
 			
 			if(fID != -1){
+				logger.debug("fid: {}",fID);
 				stmSelect.setLong(1, fID);
 				stmSelect.setBoolean(2, player_a);
 				ResultSet rs = stmSelect.executeQuery();
@@ -187,6 +191,7 @@ public class mariaDB implements DB {
 			}
 			retries++;
 		}
+		fails++;
 		return -1;
 	}
 	
@@ -219,7 +224,7 @@ public class mariaDB implements DB {
 			}
 			stmInsert.setLong(1, fID);
 			stmInsert.setBoolean(2, player_a);
-			SelectResult sel = new SelectResult();
+			SelectResult sel = new SelectResult(TRAINING_MODE ? GController.getX_MAX() : 5);
 			for(int move : moves){
 				try{
 					stmInsert.setInt(3, move);
@@ -277,6 +282,7 @@ public class mariaDB implements DB {
 			}
 			retries++;
 		}
+		fails++;
 		return false;
 	}
 
@@ -350,7 +356,7 @@ public class mariaDB implements DB {
 		} catch (SQLException e) {
 			exitLogger.error("mariaDB shutdown {}", e);
 		}
-		exitLogger.info("Stats: Deletes:{} DelAlls:{} Inserts:{} Updates:{} Retries: {}",deletes,deletesAll,inserts, updates,retries);
+		exitLogger.info("Stats: Deletes:{} DelAlls:{} Inserts:{} Updates:{} Retries: {} Fails:{}",deletes,deletesAll,inserts, updates,retries,fails);
 	}
 
 	@Override
@@ -388,7 +394,7 @@ public class mariaDB implements DB {
 	public SelectResult testField(E_FIELD_STATE[][] field_in) {
 		logger.entry();
 		try {
-			SelectResult sel = new SelectResult();
+			SelectResult sel = new SelectResult(GController.getX_MAX() * 2);
 			byte[] field = lib.field2sha(field_in);
 			long fID = getFieldID(field);
 			if(fID == -2) // error check
@@ -420,6 +426,13 @@ public class mariaDB implements DB {
 			logger.error("getMoves {}",e);
 			return null;
 		}
+	}
+	
+	/**
+	 * @param TRAINING_MODE the tRAINING_MODE to set
+	 */
+	public synchronized void setTRAINING_MODE(boolean TRAINING_MODE) {
+		this.TRAINING_MODE = TRAINING_MODE;
 	}
 	
 	public byte[] getHash(){

@@ -72,8 +72,8 @@ public final class Controller extends ControllerBase {
 				matchHistory = new ArrayList<E_FIELD_STATE[][]>((X_MAX * Y_MAX) - 5);
 			}
 			
-			if (GAMEMODE == E_GAME_MODE.TESTING){
-				logger.warn("Gamemode set to TESTING. All manipulations are enabled in this mode!");
+			if (GAMEMODE == E_GAME_MODE.TESTING || GAMEMODE == E_GAME_MODE.KI_TRAINING){
+				logger.warn("All manipulations are enabled in this mode! {}",GAMEMODE);
 			}
 			MOVES = 0;
 		}
@@ -266,8 +266,6 @@ public final class Controller extends ControllerBase {
 			System.exit(0);
 		}
 		
-		//TODO: change to represent current gamestate
-		//logger.warn("Using default win state to inform!");
 		STATE = last_win;
 		if(ALLOW_BACK_BOTH){
 			logger.debug("state; {}",STATE);

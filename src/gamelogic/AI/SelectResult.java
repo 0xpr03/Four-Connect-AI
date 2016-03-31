@@ -12,9 +12,13 @@ public class SelectResult {
 	private List<Move> wins = new ArrayList<Move>(5);
 	private List<Move> draws = new ArrayList<Move>(5);
 	private List<Move> looses = new ArrayList<Move>(5);
-	private List<Move> unused = new ArrayList<Move>(5);
+	private List<Move> unused;
+	public SelectResult(int amount_unused){
+		unused = new ArrayList<Move>(amount_unused);
+	}
 	
 	public SelectResult(){
+		this(5);
 	}
 	
 	/**
