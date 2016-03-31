@@ -55,8 +55,12 @@ public class KBS_player<E extends DB> implements AI {
 					move = moves.getDraws().get(0).getMove();
 				}
 			}else{
-				logger.debug("Going to capitulate");
-				GController.capitulate(player);
+				if(moves.getUnused().isEmpty()){
+					logger.debug("Going to capitulate");
+				}else{
+					logger.error("Capitulating, found {} unused moves!",moves.getUnused().size());
+				}
+				GController.capitulate();
 				return false;
 			}
 			GController.insertStone(move);

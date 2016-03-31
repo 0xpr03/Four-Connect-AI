@@ -55,22 +55,25 @@ public class AITrainer {
 			}
 		}
 		
-		int X_MAX = 5;
-		int Y_MAX = 5;
+		int X_MAX = 4;
+		int Y_MAX = 4;
 		
-		int first_move = 3;
+		int first_move = -1;
 		if(args.length > 1){
-			X_MAX = 5;
-			Y_MAX = 5;
+			X_MAX = 6;
+			Y_MAX = 6;
 			first_move = -1;
 			logger.warn("Detected args, using {}*{} field!",X_MAX,Y_MAX);
 		}
 		if(args.length > 2){
 			try{
 				first_move = Integer.valueOf(args[2]);
+				logger.info("Starting move: {}",first_move);
 			}catch(NumberFormatException e){
 				logger.error("Invalid first move!");
 			}
+		}else{
+			String field = "";
 		}
 		ArrayList<Integer> forbiddenMoves = new ArrayList<Integer>();
 		if(args.length > 3 ) {
@@ -109,7 +112,7 @@ public class AITrainer {
 //		}
 		registerExitFunction();
 		Level logcontroller = Level.WARN;
-		Configurator.setLevel("DB", Level.DEBUG);
+		Configurator.setLevel("DB", Level.INFO);
 		Configurator.setLevel("AI", Level.INFO);
 		Configurator.setLevel("Controller", Level.INFO);
 		

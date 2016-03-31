@@ -65,12 +65,11 @@ public class gameControllerTester {
 	@Test
 	public void get_hash(){
 		lib lib = new lib();
-		String input = "----\n----\nOXOX\nXXOO";
-		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE,4,4);
+		String input = "O----\nO---X\nO-O-X\nXXO-X";
+		GController.initGame(E_GAME_MODE.TESTING, Level.TRACE,5,4);
 		GController.startGame();
 		GController.D_setField(GController.D_parseField(input));
-		Move move = new Move(1L, 1, true);
-		logger.info("Hash: {}",move.toString());
+		logger.info("Hash: {}",lib.bytesToHex(lib.field2sha(GController.getFieldState())));
 		assertTrue(E_GAME_STATE.NONE != GController.getGameState());
 	}
 	

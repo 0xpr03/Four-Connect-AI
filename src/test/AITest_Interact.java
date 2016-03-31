@@ -32,7 +32,7 @@ public class AITest_Interact {
 	
 	public static void main(String[] args){
 		init();
-		GController.initGame(E_GAME_MODE.SINGLE_PLAYER,Level.INFO, 5,5);
+		GController.initGame(E_GAME_MODE.SINGLE_PLAYER,Level.INFO, 5,4);
 		GController.startGame();
 		logger.info("Gamemode: {}",GController.getGamemode());
 		E_GAME_STATE state = E_GAME_STATE.NONE;
@@ -44,7 +44,7 @@ public class AITest_Interact {
 			if(GController.getGameState() == E_GAME_STATE.PLAYER_A){
 				logger.info("Possibilities: \n{}",GController.getPossibilities());
 				logger.info("\n{}",GController.getprintedGameState());
-				System.out.println("Please select a column, 0-"+GController.getX_MAX());
+				System.out.println("Please select a column, 0-" + (GController.getX_MAX()-1));
 				String input;
 				try{
 					input = lib.readLine("");
@@ -55,14 +55,14 @@ public class AITest_Interact {
 					logger.debug("Player using {}",in);
 					if(in >= GController.getX_MAX() || in < 0){
 						System.out.println("Not in range!");
-					}
-					if(!GController.insertStone(in)){
-						System.out.println("Not in range!");
+					}else{
+						if(!GController.insertStone(in)){
+							System.out.println("Wrong input!");
+						}
 					}
 				}catch(NumberFormatException e){
 					System.out.println("Not a number!");
 				} catch (IOException e1) {
-					// TODO Auto-generated catch block
 					logger.error(e1);
 				}
 			}else if(GController.getGameState() == E_GAME_STATE.PLAYER_B){
@@ -77,6 +77,8 @@ public class AITest_Interact {
 			System.err.print("You win!");
 		}else if(GController.getGameState() == E_GAME_STATE.DRAW){
 			System.err.println("Draw !");
+		}else{
+			System.err.println("Unknown state! "+GController.getGameState());
 		}
 		try {
 			Thread.sleep(10);
