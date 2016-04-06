@@ -33,7 +33,6 @@ public final class Controller extends ControllerBase {
 	// for ki training
 	private List<E_FIELD_STATE[][]> matchHistory;
 	private E_GAME_STATE LAST_PLAYER;
-	private boolean WIN_A = false, WIN_B = false, DRAW = false;
 	
 	/**
 	 * If player x does a move, leading to a game end, we've to go back two times
@@ -99,9 +98,6 @@ public final class Controller extends ControllerBase {
 			STATE = E_GAME_STATE.START;
 			switch(GAMEMODE){
 			case KI_TRAINING:
-				WIN_A = false;
-				WIN_B = false;
-				DRAW = false;
 				addHistory(); // add empty field
 				ALLOW_BACK_BOTH = false;
 				logger.debug("Using hard coded state!");
@@ -205,7 +201,6 @@ public final class Controller extends ControllerBase {
 		logger.debug("State: {}",STATE);
 		
 		super.LAST_GAME = new GameStore();
-		DRAW = true;
 		informAIs(true);
 	}
 	
@@ -223,30 +218,13 @@ public final class Controller extends ControllerBase {
 		logger.debug("State: {}",()->ws.getState());
 		
 		if(GAMEMODE == E_GAME_MODE.KI_TRAINING){
-			if(ws.getState() == E_GAME_STATE.WIN_A)
-				WIN_A = true;
-			else if(ws.getState() == E_GAME_STATE.WIN_B)
-				WIN_B = true;
 			checkHistory();
-			safe_ki_values(ws);
 		}
 		
 		STATE = ws.getState();
 		LAST_GAME = ws;
 		informAIs(true);
 		//TODO: run handle code for winner display etc
-	}
-	
-	/**
-	 * Safe win_a/b for rollback events as highest outcome
-	 * @param ws
-	 */
-	private void safe_ki_values(GameStore ws) {
-		if(ws.getState() == E_GAME_STATE.WIN_A){
-			WIN_A = true;
-		}else if(ws.getState() == E_GAME_STATE.WIN_B){
-			WIN_B = true;
-		}
 	}
 
 	/**
@@ -312,11 +290,6 @@ public final class Controller extends ControllerBase {
 			}
 			
 		}
-		
-		// reset highest outcome
-		WIN_A = false;
-		WIN_B = false;
-		DRAW = false;
 		
 		if(state_cache == E_GAME_STATE.PLAYER_A){
 			STATE = E_GAME_STATE.PLAYER_B;
@@ -500,53 +473,5 @@ public final class Controller extends ControllerBase {
 			GameStore ws = new GameStore(STATE);
 			handleWin(ws);
 		}
-	}
-
-	/**
-	 * AI Training related only!
-	 * @return the win_a
-	 */
-	public synchronized boolean isWin_a() {
-		return WIN_A;
-	}
-
-	/**
-	 * AI Training related only!
-	 * @param wIN_A the wIN_A to set
-	 */
-	public synchronized void setWIN_A(boolean wIN_A) {
-		WIN_A = wIN_A;
-	}
-
-	/**
-	 * AI Training related only!
-	 * @param wIN_B the wIN_B to set
-	 */
-	public synchronized void setWIN_B(boolean wIN_B) {
-		WIN_B = wIN_B;
-	}
-
-	/**
-	 * AI Training related only!
-	 * @param dRAW the dRAW to set
-	 */
-	public synchronized void setDRAW(boolean dRAW) {
-		DRAW = dRAW;
-	}
-
-	/**
-	 * @return returns WIN_B
-	 * AI Training related only!
-	 */
-	public synchronized boolean isWin_b() {
-		return WIN_B;
-	}
-
-	/**
-	 * @return the dRAW,
-	 * AI Training related only!
-	 */
-	public synchronized boolean isDRAW() {
-		return DRAW;
 	}
 }

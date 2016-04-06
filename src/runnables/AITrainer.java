@@ -1,4 +1,4 @@
-package test;
+package runnables;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -17,6 +17,7 @@ import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.GController;
 import gamelogic.AI.MemCache;
 import gamelogic.AI.mariaDB;
+import gamelogic.AI.learning.KBS_Channel;
 import gamelogic.AI.learning.KBS_trainer;
 
 /**
@@ -55,7 +56,7 @@ public class AITrainer {
 			}
 		}
 		
-		int X_MAX = 4;
+		int X_MAX = 5;
 		int Y_MAX = 4;
 		
 		int first_move = -1;
@@ -72,17 +73,17 @@ public class AITrainer {
 			}catch(NumberFormatException e){
 				logger.error("Invalid first move!");
 			}
-		}else{
-			String field = "";
 		}
 		ArrayList<Integer> forbiddenMoves = new ArrayList<Integer>();
 		if(args.length > 3 ) {
 			String[] forbidden_moves = args[3].split(",");
 			for(String s : forbidden_moves){
+				if(s.equals(""))
+					continue;
 				try{
 					forbiddenMoves.add(Integer.valueOf(s));
 				}catch(NumberFormatException e){
-					logger.error("Invalid forbidden move! {}",s);
+					logger.error("Invalid arg for forbidden move! {}",s);
 				}
 			}
 		}
@@ -122,7 +123,7 @@ public class AITrainer {
 		
 		@SuppressWarnings("unused")
 		boolean runthrough = false;
-		while(gameRunning()){
+		while(true){
 			moves++;
 //			try {
 //				if(runthrough == false){
@@ -162,7 +163,6 @@ public class AITrainer {
 				break;
 			}
 		}
-		logger.info(GController.getprintedGameState());
 	}
 	
 	private static void initGame(Level logcontroller, E_GAME_STATE starting_pl,int x_max,int y_max){
@@ -173,8 +173,9 @@ public class AITrainer {
 	
 	private static void initController(String address, int port, String user, String pw, String db, boolean player_a, int first_move, List<Integer> forbiddenMoves){
 		MemCache<ByteBuffer,Long> cache = new MemCache<ByteBuffer, Long>(20, 30, 50000);
-		KBS_trainer AIA = new KBS_trainer(new mariaDB(address, port, user, pw, db,cache),player_a == true ? first_move : -1,forbiddenMoves);
-		KBS_trainer AIB = new KBS_trainer(new mariaDB(address, port, user, pw, db,cache),player_a == false ? first_move : -1,forbiddenMoves);
+		KBS_Channel channel = new KBS_Channel();
+		KBS_trainer AIA = new KBS_trainer(new mariaDB(address, port, user, pw, db,cache),player_a == true ? first_move : -1,forbiddenMoves,channel);
+		KBS_trainer AIB = new KBS_trainer(new mariaDB(address, port, user, pw, db,cache),player_a == false ? first_move : -1,forbiddenMoves,channel);
 		Controller controller = new Controller(AIA, AIB);
 		GController.init(controller);
 	}
@@ -186,6 +187,7 @@ public class AITrainer {
 				logger.info("Last move {}ms ago",System.currentTimeMillis() - lastmatch);
 				try{
 					logger.info("Current state: {}",GController.getGameState());
+					System.out.println("Gamestate: "+GController.getGameState());
 					logger.info("Took {}ms and {} moves including re-moves and {} restarts",System.currentTimeMillis()-start_time,moves,restarts);
 				}catch(Exception e){
 					logger.error("Trying to get state: {}",e);

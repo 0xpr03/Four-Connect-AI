@@ -1,4 +1,4 @@
-package test;
+package runnables;
 
 import java.io.IOException;
 
@@ -9,6 +9,7 @@ import org.apache.logging.log4j.core.config.Configurator;
 
 import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
+import test.lib;
 import gamelogic.GController;
 
 /**

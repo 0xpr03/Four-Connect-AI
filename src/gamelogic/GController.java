@@ -45,54 +45,6 @@ public class GController {
 
 	/**
 	 * @return
-	 * @see gamelogic.Controller#isWin_a()
-	 */
-	public static boolean isWin_a() {
-		return controller.isWin_a();
-	}
-
-	/**
-	 * @return
-	 * @see gamelogic.Controller#isWin_b()
-	 */
-	public static boolean isWin_b() {
-		return controller.isWin_b();
-	}
-
-	/**
-	 * @return
-	 * @see gamelogic.Controller#isDRAW()
-	 */
-	public static boolean isDRAW() {
-		return controller.isDRAW();
-	}
-
-	/**
-	 * @param wIN_A
-	 * @see gamelogic.Controller#setWIN_A(boolean)
-	 */
-	public static void setWIN_A(boolean wIN_A) {
-		controller.setWIN_A(wIN_A);
-	}
-
-	/**
-	 * @param wIN_B
-	 * @see gamelogic.Controller#setWIN_B(boolean)
-	 */
-	public static void setWIN_B(boolean wIN_B) {
-		controller.setWIN_B(wIN_B);
-	}
-
-	/**
-	 * @param dRAW
-	 * @see gamelogic.Controller#setDRAW(boolean)
-	 */
-	public static void setDRAW(boolean dRAW) {
-		controller.setDRAW(dRAW);
-	}
-
-	/**
-	 * @return
 	 * @see gamelogic.ControllerBase#getPossibilities()
 	 */
 	public static List<Integer> getPossibilities() {
