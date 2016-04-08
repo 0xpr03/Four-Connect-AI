@@ -40,15 +40,14 @@ import textures.TerrainTexturePack;
 import toolbox.MousePicker;
 
 /**
- *
  * @author Trist
  */
 public class MainGameLoop {
 
 	private static enum State {
 		INTRO, MAIN_MENU, GAME, INGAME_MENU;
-	}	
-	private static State state = State.GAME;
+	}
+	private static State state = State.MAIN_MENU;
 	private static final Logger logger = LogManager.getLogger(MainGameLoop.class);
 	private static String VERSION = "0.1";	
 	
@@ -80,13 +79,13 @@ public class MainGameLoop {
 		
 		checkLoggingConf();
 		logger.info("User {}", VERSION);
-
+		
 		DisplayManager.createDisplay();
 		loader = new Loader();
 		TextMaster.init(loader);
 		
 		FontType font = new FontType(loader.loadTexture("tahoma"), new File("res/tahoma.fnt"));
-
+		
 		iMButtonTexts = new ArrayList<>();
 		iMButtonTexts.add(new GUIText("Resume", 5, font, new Vector2f(0, 0.02f), 1f, true, true));
 		iMButtonTexts.add(new GUIText("Restart", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
@@ -102,33 +101,33 @@ public class MainGameLoop {
 		TerrainTexture rTexture = new TerrainTexture(loader.loadTexture("grass"));
 		TerrainTexture gTexture = new TerrainTexture(loader.loadTexture("grass"));
 		TerrainTexture bTexture = new TerrainTexture(loader.loadTexture("grass"));
-
+		
 		TerrainTexturePack texturePack = new TerrainTexturePack(backgroundTexture, rTexture, gTexture, bTexture);
 		TerrainTexture blendMap = new TerrainTexture(loader.loadTexture("black"));
-
+		
 		logger.trace("loading models");
 		// LOAD MODELS & TEXTURES
 		TexturedModel tree = loader.loadtoVAO("lowPolyTree", "lowPolyTree");
-
+		
 		TexturedModel lamp = loader.loadtoVAO("lamp", "lamp");
-
+		
 		logger.trace("creating entities");
 		terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "black");
-
+		
 		allentities = new ArrayList<>();
-
+		
 		menuGuis = new ArrayList<GuiTexture>();
 //		menuGuis.add(new GuiTexture(loader.loadTexture("null"), new Vector2f(0.0f, 0.0f),
 //				new Vector2f(1f, 1f)));
 		mouseCircle = new GuiTexture(loader.loadTexture("mouse"), new Vector2f(0.5f, 0.5f), new Vector2f(0.25f, 0.35f));
 		menuGuis.add(mouseCircle);
-
+		
 		guiRenderer = new GuiRenderer(loader);
 		
 		camera = new Camera(new Vector3f(0, 10, 0));
-
+		
 		picker = new MousePicker(camera, renderer.getProjectionMatrix(), terrain);
-
+		
 		intro = new GuiTexture(loader.loadTexture("testIntro"), //needs to be squared and the pixel count must be 2^n
 				new Vector2f(0f, 0f),
 				new Vector2f(Display.getWidth()/Display.getHeight(), 1f));
@@ -138,70 +137,14 @@ public class MainGameLoop {
 		createRandomEntities(allentities,terrain, tree, 100, 300-150, -300,0f,0f,0f,0.5f);
 		lampTest = new Entity(lamp, new Vector3f(0, 0, 0), 0, 0, 0, 1);
 		allentities.add(lampTest);
-
+		
 		Light sun = new Light(new Vector3f(0, 10000, -7000), new Vector3f(0.4f, 0.4f, 0.4f));
 		lights = new ArrayList<>();
 		lights.add(sun);
 //		lights.add(new Light(new Vector3f(10, terrain.getHeightOfTerrain(10, 10) + 20, 10), new Vector3f(5, 0, 0), new Vector3f(1, 0.01f, 0.002f)));
-	
-		iMButtonList = new ArrayList<>();
 		
-		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.15f)) {			
-			public void onClick(Button button) {
-				logger.trace("resume");			
-				resumeGame();
-			}
-			public void onStartHover(Button button) {
-			}			
-			public void onStopHover(Button button) {
-			}
-			public void whileHovering(Button button) {}			
-		});
-		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.15f)) {			
-			public void onClick(Button button) {
-				logger.trace("restart");				
-			}
-			public void onStartHover(Button button) {
-			}			
-			public void onStopHover(Button button) {
-			}
-			public void whileHovering(Button button) {}			
-		});
-		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0f), new Vector2f(0.5f, 0.15f)) {			
-			public void onClick(Button button) {
-				logger.trace("options");				
-			}
-			public void onStartHover(Button button) {
-			}			
-			public void onStopHover(Button button) {
-			}
-			public void whileHovering(Button button) {}			
-		});
-		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,-0.4f), new Vector2f(0.5f, 0.15f)) {			
-			public void onClick(Button button) {
-				logger.trace("concede");				
-			}
-			public void onStartHover(Button button) {
-			}			
-			public void onStopHover(Button button) {
-			}
-			public void whileHovering(Button button) {}			
-		});
-		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,-0.8f), new Vector2f(0.5f, 0.15f)) {			
-			public void onClick(Button button) {
-				logger.trace("exit to main menu");		
-				for(GUIText g : iMButtonTexts) {
-					g.hide();
-				}
-				state = State.MAIN_MENU;
-			}
-			public void onStartHover(Button button) {
-			}			
-			public void onStopHover(Button button) {
-			}
-			public void whileHovering(Button button) {}			
-		});
-
+		initButtons();
+		
 		logger.trace("entering renderer");
 		
 		while (!Display.isCloseRequested()) {
@@ -237,12 +180,12 @@ public class MainGameLoop {
 			for (Entity entity : allentities) {
 				renderer.processEntity(entity);
 			}
-
+			
 			renderer.render(lights, camera);
 			TextMaster.render();
 			DisplayManager.updateDisplay();
 			break;
-		case INGAME_MENU:					
+		case INGAME_MENU:
 			camera.resetMovement();
 			camera.increaseRotation(0.1f, 0f);
 			camera.move();
@@ -331,7 +274,70 @@ public class MainGameLoop {
 			allentities.add(new Entity(model, random.nextInt(4), new Vector3f(x, y, z), rotX, random.nextFloat() * rotY, rotZ,
 					scale));
 		}
-	}	
+	}
+	
+	/**
+	 * Init menu button list
+	 */
+	private static void initButtons(){
+		iMButtonList = new ArrayList<>();
+		
+		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.15f)) {			
+			public void onClick(Button button) {
+				logger.trace("resume");			
+				resumeGame();
+			}
+			public void onStartHover(Button button) {
+			}			
+			public void onStopHover(Button button) {
+			}
+			public void whileHovering(Button button) {}			
+		});
+		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.15f)) {			
+			public void onClick(Button button) {
+				logger.trace("restart");				
+			}
+			public void onStartHover(Button button) {
+			}			
+			public void onStopHover(Button button) {
+			}
+			public void whileHovering(Button button) {}			
+		});
+		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0f), new Vector2f(0.5f, 0.15f)) {			
+			public void onClick(Button button) {
+				logger.trace("options");				
+			}
+			public void onStartHover(Button button) {
+			}			
+			public void onStopHover(Button button) {
+			}
+			public void whileHovering(Button button) {}			
+		});
+		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,-0.4f), new Vector2f(0.5f, 0.15f)) {			
+			public void onClick(Button button) {
+				logger.trace("concede");				
+			}
+			public void onStartHover(Button button) {
+			}			
+			public void onStopHover(Button button) {
+			}
+			public void whileHovering(Button button) {}			
+		});
+		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,-0.8f), new Vector2f(0.5f, 0.15f)) {			
+			public void onClick(Button button) {
+				logger.trace("exit to main menu");		
+				for(GUIText g : iMButtonTexts) {
+					g.hide();
+				}
+				state = State.MAIN_MENU;
+			}
+			public void onStartHover(Button button) {
+			}			
+			public void onStopHover(Button button) {
+			}
+			public void whileHovering(Button button) {}			
+		});
+	}
 	
 	/**
 	 * Cleanup openGL context for exiting
