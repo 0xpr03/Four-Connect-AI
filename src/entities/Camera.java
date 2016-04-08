@@ -20,11 +20,11 @@ import terrain.Terrain;
  */
 public class Camera {
     
-	public static float RUN_SPEED_FORWARD;
-	public static float RUN_SPEED_STRAFE;
-    private static float UP_DOWN_SPEED;
-    	
-	private Vector3f position;
+	private float FORWARD_SPEED; // W/S keys
+	private float SIDEWARD_SPEED; // A/D keys
+    private float HEIGHT_SPEED;// shift/space keys
+
+    private Vector3f position;
     private Logger logger = LogManager.getLogger();
     private float pitch;
     private float rotY = 90;
@@ -40,31 +40,39 @@ public class Camera {
 	public void move(Terrain terrain) {
         checkInputs();        
         
-        float dx = (RUN_SPEED_FORWARD * (float) Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
-        float dz = (-RUN_SPEED_FORWARD * (float) Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
-        dx += (RUN_SPEED_STRAFE * (float)Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
-        dz += (RUN_SPEED_STRAFE * (float)Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        float dx = (FORWARD_SPEED * (float) Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        float dz = (-FORWARD_SPEED * (float) Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        dx += (SIDEWARD_SPEED * (float)Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        dz += (SIDEWARD_SPEED * (float)Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
         position.x += dx;
-        position.z += dz;    
-        logger.debug("posX {}",position.x);
-        logger.debug("posZ {}",position.z);
-        position.y += UP_DOWN_SPEED * DisplayManager.getFrameTimeSeconds();
-        increasePosition(0, UP_DOWN_SPEED * DisplayManager.getFrameTimeSeconds(), 0);
+        position.z += dz;
+//        logger.debug("S:{}|F:{}",COORDS_SIDEWARD, COORDS_FORWARD);
+        position.y += HEIGHT_SPEED * DisplayManager.getFrameTimeSeconds();
+        increasePosition(0, HEIGHT_SPEED * DisplayManager.getFrameTimeSeconds(), 0);
         float terrainHeight = terrain.getHeightOfTerrain(position.x, position.z);
         
         if(position.y < terrainHeight + 5) {
-        	UP_DOWN_SPEED = 0;
+        	HEIGHT_SPEED = 0;
             position.y = terrainHeight + 5;
         }
     }
 	
+	/**
+	 * Set forward & sideward movement to 0
+	 */
+	public void resetMovement(){
+		FORWARD_SPEED = 0;
+		SIDEWARD_SPEED = 0;
+		HEIGHT_SPEED = 0;
+	}
+	
 	public void move() {
-		float dx = (RUN_SPEED_FORWARD * (float) Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
-        float dz = (-RUN_SPEED_FORWARD * (float) Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
-        dx += (RUN_SPEED_STRAFE * (float)Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
-        dz += (RUN_SPEED_STRAFE * (float)Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+		float dx = (FORWARD_SPEED * (float) Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        float dz = (-FORWARD_SPEED * (float) Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        dx += (SIDEWARD_SPEED * (float)Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        dz += (SIDEWARD_SPEED * (float)Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
         position.x += dx;
-        position.z += dz;   
+        position.z += dz;
         logger.debug("posX {}",position.x);
         logger.debug("posZ {}",position.z);
 	}
@@ -88,41 +96,41 @@ public class Camera {
     private void checkInputs() {
         if(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
         	if(Keyboard.isKeyDown(Keyboard.KEY_W)) {
-        		RUN_SPEED_FORWARD = 200;
+        		FORWARD_SPEED = 200;
         	}else if(Keyboard.isKeyDown(Keyboard.KEY_S)) {
-        		RUN_SPEED_FORWARD = -200;
+        		FORWARD_SPEED = -200;
         	}else {
-        		RUN_SPEED_FORWARD = 0;
+        		FORWARD_SPEED = 0;
         	}        
         	if(Keyboard.isKeyDown(Keyboard.KEY_D)) {
-        		RUN_SPEED_STRAFE = 200;
+        		SIDEWARD_SPEED = 200;
         	}else if(Keyboard.isKeyDown(Keyboard.KEY_A)) {
-        		RUN_SPEED_STRAFE = -200;
+        		SIDEWARD_SPEED = -200;
         	}else {
-        		RUN_SPEED_STRAFE = 0;
+        		SIDEWARD_SPEED = 0;
         	}                
         }else{
         	if(Keyboard.isKeyDown(Keyboard.KEY_W)) {
-        		RUN_SPEED_FORWARD = 20;
+        		FORWARD_SPEED = 20;
         	}else if(Keyboard.isKeyDown(Keyboard.KEY_S)) {
-        		RUN_SPEED_FORWARD = -20;
+        		FORWARD_SPEED = -20;
         	}else {
-        		RUN_SPEED_FORWARD = 0;
+        		FORWARD_SPEED = 0;
         	}        
         	if(Keyboard.isKeyDown(Keyboard.KEY_D)) {
-        		RUN_SPEED_STRAFE = 20;
+        		SIDEWARD_SPEED = 20;
         	}else if(Keyboard.isKeyDown(Keyboard.KEY_A)) {
-        		RUN_SPEED_STRAFE = -20;
+        		SIDEWARD_SPEED = -20;
         	}else {
-        		RUN_SPEED_STRAFE = 0;
+        		SIDEWARD_SPEED = 0;
         	}        
         }
         if(Keyboard.isKeyDown(Keyboard.KEY_SPACE)) {
-        	UP_DOWN_SPEED = 30;
+        	HEIGHT_SPEED = 30;
         }else if(Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
-        	UP_DOWN_SPEED = -30;
+        	HEIGHT_SPEED = -30;
         }else {
-        	UP_DOWN_SPEED = 0;
+        	HEIGHT_SPEED = 0;
         }
         if(Mouse.isButtonDown(1)) {
             float pitchChange = Mouse.getDY() * 0.1f;

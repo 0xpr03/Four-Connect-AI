@@ -243,6 +243,7 @@ public class MainGameLoop {
 			DisplayManager.updateDisplay();
 			break;
 		case INGAME_MENU:					
+			camera.resetMovement();
 			camera.increaseRotation(0.1f, 0f);
 			camera.move();
 			for(AbstractButton b : iMButtonList) {
@@ -295,9 +296,8 @@ public class MainGameLoop {
 						g.show();
 					}
 		 			lastCamPos = camera.getPosition();
+					lastCamRotY = camera.getRotY();
 		 			logger.debug("Test");
-		 			lastCamRotY = camera.getRotY();
-		 			camera.RUN_SPEED_STRAFE = -10;
 		 			state = State.INGAME_MENU;
 		 		}
 			}
@@ -316,7 +316,6 @@ public class MainGameLoop {
 		for(GUIText g : iMButtonTexts) {
 			g.hide();
 		}
-		camera.RUN_SPEED_STRAFE = 0;
 		camera.setPosition(lastCamPos);
 		camera.setRotY(lastCamRotY);
 		state = State.GAME;
