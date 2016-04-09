@@ -45,9 +45,9 @@ import toolbox.MousePicker;
 public class MainGameLoop {
 
 	private static enum State {
-		INTRO, MAIN_MENU, GAME, INGAME_MENU;
+		INTRO, MAIN_MENU, GAME, INGAME_MENU, RESUME_GAME;
 	}
-	private static State state = State.MAIN_MENU;
+	private static State state = State.GAME;
 	private static final Logger logger = LogManager.getLogger(MainGameLoop.class);
 	private static String VERSION = "0.1";	
 	
@@ -166,12 +166,19 @@ public class MainGameLoop {
 			DisplayManager.updateDisplay();
 			TextMaster.render();
 			break;
-		case GAME:
-			camera.move(terrain);
-			picker.update();
+		case RESUME_GAME:
+			state = State.GAME;
+			camera.setPosition(lastCamPos);
+			camera.setRotY(lastCamRotY);
 			for(AbstractButton b : iMButtonList) {
 				b.hide(menuGuis);
 			}
+			for(GUIText g : iMButtonTexts) {
+				g.hide();
+			}
+		case GAME:
+			camera.move(terrain);
+			picker.update();
 			Vector3f terrainPoint = picker.getCurrentTerrainPoint(); //Gibt den Punkt aus, auf dem mouse Ray auf terrain trifft.
 			if(terrainPoint != null) {
 				lampTest.setPosition(terrainPoint);
@@ -186,26 +193,30 @@ public class MainGameLoop {
 			DisplayManager.updateDisplay();
 			break;
 		case INGAME_MENU:
-			camera.resetMovement();
-			camera.increaseRotation(0.1f, 0f);
-			camera.move();
-			for(AbstractButton b : iMButtonList) {
-				b.show(menuGuis);
-				b.update();
-			}
-			float x = (2.0f * Mouse.getX()) / Display.getWidth() - 1f;
-			float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1f;				
-			mouseCircle.setPosition(new Vector2f(x, y));
-			renderer.processTerrain(terrain);
-			for (Entity entity : allentities) {
-				renderer.processEntity(entity);
-			}
-			renderer.render(lights, camera);	
-			guiRenderer.render(menuGuis);
-			TextMaster.render();
-			DisplayManager.updateDisplay();
+			renderMovingScene();
 			break;
 		}
+	}
+	
+	private static void renderMovingScene(){
+		camera.resetMovement();
+		camera.increaseRotation(0.1f, 0f);
+		camera.move();
+		for(AbstractButton b : iMButtonList) {
+			b.show(menuGuis);
+			b.update();
+		}
+		float x = (2.0f * Mouse.getX()) / Display.getWidth() - 1f;
+		float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1f;				
+		mouseCircle.setPosition(new Vector2f(x, y));
+		renderer.processTerrain(terrain);
+		for (Entity entity : allentities) {
+			renderer.processEntity(entity);
+		}
+		renderer.render(lights, camera);	
+		guiRenderer.render(menuGuis);
+		TextMaster.render();
+		DisplayManager.updateDisplay();
 	}
 	
 	private static void checkInputs() {
@@ -218,7 +229,6 @@ public class MainGameLoop {
 				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE))  {
 					exit();
 				}
-				
 			}
 		break;
 		case MAIN_MENU:
@@ -248,22 +258,13 @@ public class MainGameLoop {
 		case INGAME_MENU:
 			while(Keyboard.next()) {
 				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
-					resumeGame();
+					state = State.RESUME_GAME;
 				}
 			}
 		break;				
 		}
 	}
 	
-	private static void resumeGame() {
-		for(GUIText g : iMButtonTexts) {
-			g.hide();
-		}
-		camera.setPosition(lastCamPos);
-		camera.setRotY(lastCamRotY);
-		state = State.GAME;
-	}
-
 	private static void createRandomEntities(List<Entity> allentities, Terrain terrain, TexturedModel model, int amount, int r_x, int r_z, float rotX, float rotY, float rotZ, float scale){
 		logger.entry();
 		Random random = new Random();
@@ -285,7 +286,7 @@ public class MainGameLoop {
 		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
 				logger.trace("resume");			
-				resumeGame();
+				state = State.RESUME_GAME;
 			}
 			public void onStartHover(Button button) {
 			}			

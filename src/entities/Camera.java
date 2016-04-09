@@ -36,7 +36,8 @@ public class Camera {
     public float getRotY() {
 		return rotY;
 	}
-
+    
+    
 	public void move(Terrain terrain) {
         checkInputs();        
         
@@ -66,6 +67,9 @@ public class Camera {
 		HEIGHT_SPEED = 0;
 	}
 	
+	/**
+	 * Run camera move
+	 */
 	public void move() {
 		float dx = (FORWARD_SPEED * (float) Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
         float dz = (-FORWARD_SPEED * (float) Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
@@ -73,8 +77,7 @@ public class Camera {
         dz += (SIDEWARD_SPEED * (float)Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
         position.x += dx;
         position.z += dz;
-        logger.debug("posX {}",position.x);
-        logger.debug("posZ {}",position.z);
+//        logger.debug("posX {} posZ {}",position.x,position.z);
 	}
 	
 	public void setPosition(Vector3f position) {
