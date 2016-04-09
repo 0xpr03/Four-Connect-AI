@@ -45,7 +45,7 @@ import toolbox.MousePicker;
 public class MainGameLoop {
 
 	private static enum State {
-		INTRO, MAIN_MENU, GAME, INGAME_MENU;
+		INTRO, MAIN_MENU, GAME, INGAME_MENU, SPMENU;
 	}
 	private static State state = State.INTRO;
 	private static final Logger logger = LogManager.getLogger(MainGameLoop.class);
@@ -66,9 +66,11 @@ public class MainGameLoop {
 	private static GuiTexture intro;
 	private static List<AbstractButton> iMButtonList;
 	private static List<AbstractButton> sMButtonList;
+	private static List<AbstractButton> SP_ButtonList;
 	private static GuiTexture menu;
 	private static List<GUIText> iMButtonTexts;
 	private static List<GUIText> sMButtonTexts;
+	private static List<GUIText> SP_ButtonTexts;
 	protected static Vector3f lastCamPos;
 	private static float lastCamRotY;
 
@@ -100,6 +102,12 @@ public class MainGameLoop {
 		sMButtonTexts.add(new GUIText("Multiplayer", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
 		sMButtonTexts.add(new GUIText("Options", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
 		sMButtonTexts.add(new GUIText("Exit", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
+		
+		SP_ButtonTexts = new ArrayList<>();
+		SP_ButtonTexts.add(new GUIText("7x6 Default", 5, font, new Vector2f(0, 0.02f), 1f, true, true));
+		SP_ButtonTexts.add(new GUIText("6x6 Hard", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
+		SP_ButtonTexts.add(new GUIText("5x5 Hard", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
+		SP_ButtonTexts.add(new GUIText("Back", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
 		
 		renderer = new MasterRenderer();
 		
@@ -172,6 +180,9 @@ public class MainGameLoop {
 		case MAIN_MENU:
 			renderMenuScene(sMButtonList,true);
 			break;
+		case SPMENU:
+			renderMenuScene(SP_ButtonList,true);
+			break;
 		case GAME:
 			camera.move(terrain);
 			picker.update();
@@ -194,10 +205,36 @@ public class MainGameLoop {
 		}
 	}
 	
-	private static void hideIngameMenu(){
-		camera.setPosition(lastCamPos);
-		camera.setRotY(lastCamRotY);
+	private static void hideIngameMenu(boolean resetCam){
 		hideMenu(iMButtonList,iMButtonTexts);
+	}
+	
+	private static void showMainMenu(){
+		showMenu(sMButtonTexts);
+	}
+	
+	private static void hideMainMenu(){
+		hideMenu(sMButtonList, sMButtonTexts);
+	}
+	
+	private static void showSPMenu(){
+		showMenu(SP_ButtonTexts);
+	}
+	
+	private static void hideSPMenu(boolean resetCam){
+		if(resetCam){
+			if(lastCamPos != null){
+				camera.setPosition(lastCamPos);
+				camera.setRotY(lastCamRotY);
+			}
+		}
+		hideMenu(SP_ButtonList,SP_ButtonTexts);
+	}
+	
+	private static void showMenu(List<GUIText> list){
+		for(GUIText g: list){
+			g.show();
+		}
 	}
 	
 	private static void hideMenu(List<AbstractButton> buttonList, List<GUIText> textList){
@@ -207,16 +244,6 @@ public class MainGameLoop {
 		for(GUIText g : textList) {
 			g.hide();
 		}
-	}
-	
-	private static void showMainMenu(){
-		for(GUIText g : sMButtonTexts) {
-			g.show();
-		}
-	}
-	
-	private static void hideMainMenu(){
-		hideMenu(sMButtonList, sMButtonTexts);
 	}
 	
 	private static void renderMenuScene(List<AbstractButton> buttonList, final boolean animateCam){
@@ -263,6 +290,9 @@ public class MainGameLoop {
 				
 			}
 		break;
+		case SPMENU:
+			
+			break;
 		case GAME: 	
 			while(Keyboard.next()) {
 				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
@@ -279,7 +309,7 @@ public class MainGameLoop {
 		case INGAME_MENU:
 			while(Keyboard.next()) {
 				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
-					hideIngameMenu();
+					hideIngameMenu(true);
 					state = State.GAME;
 				}
 			}
@@ -313,7 +343,7 @@ public class MainGameLoop {
 		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
 				logger.trace("resume");
-				hideIngameMenu();
+				hideIngameMenu(true);
 				state = State.GAME;
 			}
 			public void onStartHover(Button button) {
@@ -355,7 +385,7 @@ public class MainGameLoop {
 		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,-0.8f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
 				logger.trace("exit to main menu");		
-				hideIngameMenu();
+				hideIngameMenu(false);
 				showMainMenu();
 				state = State.MAIN_MENU;
 			}
@@ -374,7 +404,8 @@ public class MainGameLoop {
 			public void onClick(Button button) {
 				logger.trace("Menu SinglePlayer");
 				hideMainMenu();
-				state = State.GAME;
+				showSPMenu();
+				state = State.SPMENU;
 			}
 			public void onStartHover(Button button) {
 			}			
@@ -413,6 +444,64 @@ public class MainGameLoop {
 			}
 			public void whileHovering(Button button) {}			
 		});
+		
+		/**
+		 * Singleplayer Menu
+		 */
+		
+		SP_ButtonList = new ArrayList<>();
+		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.15f)) {			
+			public void onClick(Button button) {
+				logger.trace("7x6 Default");
+				startSPGame();
+			}
+			public void onStartHover(Button button) {
+			}			
+			public void onStopHover(Button button) {
+			}
+			public void whileHovering(Button button) {}			
+		});
+		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.15f)) {			
+			public void onClick(Button button) {
+				logger.trace("6x6 Hard");
+				startSPGame();
+			}
+			public void onStartHover(Button button) {
+			}			
+			public void onStopHover(Button button) {
+			}
+			public void whileHovering(Button button) {}			
+		});
+		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0f), new Vector2f(0.5f, 0.15f)) {			
+			public void onClick(Button button) {
+				logger.trace("5x5 Hard");
+				startSPGame();
+			}
+			public void onStartHover(Button button) {
+			}			
+			public void onStopHover(Button button) {
+			}
+			public void whileHovering(Button button) {}			
+		});
+		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,-0.4f), new Vector2f(0.5f, 0.15f)) {			
+			public void onClick(Button button) {
+				logger.trace("Back");
+				hideSPMenu(false);
+				showMainMenu();
+				state=State.MAIN_MENU;
+			}
+			public void onStartHover(Button button) {
+			}			
+			public void onStopHover(Button button) {
+			}
+			public void whileHovering(Button button) {}			
+		});
+		
+	}
+	
+	private static void startSPGame(){
+		hideSPMenu(true);
+		state = State.GAME;
 	}
 	
 	/**
