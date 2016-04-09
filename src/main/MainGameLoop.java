@@ -45,9 +45,9 @@ import toolbox.MousePicker;
 public class MainGameLoop {
 
 	private static enum State {
-		INTRO, MAIN_MENU, GAME, INGAME_MENU, RESUME_GAME;
+		INTRO, MAIN_MENU, GAME, INGAME_MENU;
 	}
-	private static State state = State.GAME;
+	private static State state = State.INTRO;
 	private static final Logger logger = LogManager.getLogger(MainGameLoop.class);
 	private static String VERSION = "0.1";	
 	
@@ -65,8 +65,10 @@ public class MainGameLoop {
 	private static GuiTexture mouseCircle;
 	private static GuiTexture intro;
 	private static List<AbstractButton> iMButtonList;
+	private static List<AbstractButton> sMButtonList;
 	private static GuiTexture menu;
 	private static List<GUIText> iMButtonTexts;
+	private static List<GUIText> sMButtonTexts;
 	protected static Vector3f lastCamPos;
 	private static float lastCamRotY;
 
@@ -91,7 +93,13 @@ public class MainGameLoop {
 		iMButtonTexts.add(new GUIText("Restart", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
 		iMButtonTexts.add(new GUIText("Options", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
 		iMButtonTexts.add(new GUIText("Concede", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
-		iMButtonTexts.add(new GUIText("Exit to Main Menu", 5, font, new Vector2f(0, 0.82f), 1f, true, true));		
+		iMButtonTexts.add(new GUIText("Exit to Main Menu", 5, font, new Vector2f(0, 0.82f), 1f, true, true));
+		
+		sMButtonTexts = new ArrayList<>();
+		sMButtonTexts.add(new GUIText("Singleplayer", 5, font, new Vector2f(0, 0.02f), 1f, true, true));
+		sMButtonTexts.add(new GUIText("Multiplayer", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
+		sMButtonTexts.add(new GUIText("Options", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
+		sMButtonTexts.add(new GUIText("Exit", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
 		
 		renderer = new MasterRenderer();
 		
@@ -162,20 +170,8 @@ public class MainGameLoop {
 			DisplayManager.updateDisplay();
 			break;
 		case MAIN_MENU:
-			guiRenderer.render(menu);
-			DisplayManager.updateDisplay();
-			TextMaster.render();
+			renderMenuScene(sMButtonList,true);
 			break;
-		case RESUME_GAME:
-			state = State.GAME;
-			camera.setPosition(lastCamPos);
-			camera.setRotY(lastCamRotY);
-			for(AbstractButton b : iMButtonList) {
-				b.hide(menuGuis);
-			}
-			for(GUIText g : iMButtonTexts) {
-				g.hide();
-			}
 		case GAME:
 			camera.move(terrain);
 			picker.update();
@@ -193,16 +189,43 @@ public class MainGameLoop {
 			DisplayManager.updateDisplay();
 			break;
 		case INGAME_MENU:
-			renderMovingScene();
+			renderMenuScene(iMButtonList,false);
 			break;
 		}
 	}
 	
-	private static void renderMovingScene(){
-		camera.resetMovement();
-		camera.increaseRotation(0.1f, 0f);
-		camera.move();
-		for(AbstractButton b : iMButtonList) {
+	private static void hideIngameMenu(){
+		camera.setPosition(lastCamPos);
+		camera.setRotY(lastCamRotY);
+		hideMenu(iMButtonList,iMButtonTexts);
+	}
+	
+	private static void hideMenu(List<AbstractButton> buttonList, List<GUIText> textList){
+		for(AbstractButton b : buttonList) {
+			b.hide(menuGuis);
+		}
+		for(GUIText g : textList) {
+			g.hide();
+		}
+	}
+	
+	private static void showMainMenu(){
+		for(GUIText g : sMButtonTexts) {
+			g.show();
+		}
+	}
+	
+	private static void hideMainMenu(){
+		hideMenu(sMButtonList, sMButtonTexts);
+	}
+	
+	private static void renderMenuScene(List<AbstractButton> buttonList, final boolean animateCam){
+		if(animateCam){
+			camera.resetMovement();
+			camera.increaseRotation(0.1f, 0f);
+			camera.move();
+		}
+		for(AbstractButton b : buttonList) {
 			b.show(menuGuis);
 			b.update();
 		}
@@ -224,6 +247,7 @@ public class MainGameLoop {
 		case INTRO:
 			while(Keyboard.next()) {
 				if(Keyboard.isKeyDown(Keyboard.KEY_RETURN)) {
+					showMainMenu();
 					state = State.MAIN_MENU;
 				}
 				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE))  {
@@ -233,9 +257,6 @@ public class MainGameLoop {
 		break;
 		case MAIN_MENU:
 			while(Keyboard.next()) {
-				if(Keyboard.isKeyDown(Keyboard.KEY_RETURN)) {
-					state = State.GAME;
-				}
 				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE))  {
 					state = State.INTRO;
 				}
@@ -258,10 +279,13 @@ public class MainGameLoop {
 		case INGAME_MENU:
 			while(Keyboard.next()) {
 				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
-					state = State.RESUME_GAME;
+					hideIngameMenu();
+					state = State.GAME;
 				}
 			}
-		break;				
+		break;
+		default:
+			logger.warn("Unknown case for input!");
 		}
 	}
 	
@@ -281,12 +305,16 @@ public class MainGameLoop {
 	 * Init menu button list
 	 */
 	private static void initButtons(){
-		iMButtonList = new ArrayList<>();
 		
+		/**
+		 * INGAME MENU
+		 */
+		iMButtonList = new ArrayList<>();
 		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
-				logger.trace("resume");			
-				state = State.RESUME_GAME;
+				logger.trace("resume");
+				hideIngameMenu();
+				state = State.GAME;
 			}
 			public void onStartHover(Button button) {
 			}			
@@ -327,10 +355,57 @@ public class MainGameLoop {
 		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,-0.8f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
 				logger.trace("exit to main menu");		
-				for(GUIText g : iMButtonTexts) {
-					g.hide();
-				}
+				hideIngameMenu();
+				showMainMenu();
 				state = State.MAIN_MENU;
+			}
+			public void onStartHover(Button button) {
+			}			
+			public void onStopHover(Button button) {
+			}
+			public void whileHovering(Button button) {}			
+		});
+		
+		/*
+		 * START MENU
+		 */
+		sMButtonList = new ArrayList<>();
+		sMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.15f)) {			
+			public void onClick(Button button) {
+				logger.trace("Menu SinglePlayer");
+				hideMainMenu();
+				state = State.GAME;
+			}
+			public void onStartHover(Button button) {
+			}			
+			public void onStopHover(Button button) {
+			}
+			public void whileHovering(Button button) {}			
+		});
+		sMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.15f)) {			
+			public void onClick(Button button) {
+				logger.trace("Menu Multiplayer");				
+			}
+			public void onStartHover(Button button) {
+			}			
+			public void onStopHover(Button button) {
+			}
+			public void whileHovering(Button button) {}			
+		});
+		sMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0f), new Vector2f(0.5f, 0.15f)) {			
+			public void onClick(Button button) {
+				logger.trace("Options");				
+			}
+			public void onStartHover(Button button) {
+			}			
+			public void onStopHover(Button button) {
+			}
+			public void whileHovering(Button button) {}			
+		});
+		sMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,-0.4f), new Vector2f(0.5f, 0.15f)) {			
+			public void onClick(Button button) {
+				logger.trace("Exit");
+				exit();
 			}
 			public void onStartHover(Button button) {
 			}			
