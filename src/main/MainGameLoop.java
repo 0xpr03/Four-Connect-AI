@@ -247,25 +247,38 @@ public class MainGameLoop {
 	}
 	
 	private static void renderMenuScene(List<AbstractButton> buttonList, final boolean animateCam){
+		logger.debug(renderer.checkError());
 		if(animateCam){
 			camera.resetMovement();
 			camera.increaseRotation(0.1f, 0f);
 			camera.move();
-		}
-		for(AbstractButton b : buttonList) {
-			b.show(menuGuis);
-			b.update();
 		}
 		float x = (2.0f * Mouse.getX()) / Display.getWidth() - 1f;
 		float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1f;				
 		mouseCircle.setPosition(new Vector2f(x, y));
 		renderer.processTerrain(terrain);
 		for (Entity entity : allentities) {
-			renderer.processEntity(entity);
+			renderer.processEntity(entity); 
 		}
-		renderer.render(lights, camera);	
+		renderer.startFBO(menuBackgroundFBO.getFbo(),Display.getWidth(), Display.getHeight());
+		logger.debug(renderer.checkError());
+		renderer.render(lights, camera);
+		logger.debug(renderer.checkError());
+		renderer.endFBO(Display.getWidth(), Display.getHeight());
+		logger.debug(renderer.checkError());
+		renderer.prepare();
+		logger.debug(renderer.checkError());
+//		GL11.glViewport(0, 0, Display.getWidth(), Display.getHeight());
+//		logger.debug(renderer.checkError());
+		renderer.renderFBOToScreen(menuBackgroundFBO.getTexture(), Display.getWidth(), Display.getHeight());
+		for(AbstractButton b : buttonList) {
+			b.show(menuGuis);
+			b.update();
+		}
 		guiRenderer.render(menuGuis);
+		logger.debug("is error: {}",glGetError() != GL_NO_ERROR);
 		TextMaster.render();
+		logger.debug(renderer.checkError());
 		DisplayManager.updateDisplay();
 	}
 	
