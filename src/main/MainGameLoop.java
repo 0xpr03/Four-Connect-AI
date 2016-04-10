@@ -248,6 +248,8 @@ public class MainGameLoop {
 	
 	private static void renderMenuScene(List<AbstractButton> buttonList, final boolean animateCam){
 		logger.debug(renderer.checkError());
+		menuBackground.bindFrameBuffer();
+			logger.debug(renderer.checkError());
 		if(animateCam){
 			camera.resetMovement();
 			camera.increaseRotation(0.1f, 0f);
@@ -260,25 +262,25 @@ public class MainGameLoop {
 		for (Entity entity : allentities) {
 			renderer.processEntity(entity); 
 		}
-		renderer.startFBO(menuBackgroundFBO.getFbo(),Display.getWidth(), Display.getHeight());
-		logger.debug(renderer.checkError());
+		
 		renderer.render(lights, camera);
-		logger.debug(renderer.checkError());
-		renderer.endFBO(Display.getWidth(), Display.getHeight());
-		logger.debug(renderer.checkError());
+		
+		menuBackground.unbindCurrentFrameBuffer();
+			logger.debug(renderer.checkError());
 		renderer.prepare();
-		logger.debug(renderer.checkError());
-//		GL11.glViewport(0, 0, Display.getWidth(), Display.getHeight());
-//		logger.debug(renderer.checkError());
-		renderer.renderFBOToScreen(menuBackgroundFBO.getTexture(), Display.getWidth(), Display.getHeight());
+	    	logger.debug(renderer.checkError());
+//		renderer.renderFBOToScreen(menuBackground.getTexture(), Display.getWidth(), Display.getHeight());
+		
 		for(AbstractButton b : buttonList) {
 			b.show(menuGuis);
 			b.update();
 		}
 		guiRenderer.render(menuGuis);
-		logger.debug("is error: {}",glGetError() != GL_NO_ERROR);
+			logger.debug(renderer.checkError());
 		TextMaster.render();
-		logger.debug(renderer.checkError());
+			logger.debug(renderer.checkError());
+		
+			logger.debug(renderer.checkError());
 		DisplayManager.updateDisplay();
 	}
 	
