@@ -5,6 +5,14 @@
  */
 package main;
 
+import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
+import static org.lwjgl.opengl.GL11.GL_NO_ERROR;
+import static org.lwjgl.opengl.GL11.glClear;
+import static org.lwjgl.opengl.GL11.glClearColor;
+import static org.lwjgl.opengl.GL11.glGetError;
+
+import java.awt.RenderingHints.Key;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +25,9 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.EXTFramebufferObject;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
@@ -32,6 +43,7 @@ import guis.GuiRenderer;
 import guis.GuiTexture;
 import models.TexturedModel;
 import renderEngine.DisplayManager;
+import renderEngine.FBO;
 import renderEngine.Loader;
 import renderEngine.MasterRenderer;
 import terrain.Terrain;
@@ -71,6 +83,7 @@ public class MainGameLoop {
 	private static List<GUIText> iMButtonTexts;
 	private static List<GUIText> sMButtonTexts;
 	private static List<GUIText> SP_ButtonTexts;
+	private static FBO menuBackground;
 	protected static Vector3f lastCamPos;
 	private static float lastCamRotY;
 
@@ -110,6 +123,7 @@ public class MainGameLoop {
 		SP_ButtonTexts.add(new GUIText("Back", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
 		
 		renderer = new MasterRenderer();
+		menuBackground = new FBO(Display.getWidth(), Display.getHeight(), false);
 		
 		logger.trace("loading textures");
 		// LOAD TERRAIN STUFF
@@ -163,9 +177,14 @@ public class MainGameLoop {
 		
 		logger.trace("entering renderer");
 		
+		try{
 		while (!Display.isCloseRequested()) {
 			checkInputs();
 			states();			
+		}
+		}catch(Exception e){
+			System.err.println(e);
+			logger.fatal("ERROR {}",e);
 		}
 		exit();
 	}
@@ -178,10 +197,10 @@ public class MainGameLoop {
 			DisplayManager.updateDisplay();
 			break;
 		case MAIN_MENU:
-			renderMenuScene(sMButtonList,true);
+			renderMenuSzene(sMButtonList,true);
 			break;
 		case SPMENU:
-			renderMenuScene(SP_ButtonList,true);
+			renderMenuSzene(SP_ButtonList,true);
 			break;
 		case GAME:
 			camera.move(terrain);
@@ -200,7 +219,7 @@ public class MainGameLoop {
 			DisplayManager.updateDisplay();
 			break;
 		case INGAME_MENU:
-			renderMenuScene(iMButtonList,false);
+			renderMenuSzene(iMButtonList,false);
 			break;
 		}
 	}
@@ -246,10 +265,10 @@ public class MainGameLoop {
 		}
 	}
 	
-	private static void renderMenuScene(List<AbstractButton> buttonList, final boolean animateCam){
-		logger.debug(renderer.checkError());
+	private static void renderMenuSzene(List<AbstractButton> buttonList, final boolean animateCam){
 		menuBackground.bindFrameBuffer();
-			logger.debug(renderer.checkError());
+//			logger.debug(renderer.checkError());
+		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		if(animateCam){
 			camera.resetMovement();
 			camera.increaseRotation(0.1f, 0f);
@@ -266,21 +285,20 @@ public class MainGameLoop {
 		renderer.render(lights, camera);
 		
 		menuBackground.unbindCurrentFrameBuffer();
-			logger.debug(renderer.checkError());
+//			logger.debug(renderer.checkError());
 		renderer.prepare();
-	    	logger.debug(renderer.checkError());
-//		renderer.renderFBOToScreen(menuBackground.getTexture(), Display.getWidth(), Display.getHeight());
+//	    	logger.debug(renderer.checkError());
+	    guiRenderer.renderBackground(menuBackground.getTexture());
+//	    	logger.debug(renderer.checkError());
 		
 		for(AbstractButton b : buttonList) {
 			b.show(menuGuis);
 			b.update();
 		}
 		guiRenderer.render(menuGuis);
-			logger.debug(renderer.checkError());
+//			logger.debug(renderer.checkError());
 		TextMaster.render();
-			logger.debug(renderer.checkError());
-		
-			logger.debug(renderer.checkError());
+//			logger.debug(renderer.checkError());
 		DisplayManager.updateDisplay();
 	}
 	
@@ -302,7 +320,6 @@ public class MainGameLoop {
 				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE))  {
 					state = State.INTRO;
 				}
-				
 			}
 		break;
 		case SPMENU:

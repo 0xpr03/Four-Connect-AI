@@ -5,41 +5,43 @@
  */
 package renderEngine;
 
-import entities.Camera;
-import entities.Entity;
-import entities.Light;
-import main.MainGameLoop;
+import static org.lwjgl.opengl.GL11.GL_BACK;
+import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
+import static org.lwjgl.opengl.GL11.GL_CULL_FACE;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_TEST;
+import static org.lwjgl.opengl.GL11.glClear;
+import static org.lwjgl.opengl.GL11.glClearColor;
+import static org.lwjgl.opengl.GL11.glCullFace;
+import static org.lwjgl.opengl.GL11.glDisable;
+import static org.lwjgl.opengl.GL11.glEnable;
+import static org.lwjgl.opengl.GL11.glViewport;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import models.TexturedModel;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
-
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.EXTFramebufferObject.*;
 import org.lwjgl.opengl.GLContext;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
+
+import entities.Camera;
+import entities.Entity;
+import entities.Light;
+import models.TexturedModel;
 import shaders.StaticShader;
 import shaders.TerrainShader;
 import terrain.Terrain;
 
 /**
- *
  * @author Trist
  */
 public class MasterRenderer {
-    
-	
     private static final float FOV = 70;
     private static final float NEAR_PLANE = 0.1f;
     private static final float FAR_PLANE = 1000;
@@ -101,94 +103,6 @@ public class MasterRenderer {
         entities.clear();
     }
     
-    /**
-     * Prepare render to texture
-     * @param width
-     * @param height
-     * @return texture id
-     */
-	public FBO prepareRender2Texture(int width, int height){
-		//frame buffer
-		int FBOId = glGenFramebuffersEXT();
-		logger.debug(checkError());
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FBOId);
-		
-		logger.debug(checkError());
-		
-		//depth buffer
-		int depthbuffer_id = glGenRenderbuffersEXT();
-		logger.debug(checkError());
-		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, depthbuffer_id);
-		
-		logger.debug(checkError());
-		
-		//allocate space for the renderbuffer
-		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, width, height);
-		
-		logger.debug(checkError());
-		
-		//attach depth buffer to fbo
-		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, depthbuffer_id);
-		
-		logger.debug(checkError());
-		
-		//create texture to render to
-		int texture = glGenTextures();
-		logger.debug(checkError());
-		glBindTexture(GL_TEXTURE_2D, texture);
-		logger.debug(checkError());
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		logger.debug(checkError());
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (java.nio.ByteBuffer)null);
-		logger.debug(checkError());
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		logger.debug(checkError());
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	    
-		logger.debug(checkError());
-		
-	    //attach texture to the fbo
-	    glFramebufferTexture2DEXT( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, texture, 0);
-		
-	    logger.debug(checkError());
-		
-		if(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
-			logger.error("Frame buffer creation failed!");
-		checkFrameBuffer(FBOId);
-		
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); // would switch to normal screen buffer
-		logger.debug(checkError());
-    	return new FBO(FBOId,texture);
-	}
-	
-	/**
-	 * Clear framebuffer of "render to texture"<br>
-	 * And switch to it's buffer
-	 * @param handle
-	 */
-	public void startFBO(int handle, int width, int height){
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, handle); // bind to framebuffer
-		logger.debug(checkError());
-//		GL11.glDisable(GL11.GL_TEXTURE_2D);
-//		logger.debug(checkError());
-//		logger.debug(checkError());
-//		glPushAttrib(GL_VIEWPORT_BIT);
-//		logger.debug(checkError());
-//		glViewport(0, 0, width, height);
-//		logger.debug(checkError());
-//        glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear screen & depth buffer
-//        logger.debug(checkError());
-    }
-	
-	public void endFBO(int width, int height){
-		glDrawBuffer(1);
-		logger.debug(checkError());
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-		logger.debug(checkError());
-//		glPopAttrib();
-//		logger.debug(checkError());
-	}
-	
 	/**
 	 * Check for error's and print em
 	 * @return string with details
@@ -200,72 +114,6 @@ public class MasterRenderer {
 		}else{
 			return "No Error";
 		}
-	}
-	
-	
-	
-	public void renderFBOToScreen(int texture, int width, int height){
-//		glLoadIdentity ();                                              // Reset The Modelview Matrix
-//        glTranslatef (0.0f, 0.0f, -6.0f);                               // Translate 6 Units Into The Screen and then rotate
-//        glRotatef(0,0.0f,1.0f,0.0f);
-//        glRotatef(0,1.0f,0.0f,0.0f);
-//        glRotatef(0,0.0f,0.0f,1.0f);
-//        glColor3f(1,1,1);                                               // set the color to white
-//		glEnable(GL_TEXTURE_2D);
-		logger.debug(checkError());
-		glBindTexture(GL_TEXTURE_2D, texture);
-		logger.debug(checkError());
-		
-		logger.debug(checkError());
-		drawTexture(0,0,width,height);
-		logger.debug(checkError());
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-	}
-	
-	private void checkFrameBuffer(int buffer){
-		int framebuffer = glCheckFramebufferStatusEXT( GL_FRAMEBUFFER_EXT ); 
-		switch ( framebuffer ) {
-		    case GL_FRAMEBUFFER_COMPLETE_EXT:
-		        break;
-		    case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT:
-		        throw new RuntimeException( "FrameBuffer: " + buffer
-		                + ", has caused a GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT exception" );
-		    case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT:
-		        throw new RuntimeException( "FrameBuffer: " + buffer
-		                + ", has caused a GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT exception" );
-		    case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT:
-		        throw new RuntimeException( "FrameBuffer: " + buffer
-		                + ", has caused a GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT exception" );
-		    case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT:
-		        throw new RuntimeException( "FrameBuffer: " + buffer
-		                + ", has caused a GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT exception" );
-		    case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT:
-		        throw new RuntimeException( "FrameBuffer: " + buffer
-		                + ", has caused a GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT exception" );
-		    case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT:
-		        throw new RuntimeException( "FrameBuffer: " + buffer
-		                + ", has caused a GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT exception" );
-		    default:
-		        throw new RuntimeException( "Unexpected reply from glCheckFramebufferStatusEXT: " + buffer );
-		}
-	}
-	
-	private void drawTexture(float x, float y, int width, int height) {
-		glBegin(GL_QUADS);
-		glTexCoord2f(0f, 0f);
-		logger.debug(checkError());
-		glVertex2f(x, y);
-		
-		glTexCoord2f(1f, 0f);
-		glVertex2f(x + width, y);
-		
-		glTexCoord2f(1f, 1f);
-		glVertex2f(x + width, y + height);
-		
-		glTexCoord2f(0f, 1f);
-		glVertex2f(x, y + height);
-		glEnd();
 	}
     
     public void render() {
@@ -297,11 +145,15 @@ public class MasterRenderer {
     
     public void prepare(){
         glEnable(GL_DEPTH_TEST);
-        logger.debug(checkError());
+//        logger.debug(checkError());
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-        logger.debug(checkError());
+//        logger.debug(checkError());
         glClearColor(RED, GREEN, BLUE, 1);
-        logger.debug(checkError());
+//        logger.debug(checkError());
+    }
+    
+    public void setViewport(){
+    	glViewport(0, 0, Display.getWidth(), Display.getHeight());
     }
     
     private void createProjectionMatrix() {
