@@ -95,7 +95,7 @@ public class MainGameLoop {
 	private static List<GUIText> sMButtonTexts;
 	private static List<GUIText> SP_ButtonTexts;
 	private static FBO menuBackground;
-	private static Rohr[] rohrs = new Rohr[7];
+	private static Rohr[] pipes = new Rohr[7];
 	private static Entity[][] balls = new Entity[7][6];
 	protected static Vector3f lastCamPos;
 	private static float lastCamRotY;
@@ -197,18 +197,18 @@ public class MainGameLoop {
 		allentities.add(lampTest);
 		boden = new Entity(brett, new Vector3f(0, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 5);
 		allentities.add(boden);
-		rohrs[0] = new Rohr(rohr, new Vector3f(-30, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		rohrs[1] = new Rohr(rohr, new Vector3f(-20, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		rohrs[2] = new Rohr(rohr, new Vector3f(-10, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		rohrs[3] = new Rohr(rohr, new Vector3f(0, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 0);
-		rohrs[4] = new Rohr(rohr, new Vector3f(10, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		rohrs[5] = new Rohr(rohr, new Vector3f(20, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		rohrs[6] = new Rohr(rohr, new Vector3f(30, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		pipes[0] = new Rohr(rohr, new Vector3f(-30, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		pipes[1] = new Rohr(rohr, new Vector3f(-20, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		pipes[2] = new Rohr(rohr, new Vector3f(-10, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		pipes[3] = new Rohr(rohr, new Vector3f(0, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 0);
+		pipes[4] = new Rohr(rohr, new Vector3f(10, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		pipes[5] = new Rohr(rohr, new Vector3f(20, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		pipes[6] = new Rohr(rohr, new Vector3f(30, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
 		
-		logger.debug("Ballsb4: {}",rohrs[3].getBalls());
+		logger.debug("Ballsb4: {}",pipes[3].getBalls());
 		insertStone(3, Color.RED);
 		
-		logger.debug("Ballsafta: {}",rohrs[3].getBalls());
+		logger.debug("Ballsafta: {}",pipes[3].getBalls());
 		
 		Light sun = new Light(new Vector3f(0, 10000, -7000), new Vector3f(0.4f, 0.4f, 0.4f));
 		lights = new ArrayList<>();
@@ -263,7 +263,7 @@ public class MainGameLoop {
 				renderer.processEntity(entity);
 			}
 //			GL11.glDepthMask(false);
-			for (Entity entity : rohrs) {
+			for (Entity entity : pipes) {
 				renderer.processEntity(entity);
 			}
 //			GL11.glDepthMask(true);
@@ -420,12 +420,12 @@ public class MainGameLoop {
 	}
 		
 	private static void insertStone(int spalte, Color farbe) {
-		int zeile = (rohrs[spalte]).getBalls();
+		int zeile = (pipes[spalte]).getBalls();
 		if(zeile == 6)
 			return;
 		balls[spalte][zeile] = new Entity(farbe == Color.RED ? ballR : ballG, new Vector3f(
 				0, 10, 0), 0, 0, 0, 2);		
-		(rohrs[spalte]).setBalls(zeile +1);
+		(pipes[spalte]).setBalls(zeile +1);
 		shallMoveBall = true;
 		lastSpalte = spalte;
 		lastZeile = zeile;

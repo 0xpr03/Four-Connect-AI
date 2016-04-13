@@ -41,6 +41,7 @@ public class GuiRenderer {
     private Logger logger = LogManager.getLogger();
     
     public GuiRenderer(Loader loader) {
+    	{
         float[] positions = { -1, 1, -1, -1, 1, 1, 1, -1 };
 	        quad = loader.loadtoVAO(positions);
     	}
@@ -58,8 +59,6 @@ public class GuiRenderer {
     		};
     		quad_background = loader.loadtoVAO(positions);
     	}
-        shader = new GuiShader();
-        initBackground();
     }
     
     public void render(List<GuiTexture> guis) {
