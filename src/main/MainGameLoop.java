@@ -192,18 +192,18 @@ public class MainGameLoop {
 		menu = new GuiTexture(loader.loadTexture("lamp"), //needs to be squared and the pixel count must be 2^n
 				new Vector2f(0f, 0f),
 				new Vector2f(Display.getWidth()/Display.getHeight(), 1f));
-		createRandomEntities(allentities,terrain, tree, 100, 300-150, -300,0f,0f,0f,0.5f);
+		createRandomEntities(allentities,terrain, tree, 100+50, 300-150, -300,0f,0f,0f,0.5f);
 		lampTest = new Entity(lamp, new Vector3f(50, -30, 0), 0, 0, 0, 1);
 		allentities.add(lampTest);
 		boden = new Entity(brett, new Vector3f(0, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 5);
 		allentities.add(boden);
-		pipes[0] = new Rohr(rohr, new Vector3f(-30, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		pipes[1] = new Rohr(rohr, new Vector3f(-20, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		pipes[2] = new Rohr(rohr, new Vector3f(-10, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		pipes[0] = new Rohr(rohr, new Vector3f(-15, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		pipes[1] = new Rohr(rohr, new Vector3f(-10, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		pipes[2] = new Rohr(rohr, new Vector3f(-5, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
 		pipes[3] = new Rohr(rohr, new Vector3f(0, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 0);
-		pipes[4] = new Rohr(rohr, new Vector3f(10, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		pipes[5] = new Rohr(rohr, new Vector3f(20, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		pipes[6] = new Rohr(rohr, new Vector3f(30, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		pipes[4] = new Rohr(rohr, new Vector3f(5, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		pipes[5] = new Rohr(rohr, new Vector3f(10, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		pipes[6] = new Rohr(rohr, new Vector3f(15, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
 		
 		logger.debug("Ballsb4: {}",pipes[3].getBalls());
 		insertStone(3, Color.RED);
@@ -329,8 +329,13 @@ public class MainGameLoop {
 		}
 	}
 	
+	/**
+	 * Render menu with background
+	 * @param buttonList
+	 * @param animateCam
+	 */
 	private static void renderMenuSzene(List<AbstractButton> buttonList, final boolean animateCam){
-		menuBackground.bindFrameBuffer();
+		menuBackground.bindFrameBuffer();			
 //			logger.debug(renderer.checkError());
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		if(animateCam){
