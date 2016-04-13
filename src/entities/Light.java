@@ -17,7 +17,11 @@ public class Light {
     private Vector3f colour;
     private Vector3f attenuation = new Vector3f(1, 0, 0);
     
-    public Light(Vector3f position, Vector3f colour) {
+    public void setAttenuation(Vector3f attenuation) {
+		this.attenuation = attenuation;
+	}
+
+	public Light(Vector3f position, Vector3f colour) {
         this.position = position;
         this.colour = colour;
     }

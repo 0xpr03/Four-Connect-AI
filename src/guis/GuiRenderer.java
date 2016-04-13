@@ -41,11 +41,7 @@ public class GuiRenderer {
     private Logger logger = LogManager.getLogger();
     
     public GuiRenderer(Loader loader) {
-    	{
-	        float[] positions = { -1, 1,
-	        						-1, -1,
-	        						1, 1,
-	        						1, -1 };
+        float[] positions = { -1, 1, -1, -1, 1, 1, 1, -1 };
 	        quad = loader.loadtoVAO(positions);
     	}
     	{
