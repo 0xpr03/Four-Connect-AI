@@ -59,6 +59,7 @@ public class GuiRenderer {
     		};
     		quad_background = loader.loadtoVAO(positions);
     	}
+    	shader = new GuiShader();
     }
     
     public void render(List<GuiTexture> guis) {
