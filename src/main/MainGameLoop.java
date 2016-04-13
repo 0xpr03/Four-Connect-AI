@@ -17,6 +17,7 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
@@ -25,9 +26,14 @@ import buttons.Button;
 import entities.Camera;
 import entities.Entity;
 import entities.Light;
+import entities.Rohr;
 import fontMeshCreator.FontType;
 import fontMeshCreator.GUIText;
 import fontRendering.TextMaster;
+import gamelogic.Controller.E_FIELD_STATE;
+import gamelogic.Controller.E_GAME_MODE;
+import gamelogic.Controller.E_GAME_STATE;
+import gamelogic.GController;
 import guis.GuiRenderer;
 import guis.GuiTexture;
 import models.TexturedModel;
@@ -47,7 +53,10 @@ public class MainGameLoop {
 	private static enum State {
 		INTRO, MAIN_MENU, GAME, INGAME_MENU, SPMENU;
 	}
-	private static State state = State.INTRO;
+	public static enum Color {
+		YELLOW, RED;
+	}
+	private static State state = State.GAME;
 	private static final Logger logger = LogManager.getLogger(MainGameLoop.class);
 	private static String VERSION = "0.1";	
 	
@@ -60,8 +69,10 @@ public class MainGameLoop {
 	private static MousePicker picker;
 	private static List<GuiTexture> menuGuis;
 	private static Entity lampTest;
+	private static Entity boden;
 	private static List<Entity> allentities;
 	private static List<Light> lights;
+	private static Light testLight;
 	private static GuiTexture mouseCircle;
 	private static GuiTexture intro;
 	private static List<AbstractButton> iMButtonList;
@@ -71,8 +82,15 @@ public class MainGameLoop {
 	private static List<GUIText> iMButtonTexts;
 	private static List<GUIText> sMButtonTexts;
 	private static List<GUIText> SP_ButtonTexts;
+	private static Rohr[] rohrs = new Rohr[7];
+	private static Entity[][] balls = new Entity[7][6];
 	protected static Vector3f lastCamPos;
 	private static float lastCamRotY;
+	private static TexturedModel ballR;
+	private static TexturedModel ballG;
+	private static boolean shallMoveBall = false;
+	private static int lastSpalte = 0;
+	private static int lastZeile = 0;
 
 	/**
 	 * @param args
@@ -127,6 +145,16 @@ public class MainGameLoop {
 		
 		TexturedModel lamp = loader.loadtoVAO("lamp", "lamp");
 		
+		TexturedModel brett = loader.loadtoVAO("brett", "boden2");
+		brett.getTexture().setShineDamper(7);
+		brett.getTexture().setReflectivity(1);
+		
+		ballR = loader.loadtoVAO("kugel", "kugelR");
+		
+		ballG = loader.loadtoVAO("kugel", "kugelG");
+		
+		TexturedModel rohr = loader.loadtoVAO("rohr", "rohr2");
+		
 		logger.trace("creating entities");
 		terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "black");
 		
@@ -151,12 +179,29 @@ public class MainGameLoop {
 				new Vector2f(0f, 0f),
 				new Vector2f(Display.getWidth()/Display.getHeight(), 1f));
 		createRandomEntities(allentities,terrain, tree, 100, 300-150, -300,0f,0f,0f,0.5f);
-		lampTest = new Entity(lamp, new Vector3f(0, 0, 0), 0, 0, 0, 1);
+		lampTest = new Entity(lamp, new Vector3f(50, -30, 0), 0, 0, 0, 1);
 		allentities.add(lampTest);
+		boden = new Entity(brett, new Vector3f(0, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 5);
+		allentities.add(boden);
+		rohrs[0] = new Rohr(rohr, new Vector3f(-30, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		rohrs[1] = new Rohr(rohr, new Vector3f(-20, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		rohrs[2] = new Rohr(rohr, new Vector3f(-10, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		rohrs[3] = new Rohr(rohr, new Vector3f(0, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 0);
+		rohrs[4] = new Rohr(rohr, new Vector3f(10, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		rohrs[5] = new Rohr(rohr, new Vector3f(20, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		rohrs[6] = new Rohr(rohr, new Vector3f(30, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
+		
+		logger.debug("Ballsb4: {}",rohrs[3].getBalls());
+		insertStone(3, Color.RED);
+		
+		logger.debug("Ballsafta: {}",rohrs[3].getBalls());
 		
 		Light sun = new Light(new Vector3f(0, 10000, -7000), new Vector3f(0.4f, 0.4f, 0.4f));
 		lights = new ArrayList<>();
 		lights.add(sun);
+		testLight = new Light(new Vector3f(-30, -30, 0), new Vector3f(0.9f, 0, 0.3f));
+		testLight.setAttenuation(new Vector3f(0.5f,0,0));		
+		lights.add(testLight);
 //		lights.add(new Light(new Vector3f(10, terrain.getHeightOfTerrain(10, 10) + 20, 10), new Vector3f(5, 0, 0), new Vector3f(1, 0.01f, 0.002f)));
 		
 		initButtons();
@@ -186,15 +231,34 @@ public class MainGameLoop {
 		case GAME:
 			camera.move(terrain);
 			picker.update();
+			if (shallMoveBall = true)
+			moveBall(lastSpalte, lastZeile);
 			Vector3f terrainPoint = picker.getCurrentTerrainPoint(); //Gibt den Punkt aus, auf dem mouse Ray auf terrain trifft.
-			if(terrainPoint != null) {
-				lampTest.setPosition(terrainPoint);
+			if(terrainPoint != null &&terrainPoint.getX() >= 50) {
+				testLight.setColour(new Vector3f(0.9f, 0, 0.3f));
+			}else {
+				testLight.setColour(new Vector3f(0, 0, 0));
 			}
 			renderer.processTerrain(terrain);
 			for (Entity entity : allentities) {
 				renderer.processEntity(entity);
 			}
-			
+//			GL11.glDepthMask(false);
+			for (Entity entity : rohrs) {
+				renderer.processEntity(entity);
+			}
+//			GL11.glDepthMask(true);
+			for (Entity[] entityA : balls) {
+				if(entityA == null){
+					continue;
+				}
+				for(Entity entity : entityA) {
+					if(entity == null){
+						break;
+					}
+					renderer.processEntity(entity);
+				}
+			}
 			renderer.render(lights, camera);
 			TextMaster.render();
 			DisplayManager.updateDisplay();
@@ -304,6 +368,10 @@ public class MainGameLoop {
 		 			logger.debug("Test");
 		 			state = State.INGAME_MENU;
 		 		}
+				if(Keyboard.isKeyDown(Keyboard.KEY_G)) {
+					if(!shallMoveBall)
+					insertStone(3, Color.YELLOW);
+				}
 			}
 		break;
 		case INGAME_MENU:
@@ -316,6 +384,30 @@ public class MainGameLoop {
 		break;
 		default:
 			logger.warn("Unknown case for input!");
+		}
+	}
+		
+	private static void insertStone(int spalte, Color farbe) {
+		int zeile = (rohrs[spalte]).getBalls();
+		if(zeile == 6)
+			return;
+		balls[spalte][zeile] = new Entity(farbe == Color.RED ? ballR : ballG, new Vector3f(
+				0, 10, 0), 0, 0, 0, 2);		
+		(rohrs[spalte]).setBalls(zeile +1);
+		shallMoveBall = true;
+		lastSpalte = spalte;
+		lastZeile = zeile;
+	}
+	
+	private static void moveBall(int spalte, int zeile){
+		float ziel = -30;
+		ziel += (float)spalte*10;
+		if(balls[spalte][zeile].getPosition().getX() < ziel) {
+			balls[spalte][zeile].increasePosition(0.5f, 0, 0);
+		}else if(balls[spalte][zeile].getPosition().getY() > terrain.getHeightOfTerrain(0, 0) + 3 + zeile * 4) {
+			balls[spalte][zeile].increasePosition(0, -0.5f, 0);
+		}else{
+			shallMoveBall = false;
 		}
 	}
 	
@@ -415,7 +507,13 @@ public class MainGameLoop {
 		});
 		sMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
-				logger.trace("Menu Multiplayer");				
+				logger.trace("Menu Multiplayer");
+				hideMainMenu();
+				GController.initGame(E_GAME_MODE.MULTIPLAYER);
+				state = State.GAME;
+				GController.startGame();
+//				GController.getGameState() == E_GAME_STATE.PLAYER_A 
+//				GController.insertStone(0);
 			}
 			public void onStartHover(Button button) {
 			}			
