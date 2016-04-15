@@ -52,7 +52,7 @@ public class DisplayManager {
         	dms = new ArrayList<DisplayMode>(10);
     
         	for(DisplayMode dm : adm) {
-        		boolean freq = dm.getFrequency() == 60 ? true : false;
+        		boolean freq = dm.getFrequency() == 60;
         		boolean width = false;
         		boolean height = false;
         		switch(dm.getHeight()){

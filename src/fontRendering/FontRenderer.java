@@ -23,6 +23,10 @@ public class FontRenderer {
 		shader = new FontShader();
 	}
 
+	/**
+	 * Render GUI texts
+	 * @param texts
+	 */
 	public void render(Map<FontType, List<GUIText>> texts) {
 		prepare();
 		for(FontType font : texts.keySet()) {

@@ -28,6 +28,10 @@ public class TextMaster {
 		renderer.render(texts);
 	}
 	
+	/**
+	 * Load GUI Text and add it to the text batch
+	 * @param text
+	 */
 	public static void loadText(GUIText text) {
 		FontType font = text.getFont();
 		TextMeshData data = font.loadText(text);

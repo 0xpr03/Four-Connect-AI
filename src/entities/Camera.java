@@ -15,14 +15,13 @@ import renderEngine.DisplayManager;
 import terrain.Terrain;
 
 /**
- *
  * @author Trist
  */
 public class Camera {
     
-	private float FORWARD_SPEED; // W/S keys
+	private float FORWARD_SPEED; //  W/S keys
 	private float SIDEWARD_SPEED; // A/D keys
-    private float HEIGHT_SPEED;// shift/space keys
+    private float HEIGHT_SPEED;//    shift/space keys
 
     private Vector3f position;
     private Logger logger = LogManager.getLogger();
@@ -36,7 +35,6 @@ public class Camera {
     public float getRotY() {
 		return rotY;
 	}
-    
     
 	public void move(Terrain terrain) {
         checkInputs();        
