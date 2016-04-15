@@ -8,6 +8,8 @@ package shaders;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.FloatBuffer;
 
 import org.apache.logging.log4j.LogManager;
@@ -107,7 +109,9 @@ public abstract class ShaderProgram {
     private static int loadShader(String file, int type) {
         StringBuilder shaderSource = new StringBuilder();
         try{
-            BufferedReader reader = new BufferedReader(new FileReader(file));
+        	InputStream is = ShaderProgram.class.getResourceAsStream(file);
+		    InputStreamReader isr = new InputStreamReader(is, "UTF8");
+            BufferedReader reader = new BufferedReader(isr);
             String line;
             while((line = reader.readLine())!=null) {
                 shaderSource.append(line).append("\n");
