@@ -53,10 +53,10 @@ public class GuiRenderer {
 //    		        -1f,1.0f,
 //    		        1.0f,1.0f};
     		float[] positions = {
-    				-1.0f, 1.0f,
-    				-1f,-1.0f,
-    		        1.0f,1.0f,
-    		        1.0f,-1.0f
+    				-1.0f, -1.0f,
+    				-1f,1.0f,
+    		        1.0f,-1.0f,
+    		        1.0f,1.0f
     		};
     		quad_background = loader.loadtoVAO(positions);
     	}
@@ -103,9 +103,9 @@ public class GuiRenderer {
     		//logger.debug(checkError());
     	glBindTexture(GL_TEXTURE_2D, texture);
 		Matrix4f matrix = Maths.createTransformationMatrix(new Vector2f(0,0), new Vector2f(1f,1f));
-//		matrix.rotate(3.1399975f, new Vector3f(0f,0f,1f));
+		matrix.rotate((float)Math.PI, new Vector3f(0f,1f,0f));
+		matrix.rotate((float)Math.PI, new Vector3f(0f,0f,1f));
 		shader.loadTransformation(matrix);
-		logger.debug(quad_background.getVertexCount());
         glDrawArrays(GL_TRIANGLE_STRIP, 0, quad_background.getVertexCount());  
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);

@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -90,10 +91,12 @@ public class MainGameLoop {
 	private static List<AbstractButton> iMButtonList;
 	private static List<AbstractButton> sMButtonList;
 	private static List<AbstractButton> SP_ButtonList;
+	private static List<AbstractButton> opButtonList;
 	private static GuiTexture menu;
 	private static List<GUIText> iMButtonTexts;
 	private static List<GUIText> sMButtonTexts;
 	private static List<GUIText> SP_ButtonTexts;
+	private static List<GUIText> opButtonTexts;
 	private static FBO menuBackground;
 	private static Rohr[] pipes = new Rohr[7];
 	private static Entity[][] balls = new Entity[7][6];
@@ -139,6 +142,11 @@ public class MainGameLoop {
 		SP_ButtonTexts.add(new GUIText("6x6 Hard", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("5x5 Hard", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("Back", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
+		
+		opButtonTexts = new ArrayList<>();
+		for(int i = DisplayManager.getDmi(); i <DisplayManager.getDms().size(); i++) {
+			opButtonTexts.add(new GUIText(DisplayManager.getDms().get(i).getWidth() +"x"+ DisplayManager.getDms().get(i).getHeight(), 5, font, new Vector2f(0,0.2f * i), 1f, true, true));
+		}
 		
 		renderer = new MasterRenderer();
 		menuBackground = new FBO(Display.getWidth(), Display.getHeight(), false);
@@ -192,7 +200,7 @@ public class MainGameLoop {
 		menu = new GuiTexture(loader.loadTexture("lamp"), //needs to be squared and the pixel count must be 2^n
 				new Vector2f(0f, 0f),
 				new Vector2f(Display.getWidth()/Display.getHeight(), 1f));
-		createRandomEntities(allentities,terrain, tree, 100+50, 300-150, -300,0f,0f,0f,0.5f);
+		createRandomEntities(allentities,terrain, tree, 100+50, 300-150, -300,0f,0f,0f,/*0.5f*/5);
 		lampTest = new Entity(lamp, new Vector3f(50, -30, 0), 0, 0, 0, 1);
 		allentities.add(lampTest);
 		boden = new Entity(brett, new Vector3f(0, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 5);
@@ -205,10 +213,7 @@ public class MainGameLoop {
 		pipes[5] = new Rohr(rohr, new Vector3f(10, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
 		pipes[6] = new Rohr(rohr, new Vector3f(15, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
 		
-		logger.debug("Ballsb4: {}",pipes[3].getBalls());
 		insertStone(3, Color.RED);
-		
-		logger.debug("Ballsafta: {}",pipes[3].getBalls());
 		
 		Light sun = new Light(new Vector3f(0, 10000, -7000), new Vector3f(0.4f, 0.4f, 0.4f));
 		lights = new ArrayList<>();
@@ -560,7 +565,11 @@ public class MainGameLoop {
 		});
 		sMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
-				logger.trace("Options");				
+				logger.trace("Options");	
+				hideMainMenu();
+				hideSPMenu(false);
+				renderMenuSzene(opButtonList, false);
+				showMenu(opButtonTexts);
 			}
 			public void onStartHover(Button button) {
 			}			
@@ -631,6 +640,38 @@ public class MainGameLoop {
 			}
 			public void whileHovering(Button button) {}			
 		});
+		
+		opButtonList = new ArrayList<>();
+		for(int i = DisplayManager.getDmi(); i<DisplayManager.getDms().size(); i++) {
+			int it= i;
+			opButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.8f-0.1f*i), new Vector2f(0.3f, 0.1f)) {			
+				public void onClick(Button button) {		
+					try {
+						Display.setDisplayMode(DisplayManager.getDms().get(it));
+					} catch (LWJGLException e) {
+					}
+				}
+				public void onStartHover(Button button) {
+				}			
+				public void onStopHover(Button button) {
+				}
+				public void whileHovering(Button button) {}			
+			});
+		}
+		//Fullscreen button nicht vergessen Du hässlichkeit
+		/*opButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,1f-0.1f*i), new Vector2f(0.5f, 0.15f)) {			
+			public void onClick(Button button) {		
+				try {
+					Display.setDisplayMode(DisplayManager.getDms().get(it));
+				} catch (LWJGLException e) {
+				}
+			}
+			public void onStartHover(Button button) {
+			}			
+			public void onStopHover(Button button) {
+			}
+			public void whileHovering(Button button) {}			
+		});*/
 		
 	}
 	

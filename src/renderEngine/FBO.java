@@ -30,7 +30,7 @@ public class FBO {
 	 * @param createDepthTexture set to true if needed<br>
 	 * this can't be changed afterwards
 	 */
-	public FBO(final int height,final int width,final boolean createDepthTexture) {
+	public FBO(final int width,final int height,final boolean createDepthTexture) {
 		this.WIDTH = width;
 		this.HEIGHT = height;
 		this.createDepthTexture = createDepthTexture;

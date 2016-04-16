@@ -34,7 +34,7 @@ public class DisplayManager {
      */
     private static DisplayMode[] adm;
     private static List<DisplayMode> dms;
-	private static Logger logger = LogManager.getLogger(MainGameLoop.class);
+    private static Logger logger = LogManager.getLogger(MainGameLoop.class);
 	public static boolean fullscreen = false;
 	public static int dmi = 0;
     
@@ -83,7 +83,7 @@ public class DisplayManager {
         	}
    	
         	for(DisplayMode md : dms){ // statt adm ein array was obbe erzeugt wird an if(fruq && width && height)`
-        		logger.trace("Height {} Width {} Freq {} {}", md.getHeight(),md.getWidth(),md.getFrequency(), calculateRatio(md));
+        		logger.debug("Height {} Width {} Freq {} {}", md.getHeight(),md.getWidth(),md.getFrequency(), calculateRatio(md));
         		// alternativ ein [print to screen zur auswahl]
         	}
             Display.setDisplayMode(dms.get(dmi));
@@ -149,9 +149,21 @@ public class DisplayManager {
     public static float getFrameTimeSeconds() {
         return delta;
     }
-    
+        
     public static void closeDisplay() {
         Display.destroy();
+    }
+    
+    public static List<DisplayMode> getDms() {
+		return dms;
+	}
+    
+    public static int getDmi() {
+    	return dmi;
+    }
+    
+    public void setDmi(int dmi) {
+    	this.dmi = dmi;
     }
     
     private static long getCurrentTime() {
