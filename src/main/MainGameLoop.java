@@ -253,44 +253,46 @@ public class MainGameLoop {
 			renderMenuSzene(SP_ButtonList,true);
 			break;
 		case GAME:
-			camera.move(terrain);
-			picker.update();
-			if (shallMoveBall = true)
-			moveBall(lastSpalte, lastZeile);
-			Vector3f terrainPoint = picker.getCurrentTerrainPoint(); //Gibt den Punkt aus, auf dem mouse Ray auf terrain trifft.
-			if(terrainPoint != null &&terrainPoint.getX() >= 50) {
-				testLight.setColour(new Vector3f(0.9f, 0, 0.3f));
-			}else {
-				testLight.setColour(new Vector3f(0, 0, 0));
-			}
-			renderer.processTerrain(terrain);
-			for (Entity entity : allentities) {
-				renderer.processEntity(entity);
-			}
-//			GL11.glDepthMask(false);
-			for (Entity entity : pipes) {
-				renderer.processEntity(entity);
-			}
-//			GL11.glDepthMask(true);
-			for (Entity[] entityA : balls) {
-				if(entityA == null){
-					continue;
-				}
-				for(Entity entity : entityA) {
-					if(entity == null){
-						break;
-					}
-					renderer.processEntity(entity);
-				}
-			}
-			renderer.render(lights, camera);
-			TextMaster.render();
+			renderGame();
 			DisplayManager.updateDisplay();
 			break;
 		case INGAME_MENU:
 			renderMenuSzene(iMButtonList,false);
 			break;
 		}
+	}
+	
+	private static void renderGame(){
+		camera.move(terrain);
+		picker.update();
+		if (shallMoveBall = true)
+		moveBall(lastSpalte, lastZeile);
+		Vector3f terrainPoint = picker.getCurrentTerrainPoint(); //Gibt den Punkt aus, auf dem mouse Ray auf terrain trifft.
+		if(terrainPoint != null &&terrainPoint.getX() >= 50) {
+			testLight.setColour(new Vector3f(0.9f, 0, 0.3f));
+		}else {
+			testLight.setColour(new Vector3f(0, 0, 0));
+		}
+		renderer.processTerrain(terrain);
+		for (Entity entity : allentities) {
+			renderer.processEntity(entity);
+		}
+		for (Entity entity : pipes) {
+			renderer.processEntity(entity);
+		}
+		for (Entity[] entityA : balls) {
+			if(entityA == null){
+				continue;
+			}
+			for(Entity entity : entityA) {
+				if(entity == null){
+					break;
+				}
+				renderer.processEntity(entity);
+			}
+		}
+		renderer.render(lights, camera);
+		TextMaster.render();
 	}
 	
 	private static void hideIngameMenu(boolean resetCam){
@@ -340,29 +342,21 @@ public class MainGameLoop {
 	 * @param animateCam
 	 */
 	private static void renderMenuSzene(List<AbstractButton> buttonList, final boolean animateCam){
-		menuBackground.bindFrameBuffer();			
-//			logger.debug(renderer.checkError());
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-		if(animateCam){
+		guiRenderer.startBackgroundRendering();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		if (animateCam) {
 			camera.resetMovement();
 			camera.increaseRotation(0.1f, 0f);
 			camera.move();
 		}
 		float x = (2.0f * Mouse.getX()) / Display.getWidth() - 1f;
-		float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1f;				
+		float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1f;
 		mouseCircle.setPosition(new Vector2f(x, y));
-		renderer.processTerrain(terrain);
-		for (Entity entity : allentities) {
-			renderer.processEntity(entity); 
-		}
-		
-		renderer.render(lights, camera);
-		
-		menuBackground.unbindCurrentFrameBuffer();
-//			logger.debug(renderer.checkError());
-		renderer.prepare();
-//	    	logger.debug(renderer.checkError());
-	    guiRenderer.renderBackground(menuBackground.getTexture());
+
+		renderGame();
+		guiRenderer.endBackgroundRendering();
+		logger.debug(renderer.checkError());
+		guiRenderer.renderBackground(renderer);
 //	    	logger.debug(renderer.checkError());
 		
 		for(AbstractButton b : buttonList) {
@@ -658,7 +652,7 @@ public class MainGameLoop {
 				public void whileHovering(Button button) {}			
 			});
 		}
-		//Fullscreen button nicht vergessen Du hässlichkeit
+		//Fullscreen button nicht vergessen Du hï¿½sslichkeit
 		/*opButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,1f-0.1f*i), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {		
 				try {

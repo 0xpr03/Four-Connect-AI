@@ -46,9 +46,9 @@ public class MasterRenderer {
     private static final float NEAR_PLANE = 0.1f;
     private static final float FAR_PLANE = 1000;
     
-    private static final float RED = 0.52f; 
-    private static final float GREEN = 0.74f; 
-    private static final float BLUE = 1; 
+    public static final float RED = 0.52f; 
+    public static final float GREEN = 0.74f; 
+    public static final float BLUE = 1; 
     
     private Matrix4f projectionMatrix;
     private StaticShader shader = new StaticShader();
@@ -145,11 +145,8 @@ public class MasterRenderer {
     
     public void prepare(){
         glEnable(GL_DEPTH_TEST);
-//        logger.debug(checkError());
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-//        logger.debug(checkError());
         glClearColor(RED, GREEN, BLUE, 1);
-//        logger.debug(checkError());
     }
     
     public void setViewport(){

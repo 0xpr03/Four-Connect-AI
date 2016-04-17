@@ -16,6 +16,7 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
@@ -23,7 +24,11 @@ import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
 import models.RawModel;
+import renderEngine.FBO;
 import renderEngine.Loader;
+import renderEngine.MasterRenderer;
+import shaders.BlurShader;
+import shaders.BlurShader2;
 import toolbox.Maths;
 
 /**
@@ -35,9 +40,11 @@ public class GuiRenderer {
     private final RawModel quad;
     private final RawModel quad_background;
     private GuiShader shader;
-//    private int vbo_vertex_handle;
-//    private int vertices;
-//    private BackgroundShader bShader;
+    private BlurShader blurShader;
+    private FBO fbo_a;
+    private FBO fbo_b;
+    private final Matrix4f background_matrix;
+    private final int FBO_SIZE = 1024;
     
     private Logger logger = LogManager.getLogger();
     
@@ -47,11 +54,6 @@ public class GuiRenderer {
 	        quad = loader.loadtoVAO(positions);
     	}
     	{
-//    		float[] positions = {
-//    				-1.0f, -1.0f,
-//    		        1.0f, -1.0f,
-//    		        -1f,1.0f,
-//    		        1.0f,1.0f};
     		float[] positions = {
     				-1.0f, -1.0f,
     				-1f,1.0f,
@@ -61,6 +63,12 @@ public class GuiRenderer {
     		quad_background = loader.loadtoVAO(positions);
     	}
     	shader = new GuiShader();
+    	blurShader = new BlurShader();
+    	fbo_a = new FBO(FBO_SIZE, FBO_SIZE, false);
+    	fbo_b = new FBO(FBO_SIZE, FBO_SIZE,false);
+    	background_matrix = Maths.createTransformationMatrix(new Vector2f(0,0), new Vector2f(1f,1f));
+    	background_matrix.rotate((float)Math.PI, new Vector3f(0f,1f,0f));
+    	background_matrix.rotate((float)Math.PI, new Vector3f(0f,0f,1f));
     }
     
     public void render(List<GuiTexture> guis) {
@@ -88,19 +96,14 @@ public class GuiRenderer {
      * Render texture map back to front
      * @param texture
      */
-    public void renderBackground(int texture){
+    private void drawBackground(int texture){
     	shader.start();
-    		//logger.debug(checkError());
 		glBindVertexArray(quad_background.getVaoID());
         glEnableVertexAttribArray(0);
-        	//logger.debug(checkError());
         glEnable(GL_BLEND);
-			//logger.debug(checkError());
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glDisable(GL_DEPTH_TEST);
-        	//logger.debug(checkError());
 		glActiveTexture(GL_TEXTURE0);
-    		//logger.debug(checkError());
     	glBindTexture(GL_TEXTURE_2D, texture);
 		Matrix4f matrix = Maths.createTransformationMatrix(new Vector2f(0,0), new Vector2f(1f,1f));
 		matrix.rotate((float)Math.PI, new Vector3f(0f,1f,0f));
@@ -124,39 +127,65 @@ public class GuiRenderer {
 		}
 	}
     
-    private void initBackground(){
-//    	int vertices = 4;
+    /**
+     * Start rendering for background.<br>
+     * Has to come at first, followed by the scene
+     */
+    public void startBackgroundRendering(){
+    	fbo_a.bindFrameBuffer();
+    }
+    
+    public void endBackgroundRendering(){
+    	fbo_a.unbindCurrentFrameBuffer();
+    }
+    
+    private void prepare(){
+    	glEnable(GL_DEPTH_TEST);
+    	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+        glClearColor(MasterRenderer.RED, MasterRenderer.GREEN, MasterRenderer.BLUE, 1);
+    }
+    
+    /**
+     * Add blurr to background and draw it
+     */
+    public void renderBackground(MasterRenderer renderer){
+    	prepare();
+    	logger.debug(checkError());
+    	blur(fbo_b,8f, new Vector2f(1f,0f), fbo_a.getTexture());
+    	blur(fbo_a,8f, new Vector2f(0f,1f), fbo_b.getTexture());
+    	
+    	drawBackground(fbo_a.getTexture());
+    }
+    
+//    private int getMasterFBOTex(){
 //    	
-//    	float[] vertices = {
-//    	        // Left bottom triangle
-//    	        -0.5f, 0.5f, 0f,
-//    	        -0.5f, -0.5f, 0f,
-//    	        0.5f, -0.5f, 0f,
-//    	        // Right top triangle
-//    	        0.5f, -0.5f, 0f,
-//    	        0.5f, 0.5f, 0f,
-//    	        -0.5f, 0.5f, 0f
-//    	};
-//    	// Sending data to OpenGL requires the usage of (flipped) byte buffers
-//    	FloatBuffer verticesBuffer = BufferUtils.createFloatBuffer(vertices.length);
-//    	verticesBuffer.put(vertices);
-//    	verticesBuffer.flip();
-////    	
-//    	vaoId = GL30.glGenVertexArrays();
-//    	GL30.glBindVertexArray(vaoId);
-//    	 
-//    	// Create a new Vertex Buffer Object in memory and select it (bind)
-//    	// A VBO is a collection of Vectors which in this case resemble the location of each vertex.
-//    	vbo_vertex_handle = GL15.glGenBuffers();
-//    	GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-//    	GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticesBuffer, GL15.GL_STATIC_DRAW);
-//    	// Put the VBO in the attributes list at index 0
-//    	GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
-//    	// Deselect (bind to 0) the VBO
-//    	GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-//    	 
-//    	// Deselect (bind to 0) the VAO
-//    	GL30.glBindVertexArray(0);
+//    }
+    
+    private void blur(FBO targetFBO, float amount, Vector2f direction,int texture){
+    	targetFBO.bindFrameBuffer();
+    	prepare();
+    	blurShader.start();
+    	glBindVertexArray(quad_background.getVaoID());
+        glEnableVertexAttribArray(0);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDisable(GL_DEPTH_TEST);
+		glActiveTexture(GL_TEXTURE0);
+    	glBindTexture(GL_TEXTURE_2D, texture);
+		blurShader.loadProjectionMatrix(background_matrix);
+		blurShader.loadDirectionVariable(direction);
+		blurShader.loadResolutionVariable(fbo_a.getHEIGHT());
+		blurShader.loadTextureVariable(0);
+		blurShader.loadRadiusVariable(3);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, quad_background.getVertexCount());  
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
+    	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    	glDisableVertexAttribArray(0);
+        glBindVertexArray(0);
+        blurShader.stop();
+        targetFBO.unbindCurrentFrameBuffer();
+//    	logger.debug(checkError());
     }
     
     public void render(GuiTexture gui){
@@ -169,6 +198,8 @@ public class GuiRenderer {
         shader.cleanUp();
         glDeleteBuffers(quad.getVaoID());
         glDeleteBuffers(quad_background.getVaoID());
+        fbo_a.destroy();
+        fbo_b.destroy();
     }
     
 }

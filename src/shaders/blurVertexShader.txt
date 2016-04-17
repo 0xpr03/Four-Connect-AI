@@ -1,0 +1,14 @@
+#version 400 core
+
+//combined projection and view matrix
+uniform mat4 u_projView;
+
+in vec2 position;
+in vec2 texCoord;
+
+out vec2 vTexCoord;
+
+void main() {
+	vTexCoord = vec2((position.x+1.0)/2.0, 1 - (position.y+1.0)/2.0);
+	gl_Position = u_projView * vec4(position, 0.0, 1.0);
+}

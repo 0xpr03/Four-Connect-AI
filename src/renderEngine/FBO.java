@@ -37,7 +37,7 @@ public class FBO {
 		initFrameBuffer();
 	}
 
-	public void cleanUp() {// call when closing the game
+	public void destroy() {
 		GL30.glDeleteFramebuffers(FrameBuffer);
 		GL11.glDeleteTextures(Texture);
 		GL30.glDeleteRenderbuffers(DepthBuffer);
@@ -96,7 +96,7 @@ public class FBO {
 	}
 
 	private void bindFrameBuffer(int frameBuffer, int width, int height) {
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);// To make sure the texture
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);// To make sure the texture is reset
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer); // set as current framebuffer
 		GL11.glViewport(0, 0, width, height); // set viewport
 	}
@@ -137,6 +137,20 @@ public class FBO {
 		GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, width, height); // reserve space
 		GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, depthBuffer);
 		return depthBuffer;
+	}
+
+	/**
+	 * @return the wIDTH
+	 */
+	public int getWIDTH() {
+		return WIDTH;
+	}
+
+	/**
+	 * @return the hEIGHT
+	 */
+	public int getHEIGHT() {
+		return HEIGHT;
 	}
 
 }
