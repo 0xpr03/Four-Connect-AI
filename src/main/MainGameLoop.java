@@ -5,12 +5,7 @@
  */
 package main;
 
-import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_NO_ERROR;
-import static org.lwjgl.opengl.GL11.glClear;
-import static org.lwjgl.opengl.GL11.glClearColor;
-import static org.lwjgl.opengl.GL11.glGetError;
+import static org.lwjgl.opengl.GL11.*;
 
 import java.awt.RenderingHints.Key;
 import java.io.File;
@@ -26,9 +21,6 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.EXTFramebufferObject;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
@@ -42,9 +34,7 @@ import entities.Rohr;
 import fontMeshCreator.FontType;
 import fontMeshCreator.GUIText;
 import fontRendering.TextMaster;
-import gamelogic.Controller.E_FIELD_STATE;
 import gamelogic.Controller.E_GAME_MODE;
-import gamelogic.Controller.E_GAME_STATE;
 import gamelogic.GController;
 import guis.GuiRenderer;
 import guis.GuiTexture;
@@ -97,7 +87,6 @@ public class MainGameLoop {
 	private static List<GUIText> sMButtonTexts;
 	private static List<GUIText> SP_ButtonTexts;
 	private static List<GUIText> opButtonTexts;
-	private static FBO menuBackground;
 	private static Rohr[] pipes = new Rohr[7];
 	private static Entity[][] balls = new Entity[7][6];
 	protected static Vector3f lastCamPos;
@@ -116,7 +105,7 @@ public class MainGameLoop {
 		Configurator.setLevel(LogManager.getLogger(MainGameLoop.class).getName(), Level.DEBUG);
 		
 		checkLoggingConf();
-		logger.info("User {}", VERSION);
+		logger.info("Version {}", VERSION);
 		
 		DisplayManager.createDisplay();
 		loader = new Loader();
@@ -149,7 +138,6 @@ public class MainGameLoop {
 		}
 		
 		renderer = new MasterRenderer();
-		menuBackground = new FBO(Display.getWidth(), Display.getHeight(), false);
 		
 		logger.trace("loading textures");
 		// LOAD TERRAIN STUFF
@@ -175,7 +163,7 @@ public class MainGameLoop {
 		
 		ballG = loader.loadtoVAO("kugel", "kugelG");
 		
-		TexturedModel rohr = loader.loadtoVAO("rohr", "rohr2");
+		TexturedModel rohr = loader.loadtoVAO("Cylinder", "rohr2");
 		
 		logger.trace("creating entities");
 		terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "black");
@@ -200,7 +188,7 @@ public class MainGameLoop {
 		menu = new GuiTexture(loader.loadTexture("lamp"), //needs to be squared and the pixel count must be 2^n
 				new Vector2f(0f, 0f),
 				new Vector2f(Display.getWidth()/Display.getHeight(), 1f));
-		createRandomEntities(allentities,terrain, tree, 100+50, 300-150, -300,0f,0f,0f,/*0.5f*/5);
+//		createRandomEntities(allentities,terrain, tree, 100+50, 300-150, -300,0f,0f,0f,/*0.5f*/5);
 		lampTest = new Entity(lamp, new Vector3f(50, -30, 0), 0, 0, 0, 1);
 		allentities.add(lampTest);
 		boden = new Entity(brett, new Vector3f(0, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 5);
@@ -208,7 +196,7 @@ public class MainGameLoop {
 		pipes[0] = new Rohr(rohr, new Vector3f(-15, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
 		pipes[1] = new Rohr(rohr, new Vector3f(-10, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
 		pipes[2] = new Rohr(rohr, new Vector3f(-5, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		pipes[3] = new Rohr(rohr, new Vector3f(0, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 0);
+		pipes[3] = new Rohr(rohr, new Vector3f(0, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
 		pipes[4] = new Rohr(rohr, new Vector3f(5, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
 		pipes[5] = new Rohr(rohr, new Vector3f(10, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
 		pipes[6] = new Rohr(rohr, new Vector3f(15, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
@@ -355,7 +343,7 @@ public class MainGameLoop {
 
 		renderGame();
 		guiRenderer.endBackgroundRendering();
-		logger.debug(renderer.checkError());
+//			logger.debug(renderer.checkError());
 		guiRenderer.renderBackground(renderer);
 //	    	logger.debug(renderer.checkError());
 		
