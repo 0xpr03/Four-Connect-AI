@@ -96,6 +96,9 @@ public class MainGameLoop {
 	private static boolean shallMoveBall = false;
 	private static int lastSpalte = 0;
 	private static int lastZeile = 0;
+	private static boolean staticCamera = true;
+	private static boolean rohrAnsicht = true;
+	private static int rohr = 3;
 
 	/**
 	 * @param args
@@ -178,7 +181,7 @@ public class MainGameLoop {
 		
 		guiRenderer = new GuiRenderer(loader);
 		
-		camera = new Camera(new Vector3f(0, 10, 0));
+		camera = new Camera(new Vector3f(0, -3, 75), 0, 20);
 		
 		picker = new MousePicker(camera, renderer.getProjectionMatrix(), terrain);
 		
@@ -188,7 +191,6 @@ public class MainGameLoop {
 		menu = new GuiTexture(loader.loadTexture("lamp"), //needs to be squared and the pixel count must be 2^n
 				new Vector2f(0f, 0f),
 				new Vector2f(Display.getWidth()/Display.getHeight(), 1f));
-//		createRandomEntities(allentities,terrain, tree, 100+50, 300-150, -300,0f,0f,0f,/*0.5f*/5);
 		lampTest = new Entity(lamp, new Vector3f(50, -30, 0), 0, 0, 0, 1);
 		allentities.add(lampTest);
 		boden = new Entity(brett, new Vector3f(0, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 5);
@@ -392,10 +394,27 @@ public class MainGameLoop {
 		 			logger.debug("Test");
 		 			state = State.INGAME_MENU;
 		 		}
-				if(Keyboard.isKeyDown(Keyboard.KEY_G)) {
-					if(!shallMoveBall)
-					insertStone(3, Color.YELLOW);
+				if(Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
+					if(rohrAnsicht){
+					rohr -= 1;
+					}else {
+						rohr += 1;
+					}
 				}
+				if(Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
+					if(rohrAnsicht){
+					rohr += 1;
+					}else {
+						rohr -= 1;
+					}
+				}
+				if(Keyboard.isKeyDown(Keyboard.KEY_G)) {
+					moveCam();
+//					if(!shallMoveBall)
+//					insertStone(3, Color.YELLOW);
+				}
+				if(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Keyboard.isKeyDown(Keyboard.KEY_F))
+					staticCamera = false;
 			}
 		break;
 		case INGAME_MENU:
@@ -445,6 +464,21 @@ public class MainGameLoop {
 			allentities.add(new Entity(model, random.nextInt(4), new Vector3f(x, y, z), rotX, random.nextFloat() * rotY, rotZ,
 					scale));
 		}
+	}
+	
+	private static void moveCam() {
+		int z = (int)camera.getPosition().getZ();
+		if(z<0) {
+			for(int i = 0; i<750; i++) {
+				camera.increasePosition(0, 0, 0.2f);
+				camera.increaseRotation(0.24f, 0);
+			}
+//			camera.increasePosition(0, 0, 150);
+//			camera.increaseRotation(180, 0);
+		}else {
+			camera.increasePosition(0, 0, -150);
+			camera.increaseRotation(180, 0);
+		}				
 	}
 	
 	/**
@@ -655,6 +689,10 @@ public class MainGameLoop {
 			public void whileHovering(Button button) {}			
 		});*/
 		
+	}
+	
+	public static boolean getStaticCamera() {
+		return staticCamera;
 	}
 	
 	private static void startSPGame(){

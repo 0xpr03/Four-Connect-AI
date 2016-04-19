@@ -11,6 +11,7 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.vector.Vector3f;
 
+import main.MainGameLoop;
 import renderEngine.DisplayManager;
 import terrain.Terrain;
 
@@ -26,10 +27,12 @@ public class Camera {
     private Vector3f position;
     private Logger logger = LogManager.getLogger();
     private float pitch;
-    private float rotY = 90;
+    private float rotY;
                   
-    public Camera(Vector3f position) {
+    public Camera(Vector3f position, float rotY, float pitch) {
     	this.position = position;
+    	this.rotY = rotY;
+    	this.pitch = pitch;
     }
 
     public float getRotY() {
@@ -37,7 +40,8 @@ public class Camera {
 	}
     
 	public void move(Terrain terrain) {
-        checkInputs();        
+        if(!MainGameLoop.getStaticCamera())
+		checkInputs();        
         
         float dx = (FORWARD_SPEED * (float) Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
         float dz = (-FORWARD_SPEED * (float) Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();

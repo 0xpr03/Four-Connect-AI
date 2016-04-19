@@ -28,7 +28,6 @@ import renderEngine.FBO;
 import renderEngine.Loader;
 import renderEngine.MasterRenderer;
 import shaders.BlurShader;
-import shaders.BlurShader2;
 import toolbox.Maths;
 
 /**
