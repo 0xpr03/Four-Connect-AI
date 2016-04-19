@@ -145,7 +145,7 @@ public class WebPlayer implements AI {
 				output = doPost(URL, HOST, urlParameters);
 				
 				HashMap<String, Object> map = (HashMap<String, Object>) parser.parse(output);
-				if ( !(boolean)map.get("error")){
+				if ( ((String)map.get("error")).equals("false")){
 					JSONArray moves = (JSONArray) map.get("moves");
 					SelectResult sel = new SelectResult();
 					for(Object obj :moves){
@@ -157,6 +157,7 @@ public class WebPlayer implements AI {
 					selectMove(sel);
 					no_move = false;
 				}else{
+					logger.error("Server response: {}",(String)map.get("error"));
 					no_move = true;
 				}
 				
