@@ -82,7 +82,7 @@ public class KBS_player<E extends DB> implements AI {
 
 	@Override
 	@Deprecated
-	public void preProcessing() {
+	public void preProcess() {
 		// TODO Auto-generated method stub
 		
 	}

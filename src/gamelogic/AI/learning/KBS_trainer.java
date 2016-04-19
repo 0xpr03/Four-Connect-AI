@@ -400,7 +400,7 @@ public class KBS_trainer implements AI {
 	
 	@Override
 	@Deprecated
-	public void preProcessing() {
+	public void preProcess() {
 		// TODO Auto-generated method stub
 		
 	}

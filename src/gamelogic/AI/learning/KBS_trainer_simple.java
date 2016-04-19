@@ -243,7 +243,7 @@ public class KBS_trainer_simple<E extends DB> implements AI {
 	}
 
 	@Override
-	public void preProcessing() {
+	public void preProcess() {
 		// TODO Auto-generated method stub
 		
 	}
