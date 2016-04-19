@@ -64,6 +64,22 @@ public class SelectResult {
 	}
 	
 	/**
+	 * Add move and sort it automatically into the list
+	 * @param e
+	 */
+	public void add(Move e){
+		if(e.isLoose()){
+			looses.add(e);
+		}else if(e.isDraw()){
+			draws.add(e);
+		}else if(e.isWin()){
+			wins.add(e);
+		}else if(!e.isUsed()){
+			unused.add(e);
+		}
+	}
+	
+	/**
 	 * @param e
 	 * @return
 	 * @see java.util.List#add(java.lang.Object)

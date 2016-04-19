@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.http.HttpResponse;
@@ -38,7 +40,9 @@ import gamelogic.GController;
 public class WebPlayer implements AI {
 	private static String UA = "KBS WebPlayer";
 	private static String HOST = "proctet.net";
-	private static String URL = "dev.proctet.net/q4proj.php";
+	private static String URL = "http://localhost/q4_ai/ai.php";
+	
+	private static int SCHEDULE_TIME = 1000;
 	
 	private HttpClientBuilder hcbuilder;
 	private HttpClient client;
@@ -47,10 +51,13 @@ public class WebPlayer implements AI {
 	private HttpClientConnectionManager connManager = new BasicHttpClientConnectionManager();
 	private E_PLAYER player;
 	private JSONParser parser;
-	private int[] prefetched_moves = null;
+	private Move prefetched_move = null;
 	private boolean no_move = false;
 	private boolean got_answer = false;
 	private static Thread t = null;
+	private TimerTask taskDoMove;
+	private Timer maintimer;
+
 	
 	public WebPlayer(){
 		logger.entry();
@@ -59,8 +66,68 @@ public class WebPlayer implements AI {
 		hcbuilder.disableAutomaticRetries();
 		client = hcbuilder.build();
 		lib = new lib();
+		maintimer = new Timer(true);
 		parser = new JSONParser();
-		logger.exit();
+		initThreads();
+	}
+	
+	/**
+	 * Select a move and set as prefetched move
+	 * @param sel
+	 */
+	private void selectMove(SelectResult sel){
+		List<Move> possible_moves = new ArrayList<Move>(GController.getX_MAX());
+		if(!sel.getWins().isEmpty()){
+			List<Move> possibilities = new ArrayList<Move>();
+			for(Move moveelem : sel.getWins()){
+				if(!moveelem.isDraw()){
+					possibilities.add(moveelem);
+				}
+			}
+			if(!possibilities.isEmpty()){
+				possible_moves = possibilities;
+			}else{
+				possible_moves = sel.getWins();
+			}
+		}else if(!sel.getDraws().isEmpty()) {
+			List<Move> possibilities = new ArrayList<Move>();
+			for(Move moveelem : sel.getDraws()){
+				if(!moveelem.isLoose()){
+					possibilities.add(moveelem);
+				}
+			}
+			if(!possibilities.isEmpty()){
+				possible_moves = possibilities;
+			}else{
+				possible_moves = sel.getDraws();
+			}
+		}else{
+			if(sel.getUnused().isEmpty()){
+				possible_moves = sel.getUnused();
+				logger.debug("No known sel");
+			}else{
+				logger.error("Only looses left!");
+				possible_moves = sel.getLooses();
+			}
+		}
+		
+		prefetched_move = possible_moves.get(ThreadLocalRandom.current().nextInt(0, possible_moves.size()));
+	}
+	
+	/**
+	 * Init preprocess thread & re-check timer
+	 * @author Aron Heinecke
+	 */
+	private void initThreads(){
+		taskDoMove = new TimerTask() {
+			@Override
+			public void run() {
+				logger.entry();
+				maintimer.cancel();
+				getMove();
+				logger.exit();
+			}
+		};
 		
 		t = new Thread(){
 			@SuppressWarnings("unchecked")
@@ -80,17 +147,20 @@ public class WebPlayer implements AI {
 				HashMap<String, Object> map = (HashMap<String, Object>) parser.parse(output);
 				if ( !(boolean)map.get("error")){
 					JSONArray moves = (JSONArray) map.get("moves");
-					prefetched_moves = new int[moves.size()];
-					for(int i = 0; i < moves.size(); i++){
-						prefetched_moves[i] = (int)((long)moves.get(i));
+					SelectResult sel = new SelectResult();
+					for(Object obj :moves){
+						HashMap<String, Object> entry = (HashMap<String, Object>) obj;
+						Move m = new Move(-1, (int)((long)entry.get("move")),(boolean) entry.get("used"),
+								(boolean)entry.get("loose"),(boolean) entry.get("draw"), (boolean)entry.get("win"),(boolean) entry.get("player_a"));
+						sel.add(m);
 					}
+					selectMove(sel);
 					no_move = false;
 				}else{
 					no_move = true;
 				}
 				
 				got_answer = true;
-				
 				return;
 			}catch (ParseException e){
 				logger.error("Parse exception: {} on \n{}",e,output);
@@ -105,29 +175,39 @@ public class WebPlayer implements AI {
 		};
 	}
 	
-	
+	/**
+	 * Use prefetched move
+	 */
 	@Override
 	public boolean getMove() {
+		logger.entry();
 		if(t.isAlive()){
 			logger.warn("Prefetch still running!");
+			maintimer.schedule(taskDoMove, SCHEDULE_TIME,SCHEDULE_TIME); // run it later on
 			return true;
 		}else{
-			if(got_answer && !no_move){
-				GController.insertStone(prefetched_moves[ThreadLocalRandom.current().nextInt(0, GController.getX_MAX())]);
+			if(got_answer && !no_move && prefetched_move != null){
+				GController.insertStone(prefetched_move.getMove());
 			}else{
 				logger.error("Got move: {}, no move: {}",got_answer, no_move);
 			}
+			no_move = false;
+			got_answer = false;
+			prefetched_move = null;
 		}
 		return false;
 	}
 
 	@Override
 	public void gameEvent(boolean rollback) {
-		
+		prefetched_move = null;
+		got_answer = false;
 	}
 
 	@Override
 	public void shutdown() {
+		taskDoMove.cancel();
+		maintimer.cancel();
 		connManager.shutdown();
 	}
 
@@ -136,7 +216,7 @@ public class WebPlayer implements AI {
 		this.player = player;
 		this.got_answer = false;
 		this.no_move = false;
-		this.prefetched_moves = null;
+		this.prefetched_move = null;
 	}
 
 	@Override
@@ -164,6 +244,7 @@ public class WebPlayer implements AI {
 		// TODO Auto-generated method stub
 		
 	}
+	
 	
 	private String doPost(String url, String host, List<NameValuePair> urlParameters) throws IOException{
 		//create client & post
