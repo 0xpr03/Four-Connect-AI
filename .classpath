@@ -48,5 +48,8 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/Q4Projekt/commons-collections4-4.1-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="httpclient-4.5.2.jar"/>
+	<classpathentry kind="lib" path="httpclient-cache-4.5.2.jar"/>
+	<classpathentry kind="lib" path="httpcore-4.4.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
