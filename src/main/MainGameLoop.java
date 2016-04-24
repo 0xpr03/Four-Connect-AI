@@ -35,6 +35,7 @@ import fontMeshCreator.FontType;
 import fontMeshCreator.GUIText;
 import fontRendering.TextMaster;
 import gamelogic.Controller.E_GAME_MODE;
+import gamelogic.Controller.E_GAME_STATE;
 import gamelogic.GController;
 import guis.GuiRenderer;
 import guis.GuiTexture;
@@ -421,8 +422,9 @@ public class MainGameLoop {
 				}
 				if(Keyboard.isKeyDown(Keyboard.KEY_RETURN)) {
 //					moveCam();
-					if(!shallMoveBall)
-						insertStone(chosenRohr, Color.YELLOW);
+					if(!shallMoveBall){
+						insertStone(chosenRohr);
+					}
 				}
 				if(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Keyboard.isKeyDown(Keyboard.KEY_F))
 					staticCamera = false;
@@ -441,18 +443,28 @@ public class MainGameLoop {
 		}
 	}
 		
-	private static void insertStone(int spalte, Color farbe) {
+	private static void insertStone(int spalte) {
 		if(pipes[spalte] == null)
 			return;
-		int zeile = (pipes[spalte]).getBalls();
-		if(zeile == 6)
-			return;
-		balls[spalte][zeile] = new Entity(farbe == Color.RED ? ballR : ballG, new Vector3f(
-				chosenRohr * 5, terrain.getHeightOfTerrain(0, 0)+35, 0), 0, 0, 0, 0);		
-		(pipes[spalte]).setBalls(zeile +1);
-		shallMoveBall = true;
-		lastSpalte = spalte;
-		lastZeile = zeile;
+		Color color = null;
+		if(GController.getGameState() == E_GAME_STATE.PLAYER_A){
+			color = Color.RED;
+		}else if(GController.getGameState() == E_GAME_STATE.PLAYER_B){
+			color = Color.YELLOW;
+		}
+		if(GController.insertStone(spalte) && color != null){
+			int zeile = (pipes[spalte]).getBalls();
+			if(zeile == 6)
+				return;
+			balls[spalte][zeile] = new Entity(color == Color.RED ? ballR : ballG, new Vector3f(
+					chosenRohr * 5, terrain.getHeightOfTerrain(0, 0)+35, 0), 0, 0, 0, 0);		
+			(pipes[spalte]).setBalls(zeile +1);
+			shallMoveBall = true;
+			lastSpalte = spalte;
+			lastZeile = zeile;
+		}else{
+			logger.error("Controller denied insert! {}", GController.getGameState());
+		}
 	}
 	
 	private static void moveBall(int spalte, int zeile){
@@ -566,8 +578,9 @@ public class MainGameLoop {
 			public void onClick(Button button) {
 				logger.trace("Menu SinglePlayer");
 				hideMainMenu();
-				showSPMenu();
-				state = State.SPMENU;
+				GController.initGame(E_GAME_MODE.MULTIPLAYER);
+				GController.startGame();
+				state = State.GAME;
 			}
 			public void onStartHover(Button button) {
 			}			
@@ -579,11 +592,9 @@ public class MainGameLoop {
 			public void onClick(Button button) {
 				logger.trace("Menu Multiplayer");
 				hideMainMenu();
-				GController.initGame(E_GAME_MODE.MULTIPLAYER);
+				startGame(7,6, E_GAME_MODE.MULTIPLAYER);
 				state = State.GAME;
 				GController.startGame();
-//				GController.getGameState() == E_GAME_STATE.PLAYER_A 
-//				GController.insertStone(0);
 			}
 			public void onStartHover(Button button) {
 			}			
@@ -625,8 +636,7 @@ public class MainGameLoop {
 		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
 				logger.trace("7x6 Default");
-				rohre = 7;
-				startSPGame();
+				startGame(7,6, E_GAME_MODE.SINGLE_PLAYER);
 			}
 			public void onStartHover(Button button) {
 			}			
@@ -637,8 +647,7 @@ public class MainGameLoop {
 		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
 				logger.trace("6x6 Hard");
-				rohre = 6;
-				startSPGame();
+				startGame(6,5, E_GAME_MODE.SINGLE_PLAYER);
 			}
 			public void onStartHover(Button button) {
 			}			
@@ -649,8 +658,7 @@ public class MainGameLoop {
 		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
 				logger.trace("5x5 Hard");
-				rohre = 5;
-				startSPGame();
+				startGame(5,5,E_GAME_MODE.SINGLE_PLAYER);
 			}
 			public void onStartHover(Button button) {
 			}			
@@ -710,11 +718,14 @@ public class MainGameLoop {
 		return staticCamera;
 	}
 	
-	private static void startSPGame(){
+	private static void startGame(int anzahl_spalten, int anzahl_zeilen, E_GAME_MODE gameMode){
+		rohre = anzahl_spalten;
 		hideSPMenu(true);
 		for(int i = 0; i< rohre; i++) {
 			pipes[i] = new Rohr(rohr, new Vector3f(i*5, terrain.getHeightOfTerrain(0, 0)+1, 0), 0, 0, 0, 2); 
 		}
+		GController.initGame(gameMode);
+		GController.startGame();
 		state = State.GAME;
 	}
 	
