@@ -10,6 +10,7 @@ import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.AI.KBS_player;
 import gamelogic.AI.MemCache;
+import gamelogic.AI.WebPlayer;
 import gamelogic.AI.mariaDB;
 
 /**
@@ -32,7 +33,7 @@ public class GController {
 	}
 	
 	public static void init(){
-		controller = new Controller();
+		controller = new Controller(new WebPlayer(), null);
 	}
 	
 	/**

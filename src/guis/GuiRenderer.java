@@ -149,16 +149,12 @@ public class GuiRenderer {
      */
     public void renderBackground(MasterRenderer renderer){
     	prepare();
-    	logger.debug(checkError());
+//    	logger.debug(checkError());
     	blur(fbo_b,8f, new Vector2f(1f,0f), fbo_a.getTexture());
     	blur(fbo_a,8f, new Vector2f(0f,1f), fbo_b.getTexture());
     	
     	drawBackground(fbo_a.getTexture());
     }
-    
-//    private int getMasterFBOTex(){
-//    	
-//    }
     
     private void blur(FBO targetFBO, float amount, Vector2f direction,int texture){
     	targetFBO.bindFrameBuffer();

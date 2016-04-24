@@ -34,8 +34,8 @@ import entities.Rohr;
 import fontMeshCreator.FontType;
 import fontMeshCreator.GUIText;
 import fontRendering.TextMaster;
-import gamelogic.Controller.E_GAME_MODE;
-import gamelogic.Controller.E_GAME_STATE;
+import gamelogic.ControllerBase.E_GAME_MODE;
+import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.GController;
 import guis.GuiRenderer;
 import guis.GuiTexture;
@@ -215,6 +215,7 @@ public class MainGameLoop {
 		
 		initButtons();
 		
+		GController.init();
 		logger.trace("entering renderer");
 		
 		try{
@@ -578,8 +579,6 @@ public class MainGameLoop {
 			public void onClick(Button button) {
 				logger.trace("Menu SinglePlayer");
 				hideMainMenu();
-				GController.initGame(E_GAME_MODE.MULTIPLAYER);
-				GController.startGame();
 				state = State.GAME;
 			}
 			public void onStartHover(Button button) {
@@ -724,7 +723,7 @@ public class MainGameLoop {
 		for(int i = 0; i< rohre; i++) {
 			pipes[i] = new Rohr(rohr, new Vector3f(i*5, terrain.getHeightOfTerrain(0, 0)+1, 0), 0, 0, 0, 2); 
 		}
-		GController.initGame(gameMode);
+		GController.initGame(gameMode, Level.WARN, anzahl_spalten,	anzahl_zeilen);
 		GController.startGame();
 		state = State.GAME;
 	}
