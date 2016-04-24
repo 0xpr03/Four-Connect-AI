@@ -448,7 +448,7 @@ public class MainGameLoop {
 		if(zeile == 6)
 			return;
 		balls[spalte][zeile] = new Entity(farbe == Color.RED ? ballR : ballG, new Vector3f(
-				chosenRohr * 5, 10, 0), 0, 0, 0, 2);		
+				chosenRohr * 5, terrain.getHeightOfTerrain(0, 0)+35, 0), 0, 0, 0, 0);		
 		(pipes[spalte]).setBalls(zeile +1);
 		shallMoveBall = true;
 		lastSpalte = spalte;
@@ -460,7 +460,10 @@ public class MainGameLoop {
 		ziel += (float)spalte*5;
 		if(balls[spalte][zeile] == null)
 			return;
-		if(balls[spalte][zeile].getPosition().getY() > terrain.getHeightOfTerrain(0, 0) + 3 + zeile * 4) {
+		if(balls[spalte][zeile].getScale()<2) {
+			balls[spalte][zeile].setScale(balls[spalte][zeile].getScale()+0.1f);
+		}
+		else if(balls[spalte][zeile].getPosition().getY() > terrain.getHeightOfTerrain(0, 0) + 3 + zeile * 4) {
 			balls[spalte][zeile].increasePosition(0, -0.5f, 0);
 		}else{
 			shallMoveBall = false;
