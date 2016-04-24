@@ -184,7 +184,7 @@ public class MainGameLoop {
 		
 		guiRenderer = new GuiRenderer(loader);
 		
-		camera = new Camera(new Vector3f(0, -3, 75), 0, 20);
+		camera = new Camera(new Vector3f(15, -3, 75), 0, 20);
 		
 		picker = new MousePicker(camera, renderer.getProjectionMatrix(), terrain);
 		
@@ -194,15 +194,16 @@ public class MainGameLoop {
 		menu = new GuiTexture(loader.loadTexture("lamp"), //needs to be squared and the pixel count must be 2^n
 				new Vector2f(0f, 0f),
 				new Vector2f(Display.getWidth()/Display.getHeight(), 1f));
-		lampTest = new Entity(lamp, new Vector3f(50, -30, 0), 0, 0, 0, 1);
+		lampTest = new Entity(lamp, new Vector3f(15, terrain.getHeightOfTerrain(0, 0)+ 50, 0), 0, 0, 0, 1);
+		lampTest.increaseRotation(0, 0, 180);
 		allentities.add(lampTest);
-		boden = new Entity(brett, new Vector3f(0, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 5);
+		boden = new Entity(brett, new Vector3f(15, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 5);
 		allentities.add(boden);
 		
 		
 		Light sun = new Light(new Vector3f(7000, 10000, -7000), new Vector3f(0.4f, 0.4f, 0.4f));
-		auswahlLicht = new Light(new Vector3f(0, 0, 0), new Vector3f(0, 4, 0));
-		auswahlLicht.setAttenuation(new Vector3f(1, 0.5f, 0));
+		auswahlLicht = new Light(new Vector3f(0, terrain.getHeightOfTerrain(0, 0)+5, 0), new Vector3f(0, 0, 40));
+		auswahlLicht.setAttenuation(new Vector3f(5, 1f, 0.1f));
 		lights = new ArrayList<>();
 		lights.add(sun);
 		testLight = new Light(new Vector3f(-30, -30, 0), new Vector3f(0.9f, 0, 0.3f));
@@ -253,7 +254,7 @@ public class MainGameLoop {
 	private static void renderGame(){
 		camera.move(terrain);
 		picker.update();
-		if (shallMoveBall = true)
+		if (shallMoveBall == true)
 		moveBall(lastSpalte, lastZeile);
 		Vector3f terrainPoint = picker.getCurrentTerrainPoint(); //Gibt den Punkt aus, auf dem mouse Ray auf terrain trifft.
 		if(terrainPoint != null &&terrainPoint.getX() >= 50) {
@@ -398,8 +399,10 @@ public class MainGameLoop {
 				if(Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
 					if(rohrAnsicht && chosenRohr != 0){
 					chosenRohr -= 1;
+					lampTest.increasePosition(-5, 0, 0);
 					}else if(!rohrAnsicht && chosenRohr != (rohre-1)){
 						chosenRohr += 1;
+						lampTest.increasePosition(5, 0, 0);
 					}else {
 					}
 					logger.debug("chosenRohr: {}", chosenRohr);
@@ -407,17 +410,19 @@ public class MainGameLoop {
 				if(Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
 					if(rohrAnsicht && chosenRohr != (rohre-1)){
 					chosenRohr += 1;
+					lampTest.increasePosition(5, 0, 0);
 					}else if(!rohrAnsicht && chosenRohr != 0){
 						chosenRohr -= 1;
+						lampTest.increasePosition(-5, 0, 0);
 					}else {
 					}
 					logger.debug("chosenRohr: {}", chosenRohr);
 
 				}
-				if(Keyboard.isKeyDown(Keyboard.KEY_G)) {
+				if(Keyboard.isKeyDown(Keyboard.KEY_RETURN)) {
 //					moveCam();
 					if(!shallMoveBall)
-					insertStone(3, Color.YELLOW);
+						insertStone(chosenRohr, Color.YELLOW);
 				}
 				if(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Keyboard.isKeyDown(Keyboard.KEY_F))
 					staticCamera = false;
@@ -443,7 +448,7 @@ public class MainGameLoop {
 		if(zeile == 6)
 			return;
 		balls[spalte][zeile] = new Entity(farbe == Color.RED ? ballR : ballG, new Vector3f(
-				0, 10, 0), 0, 0, 0, 2);		
+				chosenRohr * 5, 10, 0), 0, 0, 0, 2);		
 		(pipes[spalte]).setBalls(zeile +1);
 		shallMoveBall = true;
 		lastSpalte = spalte;
@@ -451,13 +456,11 @@ public class MainGameLoop {
 	}
 	
 	private static void moveBall(int spalte, int zeile){
-		float ziel = -30;
-		ziel += (float)spalte*10;
+		float ziel = 0;
+		ziel += (float)spalte*5;
 		if(balls[spalte][zeile] == null)
 			return;
-		if(balls[spalte][zeile].getPosition().getX() < ziel) {
-			balls[spalte][zeile].increasePosition(0.5f, 0, 0);
-		}else if(balls[spalte][zeile].getPosition().getY() > terrain.getHeightOfTerrain(0, 0) + 3 + zeile * 4) {
+		if(balls[spalte][zeile].getPosition().getY() > terrain.getHeightOfTerrain(0, 0) + 3 + zeile * 4) {
 			balls[spalte][zeile].increasePosition(0, -0.5f, 0);
 		}else{
 			shallMoveBall = false;
@@ -707,7 +710,7 @@ public class MainGameLoop {
 	private static void startSPGame(){
 		hideSPMenu(true);
 		for(int i = 0; i< rohre; i++) {
-			pipes[i] = new Rohr(rohr, new Vector3f(i*5, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2); 
+			pipes[i] = new Rohr(rohr, new Vector3f(i*5, terrain.getHeightOfTerrain(0, 0)+1, 0), 0, 0, 0, 2); 
 		}
 		state = State.GAME;
 	}
