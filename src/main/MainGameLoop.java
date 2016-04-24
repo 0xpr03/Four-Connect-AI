@@ -75,6 +75,7 @@ public class MainGameLoop {
 	private static Entity boden;
 	private static List<Entity> allentities;
 	private static List<Light> lights;
+	private static Light auswahlLicht;
 	private static Light testLight;
 	private static GuiTexture mouseCircle;
 	private static GuiTexture intro;
@@ -98,7 +99,9 @@ public class MainGameLoop {
 	private static int lastZeile = 0;
 	private static boolean staticCamera = true;
 	private static boolean rohrAnsicht = true;
-	private static int rohr = 3;
+	private static int chosenRohr = 3;
+	private static int rohre = 0;
+	private static TexturedModel rohr;
 
 	/**
 	 * @param args
@@ -166,7 +169,7 @@ public class MainGameLoop {
 		
 		ballG = loader.loadtoVAO("kugel", "kugelG");
 		
-		TexturedModel rohr = loader.loadtoVAO("Cylinder", "rohr2");
+		rohr = loader.loadtoVAO("rohr2", "rohr");
 		
 		logger.trace("creating entities");
 		terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "black");
@@ -195,22 +198,17 @@ public class MainGameLoop {
 		allentities.add(lampTest);
 		boden = new Entity(brett, new Vector3f(0, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 5);
 		allentities.add(boden);
-		pipes[0] = new Rohr(rohr, new Vector3f(-15, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		pipes[1] = new Rohr(rohr, new Vector3f(-10, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		pipes[2] = new Rohr(rohr, new Vector3f(-5, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		pipes[3] = new Rohr(rohr, new Vector3f(0, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		pipes[4] = new Rohr(rohr, new Vector3f(5, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		pipes[5] = new Rohr(rohr, new Vector3f(10, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
-		pipes[6] = new Rohr(rohr, new Vector3f(15, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2);
 		
-		insertStone(3, Color.RED);
 		
-		Light sun = new Light(new Vector3f(0, 10000, -7000), new Vector3f(0.4f, 0.4f, 0.4f));
+		Light sun = new Light(new Vector3f(7000, 10000, -7000), new Vector3f(0.4f, 0.4f, 0.4f));
+		auswahlLicht = new Light(new Vector3f(0, 0, 0), new Vector3f(0, 4, 0));
+		auswahlLicht.setAttenuation(new Vector3f(1, 0.5f, 0));
 		lights = new ArrayList<>();
 		lights.add(sun);
 		testLight = new Light(new Vector3f(-30, -30, 0), new Vector3f(0.9f, 0, 0.3f));
 		testLight.setAttenuation(new Vector3f(0.5f,0,0));		
 		lights.add(testLight);
+		lights.add(auswahlLicht);
 //		lights.add(new Light(new Vector3f(10, terrain.getHeightOfTerrain(10, 10) + 20, 10), new Vector3f(5, 0, 0), new Vector3f(1, 0.01f, 0.002f)));
 		
 		initButtons();
@@ -268,6 +266,8 @@ public class MainGameLoop {
 			renderer.processEntity(entity);
 		}
 		for (Entity entity : pipes) {
+			if(entity == null) 
+				break;
 			renderer.processEntity(entity);
 		}
 		for (Entity[] entityA : balls) {
@@ -281,6 +281,7 @@ public class MainGameLoop {
 				renderer.processEntity(entity);
 			}
 		}
+		auswahlLicht.setPosition(new Vector3f(chosenRohr*5, 0, 0)); 
 		renderer.render(lights, camera);
 		TextMaster.render();
 	}
@@ -395,23 +396,28 @@ public class MainGameLoop {
 		 			state = State.INGAME_MENU;
 		 		}
 				if(Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-					if(rohrAnsicht){
-					rohr -= 1;
+					if(rohrAnsicht && chosenRohr != 0){
+					chosenRohr -= 1;
+					}else if(!rohrAnsicht && chosenRohr != (rohre-1)){
+						chosenRohr += 1;
 					}else {
-						rohr += 1;
 					}
+					logger.debug("chosenRohr: {}", chosenRohr);
 				}
 				if(Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-					if(rohrAnsicht){
-					rohr += 1;
+					if(rohrAnsicht && chosenRohr != (rohre-1)){
+					chosenRohr += 1;
+					}else if(!rohrAnsicht && chosenRohr != 0){
+						chosenRohr -= 1;
 					}else {
-						rohr -= 1;
 					}
+					logger.debug("chosenRohr: {}", chosenRohr);
+
 				}
 				if(Keyboard.isKeyDown(Keyboard.KEY_G)) {
-					moveCam();
-//					if(!shallMoveBall)
-//					insertStone(3, Color.YELLOW);
+//					moveCam();
+					if(!shallMoveBall)
+					insertStone(3, Color.YELLOW);
 				}
 				if(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Keyboard.isKeyDown(Keyboard.KEY_F))
 					staticCamera = false;
@@ -431,6 +437,8 @@ public class MainGameLoop {
 	}
 		
 	private static void insertStone(int spalte, Color farbe) {
+		if(pipes[spalte] == null)
+			return;
 		int zeile = (pipes[spalte]).getBalls();
 		if(zeile == 6)
 			return;
@@ -445,6 +453,8 @@ public class MainGameLoop {
 	private static void moveBall(int spalte, int zeile){
 		float ziel = -30;
 		ziel += (float)spalte*10;
+		if(balls[spalte][zeile] == null)
+			return;
 		if(balls[spalte][zeile].getPosition().getX() < ziel) {
 			balls[spalte][zeile].increasePosition(0.5f, 0, 0);
 		}else if(balls[spalte][zeile].getPosition().getY() > terrain.getHeightOfTerrain(0, 0) + 3 + zeile * 4) {
@@ -469,12 +479,8 @@ public class MainGameLoop {
 	private static void moveCam() {
 		int z = (int)camera.getPosition().getZ();
 		if(z<0) {
-			for(int i = 0; i<750; i++) {
-				camera.increasePosition(0, 0, 0.2f);
-				camera.increaseRotation(0.24f, 0);
-			}
-//			camera.increasePosition(0, 0, 150);
-//			camera.increaseRotation(180, 0);
+			camera.increasePosition(0, 0, 150);
+			camera.increaseRotation(180, 0);
 		}else {
 			camera.increasePosition(0, 0, -150);
 			camera.increaseRotation(180, 0);
@@ -613,6 +619,7 @@ public class MainGameLoop {
 		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
 				logger.trace("7x6 Default");
+				rohre = 7;
 				startSPGame();
 			}
 			public void onStartHover(Button button) {
@@ -624,6 +631,7 @@ public class MainGameLoop {
 		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
 				logger.trace("6x6 Hard");
+				rohre = 6;
 				startSPGame();
 			}
 			public void onStartHover(Button button) {
@@ -635,6 +643,7 @@ public class MainGameLoop {
 		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
 				logger.trace("5x5 Hard");
+				rohre = 5;
 				startSPGame();
 			}
 			public void onStartHover(Button button) {
@@ -697,6 +706,9 @@ public class MainGameLoop {
 	
 	private static void startSPGame(){
 		hideSPMenu(true);
+		for(int i = 0; i< rohre; i++) {
+			pipes[i] = new Rohr(rohr, new Vector3f(i*5, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 2); 
+		}
 		state = State.GAME;
 	}
 	
