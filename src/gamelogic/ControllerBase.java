@@ -98,6 +98,9 @@ public class ControllerBase {
 		synchronized (lock) {
 			if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER){
 				AI_a.start(E_PLAYER.PLAYER_B);
+				AI_a.preProcess();
+				if(STATE == E_GAME_STATE.PLAYER_B)
+					AI_a.getMove();
 			}else if(GAMEMODE == E_GAME_MODE.KI_INTERNAL ||GAMEMODE == E_GAME_MODE.KI_TRAINING){
 				AI_a.start(E_PLAYER.PLAYER_A);
 				AI_b.start(E_PLAYER.PLAYER_B);

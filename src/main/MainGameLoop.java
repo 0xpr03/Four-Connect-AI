@@ -256,8 +256,12 @@ public class MainGameLoop {
 	private static void renderGame(){
 		camera.move(terrain);
 		picker.update();
-		if (shallMoveBall == true)
-		moveBall(lastSpalte, lastZeile);
+		if (shallMoveBall == true){
+			moveBall(lastSpalte, lastZeile);
+		}else if (callAI){
+			GController.moveAI_A();
+			callAI = false;
+		}
 		Vector3f terrainPoint = picker.getCurrentTerrainPoint(); //Gibt den Punkt aus, auf dem mouse Ray auf terrain trifft.
 		if(terrainPoint != null &&terrainPoint.getX() >= 50) {
 			testLight.setColour(new Vector3f(0.9f, 0, 0.3f));
@@ -443,8 +447,14 @@ public class MainGameLoop {
 			logger.warn("Unknown case for input!");
 		}
 	}
-		
+	
+	/**
+	 * Insert stone at given point, to be used by player inputs<br>
+	 * also sends a command to the controller
+	 * @param spalte
+	 */
 	private static void insertStone(int spalte) {
+		logger.entry(spalte);
 		if(pipes[spalte] == null)
 			return;
 		Color color = null;
@@ -454,20 +464,37 @@ public class MainGameLoop {
 			color = Color.YELLOW;
 		}
 		if(GController.insertStone(spalte) && color != null){
-			int zeile = (pipes[spalte]).getBalls();
-			if(zeile == 6)
-				return;
-			balls[spalte][zeile] = new Entity(color == Color.RED ? ballR : ballG, new Vector3f(
-					chosenRohr * 5, terrain.getHeightOfTerrain(0, 0)+35, 0), 0, 0, 0, 0);		
-			(pipes[spalte]).setBalls(zeile +1);
-			shallMoveBall = true;
-			lastSpalte = spalte;
-			lastZeile = zeile;
+			setStone(spalte,color);
 		}else{
 			logger.error("Controller denied insert! {}", GController.getGameState());
 		}
 	}
 	
+	/**
+	 * Core of the stone insert, only for AI calls, does not ask the controller<br>
+	 * Pure GUI handling
+	 * @param spalte
+	 * @param color
+	 */
+	public static void setStone(int spalte, Color color){
+		logger.entry(spalte,color);
+		int zeile = (pipes[spalte]).getBalls();
+		if(zeile == 6)
+			return;
+		balls[spalte][zeile] = new Entity(color == Color.RED ? ballR : ballG, new Vector3f(
+				spalte * 5, terrain.getHeightOfTerrain(0, 0)+35, 0), 0, 0, 0, 0);		
+		(pipes[spalte]).setBalls(zeile +1);
+		shallMoveBall = true;
+		lastSpalte = spalte;
+		lastZeile = zeile;
+	}
+	
+	/**
+	 * Move the ball and animate it<br>
+	 * Sets callAI on finish
+	 * @param spalte
+	 * @param zeile
+	 */
 	private static void moveBall(int spalte, int zeile){
 		float ziel = 0;
 		ziel += (float)spalte*5;
@@ -480,6 +507,8 @@ public class MainGameLoop {
 			balls[spalte][zeile].increasePosition(0, -0.5f, 0);
 		}else{
 			shallMoveBall = false;
+			if(GController.getGamemode() == E_GAME_MODE.SINGLE_PLAYER && GController.getGameState() == E_GAME_STATE.PLAYER_B)
+				callAI = true; // call AI in next frame
 		}
 	}
 	
@@ -649,15 +678,15 @@ public class MainGameLoop {
 				startGame(6,5, E_GAME_MODE.SINGLE_PLAYER);
 			}
 			public void onStartHover(Button button) {
-			}			
+			}
 			public void onStopHover(Button button) {
 			}
 			public void whileHovering(Button button) {}			
 		});
 		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
-				logger.trace("5x5 Hard");
-				startGame(5,5,E_GAME_MODE.SINGLE_PLAYER);
+				logger.trace("4x4 Hard");
+				startGame(4,4,E_GAME_MODE.SINGLE_PLAYER);
 			}
 			public void onStartHover(Button button) {
 			}			
@@ -723,7 +752,8 @@ public class MainGameLoop {
 		for(int i = 0; i< rohre; i++) {
 			pipes[i] = new Rohr(rohr, new Vector3f(i*5, terrain.getHeightOfTerrain(0, 0)+1, 0), 0, 0, 0, 2); 
 		}
-		GController.initGame(gameMode, Level.WARN, anzahl_spalten,	anzahl_zeilen);
+		callAI = false;
+		GController.initGame(gameMode, Level.ALL, anzahl_spalten,	anzahl_zeilen);
 		GController.startGame();
 		state = State.GAME;
 	}

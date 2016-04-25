@@ -10,6 +10,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 
 import gamelogic.AI.AI;
+import main.MainGameLoop;
+import main.MainGameLoop.Color;
 
 /**
  * Controller for the four connect game
@@ -50,6 +52,7 @@ public final class Controller extends ControllerBase {
 	 * @param y_max y size of the field
 	 */
 	public synchronized void initGame(E_GAME_MODE gamemode, Level loglevel, int x_max, int y_max) {
+		logger.entry(gamemode, loglevel, x_max, y_max);
 		synchronized(lock){
 			Configurator.setLevel(LogManager.getLogger(ControllerBase.class).getName(), loglevel);
 			if (gamemode == E_GAME_MODE.NONE){
@@ -110,12 +113,12 @@ public final class Controller extends ControllerBase {
 			case KI_INTERNAL:
 			case FUZZING:
 				STATE = Math.random() < 0.5 ? E_GAME_STATE.PLAYER_A : E_GAME_STATE.PLAYER_B;
+				start_AI();
 				break;
 			default:
 				STATE = E_GAME_STATE.PLAYER_A;
 				break;
 			}
-			start_AI();
 		}
 	}
 
@@ -146,6 +149,8 @@ public final class Controller extends ControllerBase {
 		if(found_place != -1) {
 			MOVES++;
 			GameStore ws = checkWin(column,found_place);
+			if(STATE == E_GAME_STATE.PLAYER_B && GAMEMODE == E_GAME_MODE.SINGLE_PLAYER)
+				MainGameLoop.setStone(column, Color.YELLOW);
 			if(ws == null){ // no win
 				if(checkDraw()){ // is draw
 					ALLOW_BACK_BOTH = true; // we're on a state where the last move leaded to a gameEvent sit.
@@ -155,6 +160,9 @@ public final class Controller extends ControllerBase {
 						addHistory();
 					}
 					STATE = STATE == E_GAME_STATE.PLAYER_A ? E_GAME_STATE.PLAYER_B : E_GAME_STATE.PLAYER_A;
+					if(GAMEMODE == E_GAME_MODE.SINGLE_PLAYER || GAMEMODE == E_GAME_MODE.TESTING){
+						doPrefetch();
+					}
 				}
 			}else{
 				ALLOW_BACK_BOTH = true; // we're on a state where the last move leaded to a gameEvent sit.
@@ -166,6 +174,17 @@ public final class Controller extends ControllerBase {
 			
 			//TODO: call graphics && let it callback the next run
 		return found_place != -1;
+	}
+	
+	private void doPrefetch(){
+		switch(STATE){
+		case PLAYER_B:
+			AI_a.preProcess();
+			break;
+		default:
+			break;
+		
+		}
 	}
 	
 	/**
