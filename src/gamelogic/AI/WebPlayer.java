@@ -142,32 +142,40 @@ public class WebPlayer implements AI {
 					urlParameters.add(new BasicNameValuePair("player_a", String.valueOf(player == E_PLAYER.PLAYER_A)));
 	
 					String output = "";
-					try {
-						output = doPost(URL, HOST, urlParameters);
-	
-						HashMap<String, Object> map = (HashMap<String, Object>) parser.parse(output);
-						if (!((boolean) map.get("error"))) {
-							JSONArray moves = (JSONArray) map.get("moves");
-							SelectResult sel = new SelectResult();
-							for (Object obj : moves) {
-								HashMap<String, Object> entry = (HashMap<String, Object>) obj;
-								sel.add(getMove(entry));
+					for(int i = 0; i < 3; i++){
+						try {
+							output = doPost(URL, HOST, urlParameters);
+		
+							HashMap<String, Object> map = (HashMap<String, Object>) parser.parse(output);
+							if (!((boolean) map.get("error"))) {
+								JSONArray moves = (JSONArray) map.get("moves");
+								SelectResult sel = new SelectResult();
+								for (Object obj : moves) {
+									HashMap<String, Object> entry = (HashMap<String, Object>) obj;
+									sel.add(getMove(entry));
+								}
+								selectMove(sel);
+								no_move = false;
+							} else {
+								logger.error("Server response: {}", (String) map.get("error"));
+								no_move = true;
 							}
-							selectMove(sel);
-							no_move = false;
-						} else {
-							logger.error("Server response: {}", (String) map.get("error"));
-							no_move = true;
+							
+							got_answer = true;
+							return;
+						} catch (ParseException e) {
+							logger.error("Parse exception: {} on \n{}", e, output);
+						} catch (ClassCastException e) {
+							logger.error("Invalid input, cast exception: {}", e);
+						} catch (IOException e) {
+							logger.error("Unable to retrievie KI data: {}", e);
 						}
-	
-						got_answer = true;
-						return;
-					} catch (ParseException e) {
-						logger.error("Parse exception: {} on \n{}", e, output);
-					} catch (ClassCastException e) {
-						logger.error("Invalid input, cast exception: {}", e);
-					} catch (IOException e) {
-						logger.error("Unable to retrievie KI data: {}", e);
+						// wait x ms on error
+						try{
+							Thread.sleep(50);
+						}catch(Exception e){
+							logger.error(e);
+						}
 					}
 					no_move = true;
 					got_answer = false;

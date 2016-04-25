@@ -135,9 +135,9 @@ public class MainGameLoop {
 		sMButtonTexts.add(new GUIText("Exit", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
 		
 		SP_ButtonTexts = new ArrayList<>();
-		SP_ButtonTexts.add(new GUIText("7x6 Default", 5, font, new Vector2f(0, 0.02f), 1f, true, true));
-		SP_ButtonTexts.add(new GUIText("6x6 Hard", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
-		SP_ButtonTexts.add(new GUIText("5x5 Hard", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
+		SP_ButtonTexts.add(new GUIText("7x6 WBS2", 5, font, new Vector2f(0, 0.02f), 1f, true, true));
+		SP_ButtonTexts.add(new GUIText("6x5 Hard", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
+		SP_ButtonTexts.add(new GUIText("4x4 Hard", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("Back", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
 		
 		opButtonTexts = new ArrayList<>();
@@ -677,7 +677,7 @@ public class MainGameLoop {
 		});
 		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
-				logger.trace("6x6 Hard");
+				logger.trace("6x5 Hard");
 				startGame(6,5, E_GAME_MODE.SINGLE_PLAYER);
 			}
 			public void onStartHover(Button button) {
