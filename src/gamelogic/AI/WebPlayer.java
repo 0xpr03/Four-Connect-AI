@@ -49,7 +49,7 @@ public class WebPlayer implements AI {
 	private HttpClient client;
 	private Logger logger = LogManager.getLogger();
 	private lib lib;
-	private HttpClientConnectionManager connManager = new BasicHttpClientConnectionManager();
+	private HttpClientConnectionManager connManager;
 	private E_PLAYER player;
 	private JSONParser parser;
 	private Move prefetched_move = null;
@@ -61,14 +61,11 @@ public class WebPlayer implements AI {
 
 	public WebPlayer() {
 		logger.entry();
-		hcbuilder = HttpClientBuilder.create();
-		hcbuilder.setConnectionManager(connManager);
-		hcbuilder.disableAutomaticRetries();
-		client = hcbuilder.build();
-		lib = new lib();
 		parser = new JSONParser();
+		hcbuilder = HttpClientBuilder.create();
+		hcbuilder.disableAutomaticRetries();
 	}
-
+	
 	/**
 	 * Select a move and set as prefetched move
 	 * 
@@ -179,6 +176,7 @@ public class WebPlayer implements AI {
 				}
 			}
 		};
+		t.setName("prefetch");
 	}
 
 	private Move getMove(HashMap<String, Object> map) {
@@ -224,12 +222,16 @@ public class WebPlayer implements AI {
 		taskDoMove.cancel();
 		if(t.isAlive())
 			t.interrupt();
+		connManager.shutdown();
 	}
 
 	@Override
 	public void shutdown() {
 		logger.entry();
 		taskDoMove.cancel();
+		if(t != null)
+		if(t.isAlive())
+			t.interrupt();
 		maintimer.cancel();
 		connManager.shutdown();
 	}
@@ -237,6 +239,10 @@ public class WebPlayer implements AI {
 	@Override
 	public void start(E_PLAYER player) {
 		logger.entry(player);
+		connManager = new BasicHttpClientConnectionManager();
+		hcbuilder.setConnectionManager(connManager);
+		client = hcbuilder.build();
+		lib = new lib();
 		this.player = player;
 		maintimer = new Timer(true);
 		this.got_answer = false;
@@ -247,10 +253,14 @@ public class WebPlayer implements AI {
 
 	@Override
 	public void preProcess() {
-		if (!t.isAlive()) {
-			t.start();
-		} else {
-			logger.error("Prefetch thread still running!");
+		if(t != null){
+			if (!t.isAlive()) {
+				t.start();
+			} else {
+				logger.error("Prefetch thread still running!");
+			}
+		}else{
+			logger.fatal("No thread initiated !");
 		}
 	}
 
