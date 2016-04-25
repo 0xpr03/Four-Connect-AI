@@ -35,15 +35,16 @@ import gamelogic.GController;
 /**
  * KI player retrieving it's data over the web<br>
  * This player relies on the call of preProcess before each getMove
+ * 
  * @author Aron Heinecke
  */
 public class WebPlayer implements AI {
 	private static String UA = "KBS WebPlayer";
 	private static String HOST = "proctet.net";
 	private static String URL = "http://localhost/q4_ai/ai.php";
-	
+
 	private static int SCHEDULE_TIME = 1000;
-	
+
 	private HttpClientBuilder hcbuilder;
 	private HttpClient client;
 	private Logger logger = LogManager.getLogger();
@@ -58,67 +59,67 @@ public class WebPlayer implements AI {
 	private TimerTask taskDoMove;
 	private Timer maintimer;
 
-	
-	public WebPlayer(){
+	public WebPlayer() {
 		logger.entry();
 		hcbuilder = HttpClientBuilder.create();
 		hcbuilder.setConnectionManager(connManager);
 		hcbuilder.disableAutomaticRetries();
 		client = hcbuilder.build();
 		lib = new lib();
-		maintimer = new Timer(true);
 		parser = new JSONParser();
-		initThreads();
 	}
-	
+
 	/**
 	 * Select a move and set as prefetched move
+	 * 
 	 * @param sel
 	 */
-	private void selectMove(SelectResult sel){
+	private void selectMove(SelectResult sel) {
+		logger.entry();
 		List<Move> possible_moves = new ArrayList<Move>(GController.getX_MAX());
-		if(!sel.getWins().isEmpty()){
+		if (!sel.getWins().isEmpty()) {
 			List<Move> possibilities = new ArrayList<Move>();
-			for(Move moveelem : sel.getWins()){
-				if(!moveelem.isDraw()){
+			for (Move moveelem : sel.getWins()) {
+				if (!moveelem.isDraw()) {
 					possibilities.add(moveelem);
 				}
 			}
-			if(!possibilities.isEmpty()){
+			if (!possibilities.isEmpty()) {
 				possible_moves = possibilities;
-			}else{
+			} else {
 				possible_moves = sel.getWins();
 			}
-		}else if(!sel.getDraws().isEmpty()) {
+		} else if (!sel.getDraws().isEmpty()) {
 			List<Move> possibilities = new ArrayList<Move>();
-			for(Move moveelem : sel.getDraws()){
-				if(!moveelem.isLoose()){
+			for (Move moveelem : sel.getDraws()) {
+				if (!moveelem.isLoose()) {
 					possibilities.add(moveelem);
 				}
 			}
-			if(!possibilities.isEmpty()){
+			if (!possibilities.isEmpty()) {
 				possible_moves = possibilities;
-			}else{
+			} else {
 				possible_moves = sel.getDraws();
 			}
-		}else{
-			if(sel.getUnused().isEmpty()){
+		} else {
+			if (sel.getUnused().isEmpty()) {
 				possible_moves = sel.getUnused();
 				logger.debug("No known sel");
-			}else{
+			} else {
 				logger.error("Only looses left!");
 				possible_moves = sel.getLooses();
 			}
 		}
-		
+		logger.debug("possible moves: {}", possible_moves.size());
 		prefetched_move = possible_moves.get(ThreadLocalRandom.current().nextInt(0, possible_moves.size()));
 	}
-	
+
 	/**
 	 * Init preprocess thread & re-check timer
+	 * 
 	 * @author Aron Heinecke
 	 */
-	private void initThreads(){
+	private void initThreads() {
 		taskDoMove = new TimerTask() {
 			@Override
 			public void run() {
@@ -128,85 +129,106 @@ public class WebPlayer implements AI {
 				logger.exit();
 			}
 		};
-		
-		t = new Thread(){
+
+		t = new Thread() {
 			@SuppressWarnings("unchecked")
 			@Override
-			public void run(){
-			byte[] fieldhash = lib.field2sha(GController.getFieldState());
-			List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
-			urlParameters.add(new BasicNameValuePair("field", lib.bytesToHex(fieldhash)));
-			urlParameters.add(new BasicNameValuePair("x", String.valueOf(GController.getX_MAX())));
-			urlParameters.add(new BasicNameValuePair("y", String.valueOf(GController.getY_MAX())));
-			urlParameters.add(new BasicNameValuePair("player_a", String.valueOf(player == E_PLAYER.PLAYER_A)));
-			
-			String output = "";
-			try{
-				output = doPost(URL, HOST, urlParameters);
-				
-				HashMap<String, Object> map = (HashMap<String, Object>) parser.parse(output);
-				if ( ((String)map.get("error")).equals("false")){
-					JSONArray moves = (JSONArray) map.get("moves");
-					SelectResult sel = new SelectResult();
-					for(Object obj :moves){
-						HashMap<String, Object> entry = (HashMap<String, Object>) obj;
-						Move m = new Move(-1, (int)((long)entry.get("move")),(boolean) entry.get("used"),
-								(boolean)entry.get("loose"),(boolean) entry.get("draw"), (boolean)entry.get("win"),(boolean) entry.get("player_a"));
-						sel.add(m);
+			public void run() {
+				try{
+					logger.entry();
+					byte[] fieldhash = lib.field2sha(GController.getFieldState());
+					List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
+					logger.debug("Field: {} player_a: {}",lib.bytesToHex(fieldhash), player);
+					urlParameters.add(new BasicNameValuePair("field", lib.bytesToHex(fieldhash)));
+					urlParameters.add(new BasicNameValuePair("x", String.valueOf(GController.getX_MAX())));
+					urlParameters.add(new BasicNameValuePair("y", String.valueOf(GController.getY_MAX())));
+					urlParameters.add(new BasicNameValuePair("player_a", String.valueOf(player == E_PLAYER.PLAYER_A)));
+	
+					String output = "";
+					try {
+						output = doPost(URL, HOST, urlParameters);
+	
+						HashMap<String, Object> map = (HashMap<String, Object>) parser.parse(output);
+						if (!((boolean) map.get("error"))) {
+							JSONArray moves = (JSONArray) map.get("moves");
+							SelectResult sel = new SelectResult();
+							for (Object obj : moves) {
+								HashMap<String, Object> entry = (HashMap<String, Object>) obj;
+								sel.add(getMove(entry));
+							}
+							selectMove(sel);
+							no_move = false;
+						} else {
+							logger.error("Server response: {}", (String) map.get("error"));
+							no_move = true;
+						}
+	
+						got_answer = true;
+						return;
+					} catch (ParseException e) {
+						logger.error("Parse exception: {} on \n{}", e, output);
+					} catch (ClassCastException e) {
+						logger.error("Invalid input, cast exception: {}", e);
+					} catch (IOException e) {
+						logger.error("Unable to retrievie KI data: {}", e);
 					}
-					selectMove(sel);
-					no_move = false;
-				}else{
-					logger.error("Server response: {}",(String)map.get("error"));
 					no_move = true;
+					got_answer = false;
+				}catch(Exception e){
+					logger.fatal(e);
 				}
-				
-				got_answer = true;
-				return;
-			}catch (ParseException e){
-				logger.error("Parse exception: {} on \n{}",e,output);
-			}catch (ClassCastException  e){
-				logger.error("Invalid input, cast exception: {}",e);
-			} catch (IOException e) {
-				logger.error("Unable to retrievie KI data: {}",e);
-			}
-			no_move = true;
-			got_answer = false;
 			}
 		};
 	}
-	
+
+	private Move getMove(HashMap<String, Object> map) {
+		boolean loose = ((long) map.get("loose")) != 0;
+		boolean draw = ((long) map.get("draw")) != 0;
+		boolean win = ((long) map.get("win")) != 0;
+		boolean player_a = ((String) map.get("player_a")).equals("true");
+		boolean used = ((long) map.get("used")) != 0;
+		return new Move(-1, (int) ((long) map.get("move")), used, loose, draw, win, player_a);
+	}
+
 	/**
 	 * Use prefetched move
 	 */
 	@Override
 	public boolean getMove() {
 		logger.entry();
-		if(t.isAlive()){
+		if (t.isAlive()) {
 			logger.warn("Prefetch still running!");
-			maintimer.schedule(taskDoMove, SCHEDULE_TIME,SCHEDULE_TIME); // run it later on
+			maintimer.schedule(taskDoMove, SCHEDULE_TIME, SCHEDULE_TIME);
 			return true;
-		}else{
-			if(got_answer && !no_move && prefetched_move != null){
+		} else {
+			if (got_answer && !no_move && prefetched_move != null) {
+				logger.debug("Using move: {}",prefetched_move.toString());
 				GController.insertStone(prefetched_move.getMove());
-			}else{
-				logger.error("Got move: {}, no move: {}",got_answer, no_move);
+				
+			} else {
+				logger.error("Got move: {}, no move: {}, prefetched_move: {}", got_answer, no_move, prefetched_move);
 			}
 			no_move = false;
 			got_answer = false;
 			prefetched_move = null;
 		}
+		initThreads();
 		return false;
 	}
 
 	@Override
 	public void gameEvent(boolean rollback) {
+		logger.entry();
 		prefetched_move = null;
 		got_answer = false;
+		taskDoMove.cancel();
+		if(t.isAlive())
+			t.interrupt();
 	}
 
 	@Override
 	public void shutdown() {
+		logger.entry();
 		taskDoMove.cancel();
 		maintimer.cancel();
 		connManager.shutdown();
@@ -214,17 +236,20 @@ public class WebPlayer implements AI {
 
 	@Override
 	public void start(E_PLAYER player) {
+		logger.entry(player);
 		this.player = player;
+		maintimer = new Timer(true);
 		this.got_answer = false;
 		this.no_move = false;
 		this.prefetched_move = null;
+		initThreads();
 	}
 
 	@Override
 	public void preProcess() {
-		if(!t.isAlive()){
+		if (!t.isAlive()) {
 			t.start();
-		}else{
+		} else {
 			logger.error("Prefetch thread still running!");
 		}
 	}
@@ -232,7 +257,7 @@ public class WebPlayer implements AI {
 	@Override
 	public void goBackHistory(boolean allowEmpty) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
@@ -243,12 +268,11 @@ public class WebPlayer implements AI {
 	@Override
 	public void getOutcome() {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
-	
-	private String doPost(String url, String host, List<NameValuePair> urlParameters) throws IOException{
-		//create client & post
+
+	private String doPost(String url, String host, List<NameValuePair> urlParameters) throws IOException {
+		// create client & post
 		HttpPost post = new HttpPost(url);
 
 		// add header
@@ -258,22 +282,22 @@ public class WebPlayer implements AI {
 		post.setHeader("Connection", "keep-alive");
 		post.setHeader("Host", host);
 		post.setHeader("User-Agent", UA);
-		
-		//create gzip encoder
+
+		// create gzip encoder
 		UrlEncodedFormEntity urlEncodedFormEntity = new UrlEncodedFormEntity(urlParameters);
 		urlEncodedFormEntity.setContentEncoding(new BasicHeader(HTTP.CONTENT_ENCODING, "UTF_8"));
 		post.setEntity(urlEncodedFormEntity);
 
-		//Create own context which stores the cookies
+		// Create own context which stores the cookies
 		HttpClientContext context = HttpClientContext.create();
-		
+
 		HttpResponse response = client.execute(post, context);
-		
+
 		// input-stream with gzip-accept
 		InputStream input = response.getEntity().getContent();
 		InputStreamReader isr = new InputStreamReader(input);
 		BufferedReader rd = new BufferedReader(isr);
-		
+
 		StringBuffer result = new StringBuffer();
 		String line = "";
 		while ((line = rd.readLine()) != null) {
@@ -282,9 +306,9 @@ public class WebPlayer implements AI {
 		input.close();
 		isr.close();
 		rd.close();
-		
-		if(response.getStatusLine().getStatusCode() != 200){
-			logger.error("Server returned code {}",response.getStatusLine().getStatusCode());
+
+		if (response.getStatusLine().getStatusCode() != 200) {
+			logger.error("Server returned code {}", response.getStatusLine().getStatusCode());
 		}
 
 		return result.toString();

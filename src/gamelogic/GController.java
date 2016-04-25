@@ -28,6 +28,13 @@ public class GController {
 		controller = new Controller(new KBS_player<mariaDB>(new mariaDB(address,3306,user,pw,db,cache)), new KBS_player<mariaDB>(new mariaDB(address,3306,user,pw,db,cache)));
 	}
 	
+	/**
+	 * @see gamelogic.Controller#stopGame()
+	 */
+	public static void stopGame() {
+		controller.stopGame();
+	}
+
 	public static void init(Controller cont){
 		controller = cont;
 	}

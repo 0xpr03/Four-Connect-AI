@@ -424,6 +424,25 @@ public final class Controller extends ControllerBase {
 	}
 	
 	/**
+	 * Stops the current game
+	 */
+	public synchronized void stopGame(){
+		logger.entry();
+		switch(GAMEMODE){
+		case FUZZING:
+		case KI_INTERNAL:
+		case KI_TRAINING:
+		case SINGLE_PLAYER:
+			AI_a.gameEvent(false);
+			break;
+		case MULTIPLAYER:
+			break;
+		default:
+			break;
+		}
+	}
+	
+	/**
 	 * Inform AI's and go back if needed
 	 * @param reset if set to true we'll only reset the game
 	 */

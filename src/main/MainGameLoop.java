@@ -103,13 +103,14 @@ public class MainGameLoop {
 	private static int chosenRohr = 3;
 	private static int rohre = 0;
 	private static TexturedModel rohr;
+	private static boolean callAI;
 
 	/**
 	 * @param args
 	 *            the command line arguments
 	 */
 	public static void main(String[] args) {
-		Configurator.setLevel(LogManager.getLogger(MainGameLoop.class).getName(), Level.DEBUG);
+		Configurator.setLevel(LogManager.getLogger(MainGameLoop.class).getName(), Level.ALL);
 		
 		checkLoggingConf();
 		logger.info("Version {}", VERSION);
@@ -591,6 +592,7 @@ public class MainGameLoop {
 				logger.trace("exit to main menu");		
 				hideIngameMenu(false);
 				showMainMenu();
+				cleanupGame();
 				state = State.MAIN_MENU;
 			}
 			public void onStartHover(Button button) {
@@ -608,7 +610,8 @@ public class MainGameLoop {
 			public void onClick(Button button) {
 				logger.trace("Menu SinglePlayer");
 				hideMainMenu();
-				state = State.GAME;
+				showSPMenu();
+				state = State.SPMENU;
 			}
 			public void onStartHover(Button button) {
 			}			
@@ -746,6 +749,26 @@ public class MainGameLoop {
 		return staticCamera;
 	}
 	
+	/**
+	 * End game, inform controller, cleanup GUI
+	 */
+	private static void cleanupGame(){
+		GController.stopGame();
+		for(Entity[] ball_col : balls){
+			for(int i = 0; i < ball_col.length; i++){
+				ball_col[i] = null;
+			}
+		}
+		for(int i = 0; i < pipes.length; i++)
+			pipes[i] = null;
+	}
+	
+	/**
+	 * Start game, setup GUI, inform controller
+	 * @param anzahl_spalten
+	 * @param anzahl_zeilen
+	 * @param gameMode
+	 */
 	private static void startGame(int anzahl_spalten, int anzahl_zeilen, E_GAME_MODE gameMode){
 		rohre = anzahl_spalten;
 		hideSPMenu(true);
