@@ -41,7 +41,7 @@ public class DisplayManager {
     private static long lastFrameTime;
     private static float delta;
     
-    public static void createDisplay() {
+    public static void createDisplay(boolean useAA) {
         
         ContextAttribs attribs = new ContextAttribs(3,2)
         .withForwardCompatible(true)

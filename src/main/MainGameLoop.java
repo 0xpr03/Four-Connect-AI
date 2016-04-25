@@ -104,6 +104,7 @@ public class MainGameLoop {
 	private static int rohre = 0;
 	private static TexturedModel rohr;
 	private static boolean callAI;
+	private final static boolean USE_AA = true; // anti-aliasing
 
 	/**
 	 * @param args
@@ -115,7 +116,7 @@ public class MainGameLoop {
 		checkLoggingConf();
 		logger.info("Version {}", VERSION);
 		
-		DisplayManager.createDisplay();
+		DisplayManager.createDisplay(USE_AA);
 		loader = new Loader();
 		TextMaster.init(loader);
 		
