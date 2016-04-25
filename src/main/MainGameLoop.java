@@ -12,6 +12,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -21,6 +22,7 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
@@ -104,6 +106,9 @@ public class MainGameLoop {
 	private static int rohre = 0;
 	private static TexturedModel rohr;
 	private static boolean callAI;
+	private static boolean backgroundGame = false;
+	private final static boolean RENDER_LINES = false;
+	
 	private final static boolean USE_AA = true; // anti-aliasing
 
 	/**
@@ -233,6 +238,15 @@ public class MainGameLoop {
 	}
 	
 	private static void states() {
+		if(RENDER_LINES){
+			GL11.glEnable(GL11.GL_BLEND);
+		    GL11.glEnable(GL11.GL_POLYGON_SMOOTH);
+		    GL11.glHint(GL11.GL_POLYGON_SMOOTH_HINT,GL11.GL_DONT_CARE);
+		}else{
+//			GL11.glEnable(GL11.GL_BLEND);
+//		    GL11.glEnable(GL11.GL_LINE_SMOOTH);
+//		    GL11.glHint(GL11.GL_LINE_SMOOTH_HINT,GL11.GL_DONT_CARE);
+		}
 		switch(state) {
 		case INTRO:
 			guiRenderer.render(intro);
@@ -261,8 +275,23 @@ public class MainGameLoop {
 		if (shallMoveBall == true){
 			moveBall(lastSpalte, lastZeile);
 		}else if (callAI){
-			GController.moveAI_A();
-			callAI = false;
+			if(backgroundGame){
+				switch(GController.getGameState()){
+				case PLAYER_A:
+				case PLAYER_B:
+					List<Integer> i = GController.getPossibilities();
+					insertStone(i.get(ThreadLocalRandom.current().nextInt(0, i.size())));
+					break;
+				default:
+					logger.debug(GController.getGameState());
+					stopBackgroundGame();
+					startBackgroundGame();
+					break;
+				}
+			}else{
+				GController.moveAI_A();
+				callAI = false;
+			}
 		}
 		Vector3f terrainPoint = picker.getCurrentTerrainPoint(); //Gibt den Punkt aus, auf dem mouse Ray auf terrain trifft.
 		if(terrainPoint != null &&terrainPoint.getX() >= 50) {
@@ -275,7 +304,7 @@ public class MainGameLoop {
 			renderer.processEntity(entity);
 		}
 		for (Entity entity : pipes) {
-			if(entity == null) 
+			if(entity == null)
 				break;
 			renderer.processEntity(entity);
 		}
@@ -344,7 +373,7 @@ public class MainGameLoop {
 	private static void renderMenuSzene(List<AbstractButton> buttonList, final boolean animateCam){
 		guiRenderer.startBackgroundRendering();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		if (animateCam) {
+		if (false) {
 			camera.resetMovement();
 			camera.increaseRotation(0.1f, 0f);
 			camera.move();
@@ -376,6 +405,7 @@ public class MainGameLoop {
 			while(Keyboard.next()) {
 				if(Keyboard.isKeyDown(Keyboard.KEY_RETURN)) {
 					showMainMenu();
+					startBackgroundGame();
 					state = State.MAIN_MENU;
 				}
 				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE))  {
@@ -594,6 +624,7 @@ public class MainGameLoop {
 				hideIngameMenu(false);
 				showMainMenu();
 				cleanupGame();
+				startBackgroundGame();
 				state = State.MAIN_MENU;
 			}
 			public void onStartHover(Button button) {
@@ -624,7 +655,7 @@ public class MainGameLoop {
 			public void onClick(Button button) {
 				logger.trace("Menu Multiplayer");
 				hideMainMenu();
-				startGame(7,6, E_GAME_MODE.MULTIPLAYER);
+				startGame(7,6, E_GAME_MODE.MULTIPLAYER, false);
 				state = State.GAME;
 				GController.startGame();
 			}
@@ -668,10 +699,10 @@ public class MainGameLoop {
 		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
 				logger.trace("7x6 Default");
-				startGame(7,6, E_GAME_MODE.SINGLE_PLAYER);
+				startGame(7,6, E_GAME_MODE.SINGLE_PLAYER, false);
 			}
 			public void onStartHover(Button button) {
-			}			
+			}
 			public void onStopHover(Button button) {
 			}
 			public void whileHovering(Button button) {}			
@@ -679,7 +710,7 @@ public class MainGameLoop {
 		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
 				logger.trace("6x5 Hard");
-				startGame(6,5, E_GAME_MODE.SINGLE_PLAYER);
+				startGame(6,5, E_GAME_MODE.SINGLE_PLAYER, false);
 			}
 			public void onStartHover(Button button) {
 			}
@@ -690,7 +721,7 @@ public class MainGameLoop {
 		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0f), new Vector2f(0.5f, 0.15f)) {			
 			public void onClick(Button button) {
 				logger.trace("4x4 Hard");
-				startGame(4,4,E_GAME_MODE.SINGLE_PLAYER);
+				startGame(4,4,E_GAME_MODE.SINGLE_PLAYER, false);
 			}
 			public void onStartHover(Button button) {
 			}			
@@ -769,10 +800,14 @@ public class MainGameLoop {
 	 * @param anzahl_spalten
 	 * @param anzahl_zeilen
 	 * @param gameMode
+	 * @param background set to true to enable background games
 	 */
-	private static void startGame(int anzahl_spalten, int anzahl_zeilen, E_GAME_MODE gameMode){
+	private static void startGame(int anzahl_spalten, int anzahl_zeilen, E_GAME_MODE gameMode, boolean background){
+		if(!background){
+			stopBackgroundGame();
+			hideSPMenu(true);
+		}
 		rohre = anzahl_spalten;
-		hideSPMenu(true);
 		for(int i = 0; i< rohre; i++) {
 			pipes[i] = new Rohr(rohr, new Vector3f(i*5, terrain.getHeightOfTerrain(0, 0)+1, 0), 0, 0, 0, 2); 
 		}
@@ -780,6 +815,19 @@ public class MainGameLoop {
 		GController.initGame(gameMode, Level.ALL, anzahl_spalten,	anzahl_zeilen);
 		GController.startGame();
 		state = State.GAME;
+	}
+	
+	public static void startBackgroundGame(){
+		logger.entry();
+		backgroundGame = true;
+		startGame(7, 6, E_GAME_MODE.MULTIPLAYER, true);
+		callAI = true;
+	}
+	
+	public static void stopBackgroundGame(){
+		logger.entry();
+		backgroundGame = false;
+		cleanupGame();
 	}
 	
 	/**

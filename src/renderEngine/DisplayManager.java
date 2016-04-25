@@ -87,7 +87,7 @@ public class DisplayManager {
         		// alternativ ein [print to screen zur auswahl]
         	}
             Display.setDisplayMode(dms.get(dmi));
-            Display.create(new PixelFormat(), attribs);
+            Display.create(new PixelFormat(32, 0, 24, 0, useAA ? 4 : 0), attribs);
             Display.setTitle("Game1ATrial");
             Display.setFullscreen(fullscreen);            
         } catch (LWJGLException e) {
