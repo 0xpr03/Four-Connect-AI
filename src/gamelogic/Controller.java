@@ -105,6 +105,7 @@ public final class Controller extends ControllerBase {
 				ALLOW_BACK_BOTH = false;
 				logger.debug("Using hard coded state!");
 				STATE = E_GAME_STATE.PLAYER_A;
+				start_AI();
 				break;
 			case SINGLE_PLAYER:
 //				STATE = E_GAME_STATE.PLAYER_B;
