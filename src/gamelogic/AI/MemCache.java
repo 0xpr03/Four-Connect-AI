@@ -39,7 +39,7 @@ public class MemCache<K, T> {
 	 * additionally the adjustment time will decrease, creating earlier flushes
 	 * @param minItems minimal items, under this value the cleanup interval will increase<br>
 	 */
-	public MemCache(long lifetimeSec, final long timerIntervall, int maxItems, int minItems) {
+	public MemCache(long lifetimeSec, final long timerIntervall, int maxItems, int minItems, int max_target) {
 		this.timeToLive = lifetimeSec * 1000;
 		adjustmentTime = 0;
 		cacheMap = new LRUMap(maxItems);
@@ -57,7 +57,7 @@ public class MemCache<K, T> {
 						logger.debug("Size: {}",size);
 						if(size < minItems){
 							adjustmentTime += 10;
-						}else if(size > maxItems){
+						}else if(size > max_target){
 							adjustmentTime -= 5;
 						}
 						cleanup();

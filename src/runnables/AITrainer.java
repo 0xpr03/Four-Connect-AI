@@ -172,7 +172,7 @@ public class AITrainer {
 	}
 	
 	private static void initController(String address, int port, String user, String pw, String db, boolean player_a, int first_move, List<Integer> forbiddenMoves){
-		MemCache<ByteBuffer,Long> cache = new MemCache<ByteBuffer, Long>(20, 30, 40000,10000);
+		MemCache<ByteBuffer,Long> cache = new MemCache<ByteBuffer, Long>(20, 20, 11000,10000,10900);
 		KBS_Channel channel = new KBS_Channel();
 		KBS_trainer AIA = new KBS_trainer(new mariaDB(address, port, user, pw, db,cache),player_a == true ? first_move : -1,forbiddenMoves,channel);
 		KBS_trainer AIB = new KBS_trainer(new mariaDB(address, port, user, pw, db,cache),player_a == false ? first_move : -1,forbiddenMoves,channel);
