@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 @SuppressWarnings("rawtypes")
 public class MemCache<K, T> {
 	private long timeToLive;
+	private long adjustmentTime;
 	private LRUMap cacheMap;
 	private Logger logger = LogManager.getLogger();
 
@@ -26,10 +27,21 @@ public class MemCache<K, T> {
 			this.value = value;
 		}
 	}
-
-	public MemCache(long lifetimeSec, final long timerIntervall, int maxItems) {
+	
+	/**
+	 * Memory cache object<br>
+	 * If the flush time should be too high or low to meet the min/max values, it'll be adjusted.<br>
+	 * In case of an higher item count, the time will be decreased by 5 seconds. In case of an lower count,
+	 * the time will be increased by 10 seconds.
+	 * @param lifetimeSec max. lifetime of an object
+	 * @param timerIntervall time interval between cleanup cycles
+	 * @param maxItems max items to be stored till the first one will be overridden<br>
+	 * additionally the adjustment time will decrease, creating earlier flushes
+	 * @param minItems minimal items, under this value the cleanup interval will increase<br>
+	 */
+	public MemCache(long lifetimeSec, final long timerIntervall, int maxItems, int minItems) {
 		this.timeToLive = lifetimeSec * 1000;
-
+		adjustmentTime = 0;
 		cacheMap = new LRUMap(maxItems);
 
 		if (timeToLive > 0 && timerIntervall > 0) {
@@ -38,10 +50,16 @@ public class MemCache<K, T> {
 				public void run() {
 					while (true) {
 						try {
-							Thread.sleep(timerIntervall * 1000);
+							Thread.sleep((timerIntervall + adjustmentTime) * 1000);
 						} catch (InterruptedException ex) {
 						}
-						logger.debug("Size: {}",size());
+						int size = size();
+						logger.debug("Size: {}",size);
+						if(size < minItems){
+							adjustmentTime += 10;
+						}else if(size > maxItems){
+							adjustmentTime -= 5;
+						}
 						cleanup();
 					}
 				}
@@ -117,7 +135,7 @@ public class MemCache<K, T> {
 				key = itr.next();
 				c = (CacheObject) itr.getValue();
 
-				if (c != null && (now > (timeToLive + c.lastAccessed))) {
+				if (c != null && (now > (timeToLive+adjustmentTime + c.lastAccessed))) {
 					deleteKey.add(key);
 				}
 			}
