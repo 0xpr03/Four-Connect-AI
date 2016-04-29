@@ -19,7 +19,7 @@ import toolbox.Maths;
  */
 public class StaticShader extends ShaderProgram{
     
-    private static final int MAX_LIGHTS = 4;
+    private static final int MAX_LIGHTS = 9;
 
     private static final String VERTEX_FILE = "/shaders/vertexShader.txt";
     private static final String FRAGMENT_FILE = "/shaders/fragmentShader.txt";

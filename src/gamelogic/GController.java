@@ -230,4 +230,12 @@ public class GController {
 	public static int getY_MAX() {
 		return controller.getY_MAX();
 	}
+	
+	/**
+	 * @return
+	 * @see gamelogic.ControllerBase#getLAST_GAME()
+	 */
+	public static GameStore getLAST_GAME() {
+		return controller.getLAST_GAME();
+	}
 }

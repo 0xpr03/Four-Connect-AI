@@ -244,6 +244,7 @@ public final class Controller extends ControllerBase {
 		STATE = ws.getState();
 		LAST_GAME = ws;
 		informAIs(true);
+		
 		//TODO: run handle code for winner display etc
 	}
 

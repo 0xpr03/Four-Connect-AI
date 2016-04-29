@@ -767,4 +767,8 @@ public class ControllerBase {
 	public int getY_MAX() {
 		return Y_MAX;
 	}
+
+	public synchronized GameStore getLAST_GAME() {
+		return LAST_GAME;
+	}
 }

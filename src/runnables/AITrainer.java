@@ -56,10 +56,10 @@ public class AITrainer {
 			}
 		}
 		
-		int X_MAX = 5;
+		int X_MAX = 4;
 		int Y_MAX = 4;
 		
-		int first_move = -1;
+		int first_move = 3;
 		if(args.length > 1){
 			X_MAX = 6;
 			Y_MAX = 6;
@@ -88,7 +88,7 @@ public class AITrainer {
 			}
 		}
 		
-		initController("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai", player == E_GAME_STATE.PLAYER_A, first_move,forbiddenMoves);
+		initController("localhost", 3306, "root", "", "ai", player == E_GAME_STATE.PLAYER_A, first_move,forbiddenMoves);
 		try{
 			run(player,first_move,X_MAX, Y_MAX);
 		} catch(Exception e){

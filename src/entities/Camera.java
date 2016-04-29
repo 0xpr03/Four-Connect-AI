@@ -160,5 +160,9 @@ public class Camera {
         this.rotY += dy;
         this.pitch += pitch;
     }
+    
+    public void increaseSideSpeed(float s) {
+    	SIDEWARD_SPEED += s;
+    }
 }
 

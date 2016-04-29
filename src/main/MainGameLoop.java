@@ -57,12 +57,12 @@ import toolbox.MousePicker;
 public class MainGameLoop {
 
 	private static enum State {
-		INTRO, MAIN_MENU, GAME, INGAME_MENU, SPMENU;
+		INTRO, MAIN_MENU, GAME, INGAME_MENU, SPMENU, OPMENU, OPMENU_IG;
 	}
 	public static enum Color {
 		YELLOW, RED;
 	}
-	private static State state = State.GAME;
+	private static State state = State.INTRO;
 	private static final Logger logger = LogManager.getLogger(MainGameLoop.class);
 	private static String VERSION = "0.1";	
 	
@@ -79,14 +79,17 @@ public class MainGameLoop {
 	private static List<Entity> allentities;
 	private static List<Light> lights;
 	private static Light auswahlLicht;
+	private static Light auswahlLicht2;
+	private static Light auswahlLicht3;
+	private static Light auswahlLicht4;
 	private static Light testLight;
-	private static GuiTexture mouseCircle;
 	private static GuiTexture intro;
+	private static List<List<AbstractButton>> allButtons;
 	private static List<AbstractButton> iMButtonList;
 	private static List<AbstractButton> sMButtonList;
 	private static List<AbstractButton> SP_ButtonList;
 	private static List<AbstractButton> opButtonList;
-	private static GuiTexture menu;
+	private static List<List<GUIText>> allTexts;
 	private static List<GUIText> iMButtonTexts;
 	private static List<GUIText> sMButtonTexts;
 	private static List<GUIText> SP_ButtonTexts;
@@ -108,6 +111,7 @@ public class MainGameLoop {
 	private static boolean callAI;
 	private static boolean backgroundGame = false;
 	private final static boolean RENDER_LINES = false;
+	private static Vector3f startCamPos = new Vector3f(15, -3, 75);
 	
 	private final static boolean USE_AA = true; // anti-aliasing
 
@@ -127,29 +131,37 @@ public class MainGameLoop {
 		
 		FontType font = new FontType(loader.loadTexture("tahoma"), new File("res/tahoma.fnt"));
 		
+		allTexts = new ArrayList<>();
 		iMButtonTexts = new ArrayList<>();
 		iMButtonTexts.add(new GUIText("Resume", 5, font, new Vector2f(0, 0.02f), 1f, true, true));
 		iMButtonTexts.add(new GUIText("Restart", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
 		iMButtonTexts.add(new GUIText("Options", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
 		iMButtonTexts.add(new GUIText("Concede", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
 		iMButtonTexts.add(new GUIText("Exit to Main Menu", 5, font, new Vector2f(0, 0.82f), 1f, true, true));
+		allTexts.add(iMButtonTexts);
 		
 		sMButtonTexts = new ArrayList<>();
 		sMButtonTexts.add(new GUIText("Singleplayer", 5, font, new Vector2f(0, 0.02f), 1f, true, true));
 		sMButtonTexts.add(new GUIText("Multiplayer", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
 		sMButtonTexts.add(new GUIText("Options", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
 		sMButtonTexts.add(new GUIText("Exit", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
+		allTexts.add(sMButtonTexts);
 		
 		SP_ButtonTexts = new ArrayList<>();
 		SP_ButtonTexts.add(new GUIText("7x6 WBS2", 5, font, new Vector2f(0, 0.02f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("6x5 Hard", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("4x4 Hard", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("Back", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
+		allTexts.add(SP_ButtonTexts);
 		
 		opButtonTexts = new ArrayList<>();
 		for(int i = DisplayManager.getDmi(); i <DisplayManager.getDms().size(); i++) {
-			opButtonTexts.add(new GUIText(DisplayManager.getDms().get(i).getWidth() +"x"+ DisplayManager.getDms().get(i).getHeight(), 5, font, new Vector2f(0,0.2f * i), 1f, true, true));
+			opButtonTexts.add(new GUIText(DisplayManager.getDms().get(i).getWidth() +"x"+ DisplayManager.getDms().get(i).getHeight(), 2, font, new Vector2f(0,0.05f+0.1f * i), 1f, true, true));
 		}
+		opButtonTexts.add(new GUIText("Fullscreen", 2, font, new Vector2f(0, 0.77f), 1f, true, true));
+		opButtonTexts.add(new GUIText("Back", 2, font, new Vector2f(0, 0.87f), 1f, true, true));
+		allTexts.add(opButtonTexts);
+		initButtons();
 		
 		renderer = new MasterRenderer();
 		
@@ -177,7 +189,7 @@ public class MainGameLoop {
 		
 		ballG = loader.loadtoVAO("kugel", "kugelG");
 		
-		rohr = loader.loadtoVAO("rohr2", "rohr");
+		rohr = loader.loadtoVAO("rohr2", "rohrTexture");
 		
 		logger.trace("creating entities");
 		terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "black");
@@ -187,19 +199,14 @@ public class MainGameLoop {
 		menuGuis = new ArrayList<GuiTexture>();
 //		menuGuis.add(new GuiTexture(loader.loadTexture("null"), new Vector2f(0.0f, 0.0f),
 //				new Vector2f(1f, 1f)));
-		mouseCircle = new GuiTexture(loader.loadTexture("mouse"), new Vector2f(0.5f, 0.5f), new Vector2f(0.25f, 0.35f));
-		menuGuis.add(mouseCircle);
 		
 		guiRenderer = new GuiRenderer(loader);
 		
-		camera = new Camera(new Vector3f(15, -3, 75), 0, 20);
+		camera = new Camera(startCamPos, 0, 20);
 		
 		picker = new MousePicker(camera, renderer.getProjectionMatrix(), terrain);
 		
 		intro = new GuiTexture(loader.loadTexture("testIntro"), //needs to be squared and the pixel count must be 2^n
-				new Vector2f(0f, 0f),
-				new Vector2f(Display.getWidth()/Display.getHeight(), 1f));
-		menu = new GuiTexture(loader.loadTexture("lamp"), //needs to be squared and the pixel count must be 2^n
 				new Vector2f(0f, 0f),
 				new Vector2f(Display.getWidth()/Display.getHeight(), 1f));
 		lampTest = new Entity(lamp, new Vector3f(15, terrain.getHeightOfTerrain(0, 0)+ 50, 0), 0, 0, 0, 1);
@@ -208,20 +215,21 @@ public class MainGameLoop {
 		boden = new Entity(brett, new Vector3f(15, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 5);
 		allentities.add(boden);
 		
-		
 		Light sun = new Light(new Vector3f(7000, 10000, -7000), new Vector3f(0.4f, 0.4f, 0.4f));
-		auswahlLicht = new Light(new Vector3f(0, terrain.getHeightOfTerrain(0, 0)+5, 0), new Vector3f(0, 0, 40));
-		auswahlLicht.setAttenuation(new Vector3f(5, 1f, 0.1f));
+		auswahlLicht = new Light(new Vector3f(0, terrain.getHeightOfTerrain(0, 0)+32, 0), new Vector3f(0, 0, 40), new Vector3f(0, 0.04f, 1f));
+		auswahlLicht2 = new Light(new Vector3f(0, terrain.getHeightOfTerrain(0, 0)+25, 0), new Vector3f(0, 0, 40), new Vector3f(0, 0.04f, 1.3f));
+		auswahlLicht3 = new Light(new Vector3f(0, terrain.getHeightOfTerrain(0, 0)+15, 0), new Vector3f(0, 0, 40), new Vector3f(0, 0.04f, 1.4f));
+		auswahlLicht4 = new Light(new Vector3f(0, terrain.getHeightOfTerrain(0, 0)+5, 0), new Vector3f(0, 0, 40), new Vector3f(0, 0.04f, 1.5f));
 		lights = new ArrayList<>();
 		lights.add(sun);
-		testLight = new Light(new Vector3f(-30, -30, 0), new Vector3f(0.9f, 0, 0.3f));
-		testLight.setAttenuation(new Vector3f(0.5f,0,0));		
+		testLight = new Light(new Vector3f(-30, -30, 0), new Vector3f(0.9f, 0, 0.3f), new Vector3f(0.5f,0,0));
 		lights.add(testLight);
 		lights.add(auswahlLicht);
+		lights.add(auswahlLicht2);
+		lights.add(auswahlLicht3);
+		lights.add(auswahlLicht4);
 //		lights.add(new Light(new Vector3f(10, terrain.getHeightOfTerrain(10, 10) + 20, 10), new Vector3f(5, 0, 0), new Vector3f(1, 0.01f, 0.002f)));
-		
-		initButtons();
-		
+				
 		GController.init();
 		logger.trace("entering renderer");
 		
@@ -265,6 +273,12 @@ public class MainGameLoop {
 			break;
 		case INGAME_MENU:
 			renderMenuSzene(iMButtonList,false);
+			break;
+		case OPMENU:
+			renderMenuSzene(opButtonList, true);
+			break;
+		case OPMENU_IG:
+			renderMenuSzene(opButtonList, true);
 			break;
 		}
 	}
@@ -319,49 +333,43 @@ public class MainGameLoop {
 				renderer.processEntity(entity);
 			}
 		}
-		auswahlLicht.setPosition(new Vector3f(chosenRohr*5, 0, 0)); 
+		auswahlLicht.setPosition(new Vector3f(chosenRohr*5, terrain.getHeightOfTerrain(0, 0)+ 32, 0)); 
+		auswahlLicht2.setPosition(new Vector3f(chosenRohr*5, terrain.getHeightOfTerrain(0, 0)+ 25, 0)); 
+		auswahlLicht3.setPosition(new Vector3f(chosenRohr*5, terrain.getHeightOfTerrain(0, 0)+ 18, 0)); 
+		auswahlLicht4.setPosition(new Vector3f(chosenRohr*5, terrain.getHeightOfTerrain(0, 0)+ 11, 0)); 
 		renderer.render(lights, camera);
 		TextMaster.render();
 	}
 	
-	private static void hideIngameMenu(boolean resetCam){
-		hideMenu(iMButtonList,iMButtonTexts);
-	}
-	
-	private static void showMainMenu(){
-		showMenu(sMButtonTexts);
-	}
-	
-	private static void hideMainMenu(){
-		hideMenu(sMButtonList, sMButtonTexts);
-	}
-	
-	private static void showSPMenu(){
-		showMenu(SP_ButtonTexts);
-	}
-	
-	private static void hideSPMenu(boolean resetCam){
+	private static void hideAllMenus(boolean resetCam) {
 		if(resetCam){
+			camera.resetMovement();
 			if(lastCamPos != null){
 				camera.setPosition(lastCamPos);
 				camera.setRotY(lastCamRotY);
+				logger.debug("lastCamPos {}", lastCamPos);
+			}
+			else{
+				camera.setPosition(startCamPos);
+				camera.setRotY(0);
+				logger.debug("startCamPos {}", startCamPos);
 			}
 		}
-		hideMenu(SP_ButtonList,SP_ButtonTexts);
+		for(List<GUIText> l : allTexts) {
+			for(GUIText g : l) {
+				g.hide();
+			}
+		}
+		for(List<AbstractButton> l : allButtons) {
+			for(AbstractButton b : l) {
+				b.hide(menuGuis);
+			}
+		}
 	}
 	
-	private static void showMenu(List<GUIText> list){
-		for(GUIText g: list){
+	private static void showMenu(List<GUIText> textlist) {
+		for(GUIText g : textlist) {
 			g.show();
-		}
-	}
-	
-	private static void hideMenu(List<AbstractButton> buttonList, List<GUIText> textList){
-		for(AbstractButton b : buttonList) {
-			b.hide(menuGuis);
-		}
-		for(GUIText g : textList) {
-			g.hide();
 		}
 	}
 	
@@ -373,14 +381,16 @@ public class MainGameLoop {
 	private static void renderMenuSzene(List<AbstractButton> buttonList, final boolean animateCam){
 		guiRenderer.startBackgroundRendering();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		if (false) {
+		if (animateCam) {
 			camera.resetMovement();
-			camera.increaseRotation(0.1f, 0f);
+			camera.increaseRotation(0.078f, 0f);
+			camera.increaseSideSpeed(-3);
+			logger.debug("CamPos b4 move(): {}", startCamPos);
 			camera.move();
+			logger.debug("CamPos after move(): {}", startCamPos);
 		}
 		float x = (2.0f * Mouse.getX()) / Display.getWidth() - 1f;
 		float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1f;
-		mouseCircle.setPosition(new Vector2f(x, y));
 
 		renderGame();
 		guiRenderer.endBackgroundRendering();
@@ -404,7 +414,7 @@ public class MainGameLoop {
 		case INTRO:
 			while(Keyboard.next()) {
 				if(Keyboard.isKeyDown(Keyboard.KEY_RETURN)) {
-					showMainMenu();
+					showMenu(sMButtonTexts);
 					startBackgroundGame();
 					state = State.MAIN_MENU;
 				}
@@ -443,7 +453,6 @@ public class MainGameLoop {
 						lampTest.increasePosition(5, 0, 0);
 					}else {
 					}
-					logger.debug("chosenRohr: {}", chosenRohr);
 				}
 				if(Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
 					if(rohrAnsicht && chosenRohr != (rohre-1)){
@@ -454,11 +463,11 @@ public class MainGameLoop {
 						lampTest.increasePosition(-5, 0, 0);
 					}else {
 					}
-					logger.debug("chosenRohr: {}", chosenRohr);
 
 				}
 				if(Keyboard.isKeyDown(Keyboard.KEY_RETURN)) {
-//					moveCam();
+					if(staticCamera)
+					moveCam();
 					if(!shallMoveBall){
 						insertStone(chosenRohr);
 					}
@@ -470,11 +479,13 @@ public class MainGameLoop {
 		case INGAME_MENU:
 			while(Keyboard.next()) {
 				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
-					hideIngameMenu(true);
+					hideAllMenus(false);
 					state = State.GAME;
 				}
 			}
 		break;
+		case OPMENU:
+			break;
 		default:
 			logger.warn("Unknown case for input!");
 		}
@@ -499,6 +510,7 @@ public class MainGameLoop {
 			setStone(spalte,color);
 		}else{
 			logger.error("Controller denied insert! {}", GController.getGameState());
+			logger.info(GController.getprintedGameState());
 		}
 	}
 	
@@ -575,178 +587,213 @@ public class MainGameLoop {
 		/**
 		 * INGAME MENU
 		 */
+		allButtons = new ArrayList<>();
 		iMButtonList = new ArrayList<>();
-		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.15f)) {			
+		iMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.8f), new Vector2f(0.4f, 0.17f)) {			
 			public void onClick(Button button) {
 				logger.trace("resume");
-				hideIngameMenu(true);
+				hideAllMenus(true);
 				state = State.GAME;
 			}
 			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.03f);
 			}			
 			public void onStopHover(Button button) {
+				this.resetScale();
 			}
 			public void whileHovering(Button button) {}			
 		});
-		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.15f)) {			
+		iMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.4f), new Vector2f(0.4f, 0.17f)) {			
 			public void onClick(Button button) {
 				logger.trace("restart");				
 			}
 			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.03f);
 			}			
 			public void onStopHover(Button button) {
+				this.resetScale();
 			}
 			public void whileHovering(Button button) {}			
 		});
-		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0f), new Vector2f(0.5f, 0.15f)) {			
+		iMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0f), new Vector2f(0.4f, 0.17f)) {			
 			public void onClick(Button button) {
-				logger.trace("options");				
+				logger.trace("Options");	
+				hideAllMenus(true);
+				showMenu(opButtonTexts);
+				state = State.OPMENU_IG;
 			}
 			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.03f);
 			}			
 			public void onStopHover(Button button) {
+				this.resetScale();
 			}
 			public void whileHovering(Button button) {}			
 		});
-		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,-0.4f), new Vector2f(0.5f, 0.15f)) {			
+		iMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,-0.4f), new Vector2f(0.4f, 0.17f)) {			
 			public void onClick(Button button) {
 				logger.trace("concede");				
 			}
 			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.03f);
 			}			
 			public void onStopHover(Button button) {
+				this.resetScale();
 			}
 			public void whileHovering(Button button) {}			
 		});
-		iMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,-0.8f), new Vector2f(0.5f, 0.15f)) {			
+		iMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,-0.8f), new Vector2f(0.7f, 0.17f)) {			
 			public void onClick(Button button) {
 				logger.trace("exit to main menu");		
-				hideIngameMenu(false);
-				showMainMenu();
+				hideAllMenus(true);
+				showMenu(sMButtonTexts);
 				cleanupGame();
 				startBackgroundGame();
 				state = State.MAIN_MENU;
 			}
 			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.03f);
 			}			
 			public void onStopHover(Button button) {
+				this.resetScale();
 			}
 			public void whileHovering(Button button) {}			
 		});
+		
+		allButtons.add(iMButtonList);
 		
 		/*
 		 * START MENU
 		 */
 		sMButtonList = new ArrayList<>();
-		sMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.15f)) {			
+		sMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.17f)) {			
 			public void onClick(Button button) {
 				logger.trace("Menu SinglePlayer");
-				hideMainMenu();
-				showSPMenu();
+				hideAllMenus(false);
+				showMenu(SP_ButtonTexts);
 				state = State.SPMENU;
 			}
 			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.03f);
 			}			
 			public void onStopHover(Button button) {
+				this.resetScale();
 			}
 			public void whileHovering(Button button) {}			
 		});
-		sMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.15f)) {			
+		sMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.17f)) {			
 			public void onClick(Button button) {
 				logger.trace("Menu Multiplayer");
-				hideMainMenu();
+				hideAllMenus(true);
 				startGame(7,6, E_GAME_MODE.MULTIPLAYER, false);
 				state = State.GAME;
 				GController.startGame();
 			}
 			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.03f);
 			}			
 			public void onStopHover(Button button) {
+				this.resetScale();
 			}
 			public void whileHovering(Button button) {}			
 		});
-		sMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0f), new Vector2f(0.5f, 0.15f)) {			
+		sMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0f), new Vector2f(0.5f, 0.17f)) {			
 			public void onClick(Button button) {
 				logger.trace("Options");	
-				hideMainMenu();
-				hideSPMenu(false);
-				renderMenuSzene(opButtonList, false);
+				hideAllMenus(true);
 				showMenu(opButtonTexts);
+				state = State.OPMENU;
 			}
 			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.03f);
 			}			
 			public void onStopHover(Button button) {
+				this.resetScale();
 			}
 			public void whileHovering(Button button) {}			
 		});
-		sMButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,-0.4f), new Vector2f(0.5f, 0.15f)) {			
+		sMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,-0.4f), new Vector2f(0.5f, 0.17f)) {			
 			public void onClick(Button button) {
 				logger.trace("Exit");
 				exit();
 			}
 			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.03f);
 			}			
 			public void onStopHover(Button button) {
+				this.resetScale();
 			}
 			public void whileHovering(Button button) {}			
 		});
+		
+		allButtons.add(sMButtonList);
 		
 		/**
 		 * Singleplayer Menu
 		 */
 		
 		SP_ButtonList = new ArrayList<>();
-		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.15f)) {			
+		SP_ButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.17f)) {			
 			public void onClick(Button button) {
 				logger.trace("7x6 Default");
 				startGame(7,6, E_GAME_MODE.SINGLE_PLAYER, false);
 			}
 			public void onStartHover(Button button) {
-			}
+				this.playHoverAnimation(0.03f);
+			}			
 			public void onStopHover(Button button) {
+				this.resetScale();
 			}
 			public void whileHovering(Button button) {}			
 		});
-		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.15f)) {			
+		SP_ButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.17f)) {			
 			public void onClick(Button button) {
 				logger.trace("6x5 Hard");
 				startGame(6,5, E_GAME_MODE.SINGLE_PLAYER, false);
 			}
 			public void onStartHover(Button button) {
-			}
+				this.playHoverAnimation(0.03f);
+			}			
 			public void onStopHover(Button button) {
+				this.resetScale();
 			}
 			public void whileHovering(Button button) {}			
 		});
-		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0f), new Vector2f(0.5f, 0.15f)) {			
+		SP_ButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0f), new Vector2f(0.5f, 0.17f)) {			
 			public void onClick(Button button) {
 				logger.trace("4x4 Hard");
 				startGame(4,4,E_GAME_MODE.SINGLE_PLAYER, false);
 			}
 			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.03f);
 			}			
 			public void onStopHover(Button button) {
+				this.resetScale();
 			}
 			public void whileHovering(Button button) {}			
 		});
-		SP_ButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,-0.4f), new Vector2f(0.5f, 0.15f)) {			
+		SP_ButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,-0.4f), new Vector2f(0.5f, 0.17f)) {			
 			public void onClick(Button button) {
 				logger.trace("Back");
-				hideSPMenu(false);
-				showMainMenu();
+				hideAllMenus(false);
+				showMenu(sMButtonTexts);
 				state=State.MAIN_MENU;
 			}
 			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.03f);
 			}			
 			public void onStopHover(Button button) {
+				this.resetScale();
 			}
 			public void whileHovering(Button button) {}			
 		});
 		
+		allButtons.add(SP_ButtonList);
+		
 		opButtonList = new ArrayList<>();
 		for(int i = DisplayManager.getDmi(); i<DisplayManager.getDms().size(); i++) {
 			int it= i;
-			opButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,0.8f-0.1f*i), new Vector2f(0.3f, 0.1f)) {			
+			opButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.83f-0.2f*i), new Vector2f(0.2f, 0.08f)) {			
 				public void onClick(Button button) {		
 					try {
 						Display.setDisplayMode(DisplayManager.getDms().get(it));
@@ -754,14 +801,55 @@ public class MainGameLoop {
 					}
 				}
 				public void onStartHover(Button button) {
+					this.playHoverAnimation(0.02f);
 				}			
 				public void onStopHover(Button button) {
+					this.resetScale();
 				}
 				public void whileHovering(Button button) {}			
 			});
 		}
-		//Fullscreen button nicht vergessen Du h�sslichkeit
-		/*opButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,1f-0.1f*i), new Vector2f(0.5f, 0.15f)) {			
+		opButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,-0.6f), new Vector2f(0.2f, 0.1f)) {			
+			public void onClick(Button button) {
+				logger.trace("Fscreen");
+				try {
+					Display.setFullscreen(!Display.isFullscreen());
+				} catch (LWJGLException e) {
+					e.printStackTrace();
+				}
+			}
+			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.03f);
+			}			
+			public void onStopHover(Button button) {
+				this.resetScale();
+			}
+			public void whileHovering(Button button) {}			
+		});
+		opButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,-0.8f), new Vector2f(0.2f, 0.1f)) {			
+			public void onClick(Button button) {
+				logger.trace("Back");
+				hideAllMenus(false);
+				if(state == State.OPMENU) {
+				showMenu(sMButtonTexts);
+				state=State.MAIN_MENU;
+				}else {
+					showMenu(iMButtonTexts);
+					state = State.INGAME_MENU;
+				}
+			}
+			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.03f);
+			}			
+			public void onStopHover(Button button) {
+				this.resetScale();
+			}
+			public void whileHovering(Button button) {}			
+		});
+	
+		allButtons.add(opButtonList);
+		//Fullscreen button nicht vergessen Du hässlichkeit
+		/*opButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,1f-0.1f*i), new Vector2f(0.5f, 0.17f)) {			
 			public void onClick(Button button) {		
 				try {
 					Display.setDisplayMode(DisplayManager.getDms().get(it));
@@ -805,16 +893,18 @@ public class MainGameLoop {
 	private static void startGame(int anzahl_spalten, int anzahl_zeilen, E_GAME_MODE gameMode, boolean background){
 		if(!background){
 			stopBackgroundGame();
-			hideSPMenu(true);
+			hideAllMenus(true);
+			state = State.GAME;
 		}
 		rohre = anzahl_spalten;
 		for(int i = 0; i< rohre; i++) {
 			pipes[i] = new Rohr(rohr, new Vector3f(i*5, terrain.getHeightOfTerrain(0, 0)+1, 0), 0, 0, 0, 2); 
+			pipes[i].getModel().getTexture().setUseFakeLighting(true);
 		}
 		callAI = false;
 		GController.initGame(gameMode, Level.ALL, anzahl_spalten,	anzahl_zeilen);
 		GController.startGame();
-		state = State.GAME;
+		
 	}
 	
 	public static void startBackgroundGame(){
