@@ -10,7 +10,6 @@ import static org.lwjgl.opengl.GL11.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.logging.log4j.Level;
@@ -101,16 +100,17 @@ public class MainGameLoop {
 	private static int lastSpalte = 0;
 	private static int lastZeile = 0;
 	private static boolean staticCamera = true;
-	private static boolean rohrAnsicht = true;
+	private static boolean flippedView = true;
 	private static int chosenRohr = 3;
 	private static int rohre = 0;
 	private static TexturedModel rohr;
 	private static boolean callAI;
 	private static boolean backgroundGame = false;
-	private final static boolean RENDER_LINES = false;
 	private static Vector3f startCamPos = new Vector3f(15, -3, 75);
 	
+	private final static Level LOG_CONTRBASE = Level.WARN;
 	private final static boolean USE_AA = true; // anti-aliasing
+	private final static boolean RENDER_LINES = false; // render vector lines
 
 	/**
 	 * @param args
@@ -118,6 +118,9 @@ public class MainGameLoop {
 	 */
 	public static void main(String[] args) {
 		Configurator.setLevel(LogManager.getLogger(MainGameLoop.class).getName(), Level.ALL);
+		Configurator.setLevel("DB", Level.INFO);
+		Configurator.setLevel("Controller", Level.ALL);
+		Configurator.setLevel(LogManager.getLogger(WebPlayer.class).getName(), Level.ALL);
 		
 		checkLoggingConf();
 		logger.info("Version {}", VERSION);
@@ -174,8 +177,6 @@ public class MainGameLoop {
 		
 		logger.trace("loading models");
 		// LOAD MODELS & TEXTURES
-		TexturedModel tree = loader.loadtoVAO("lowPolyTree", "lowPolyTree");
-		
 		TexturedModel lamp = loader.loadtoVAO("lamp", "lamp");
 		
 		TexturedModel brett = loader.loadtoVAO("brett", "boden2");
@@ -247,10 +248,6 @@ public class MainGameLoop {
 			GL11.glEnable(GL11.GL_BLEND);
 		    GL11.glEnable(GL11.GL_POLYGON_SMOOTH);
 		    GL11.glHint(GL11.GL_POLYGON_SMOOTH_HINT,GL11.GL_DONT_CARE);
-		}else{
-//			GL11.glEnable(GL11.GL_BLEND);
-//		    GL11.glEnable(GL11.GL_LINE_SMOOTH);
-//		    GL11.glHint(GL11.GL_LINE_SMOOTH_HINT,GL11.GL_DONT_CARE);
 		}
 		switch(state) {
 		case INTRO:
@@ -276,6 +273,9 @@ public class MainGameLoop {
 			break;
 		case OPMENU_IG:
 			renderMenuSzene(opButtonList, true);
+			break;
+		default:
+			logger.fatal("Unknown case: {}",state);
 			break;
 		}
 	}
@@ -382,31 +382,27 @@ public class MainGameLoop {
 			camera.resetMovement();
 			camera.increaseRotation(0.078f, 0f);
 			camera.increaseSideSpeed(-3);
-			logger.debug("CamPos b4 move(): {}", startCamPos);
+//			logger.debug("CamPos b4 move(): {}", startCamPos);
 			camera.move();
-			logger.debug("CamPos after move(): {}", startCamPos);
+//			logger.debug("CamPos after move(): {}", startCamPos);
 		}
-		float x = (2.0f * Mouse.getX()) / Display.getWidth() - 1f;
-		float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1f;
-
 		renderGame();
 		guiRenderer.endBackgroundRendering();
-//			logger.debug(renderer.checkError());
 		guiRenderer.renderBackground(renderer);
-//	    	logger.debug(renderer.checkError());
 		
 		for(AbstractButton b : buttonList) {
 			b.show(menuGuis);
 			b.update();
 		}
 		guiRenderer.render(menuGuis);
-//			logger.debug(renderer.checkError());
 		TextMaster.render();
-//			logger.debug(renderer.checkError());
 		DisplayManager.updateDisplay();
 	}
 	
 	private static void checkInputs() {
+		if(Keyboard.isKeyDown(Keyboard.KEY_F9)) {
+			logger.debug("State: {}",state);
+		}
 		switch(state) {
 		case INTRO:
 			while(Keyboard.next()) {
@@ -442,23 +438,21 @@ public class MainGameLoop {
 		 			state = State.INGAME_MENU;
 		 		}
 				if(Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-					if(rohrAnsicht && chosenRohr != 0){
+					if(flippedView && chosenRohr != 0){
 					chosenRohr -= 1;
 					lampTest.increasePosition(-5, 0, 0);
-					}else if(!rohrAnsicht && chosenRohr != (rohre-1)){
+					}else if(!flippedView && chosenRohr != (rohre-1)){
 						chosenRohr += 1;
 						lampTest.increasePosition(5, 0, 0);
-					}else {
 					}
 				}
 				if(Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-					if(rohrAnsicht && chosenRohr != (rohre-1)){
+					if(flippedView && chosenRohr != (rohre-1)){
 					chosenRohr += 1;
 					lampTest.increasePosition(5, 0, 0);
-					}else if(!rohrAnsicht && chosenRohr != 0){
+					}else if(!flippedView && chosenRohr != 0){
 						chosenRohr -= 1;
 						lampTest.increasePosition(-5, 0, 0);
-					}else {
 					}
 
 				}
@@ -535,8 +529,6 @@ public class MainGameLoop {
 	 * @param zeile
 	 */
 	private static void moveBall(int spalte, int zeile){
-		float ziel = 0;
-		ziel += (float)spalte*5;
 		if(balls[spalte][zeile] == null)
 			return;
 		if(balls[spalte][zeile].getScale()<2) {
@@ -548,19 +540,7 @@ public class MainGameLoop {
 			shallMoveBall = false;
 			if(GController.getGamemode() == E_GAME_MODE.SINGLE_PLAYER && GController.getGameState() == E_GAME_STATE.PLAYER_B)
 				callAI = true; // call AI in next frame
-		}
-	}
-	
-	private static void createRandomEntities(List<Entity> allentities, Terrain terrain, TexturedModel model, int amount, int r_x, int r_z, float rotX, float rotY, float rotZ, float scale){
-		logger.entry();
-		Random random = new Random();
-		for (int i = 0; i < amount; i++) {
-			float x = random.nextFloat() * r_x;
-			float z = random.nextFloat() * r_z;
-			float y = terrain.getHeightOfTerrain(x, z);
-			allentities.add(new Entity(model, random.nextInt(4), new Vector3f(x, y, z), rotX, random.nextFloat() * rotY, rotZ,
-					scale));
-			else if(GController.getGamemode() == E_GAME_MODE.MULTIPLAYER)
+			else if(GController.getGamemode() == E_GAME_MODE.MULTIPLAYER && !backgroundGame)
 				moveCam();
 		}
 	}
@@ -899,9 +879,8 @@ public class MainGameLoop {
 			pipes[i].getModel().getTexture().setUseFakeLighting(true);
 		}
 		callAI = false;
-		GController.initGame(gameMode, Level.ALL, anzahl_spalten,	anzahl_zeilen);
+		GController.initGame(gameMode, LOG_CONTRBASE, anzahl_spalten,	anzahl_zeilen);
 		GController.startGame();
-		
 	}
 	
 	public static void startBackgroundGame(){

@@ -117,6 +117,7 @@ public class WebPlayer implements AI {
 	 * @author Aron Heinecke
 	 */
 	private void initThreads() {
+		logger.entry();
 		taskDoMove = new TimerTask() {
 			@Override
 			public void run() {
@@ -261,6 +262,7 @@ public class WebPlayer implements AI {
 
 	@Override
 	public void preProcess() {
+		logger.entry();
 		if(t != null){
 			if (!t.isAlive()) {
 				t.start();

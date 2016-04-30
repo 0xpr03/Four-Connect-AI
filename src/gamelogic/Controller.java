@@ -53,8 +53,9 @@ public final class Controller extends ControllerBase {
 	 */
 	public synchronized void initGame(E_GAME_MODE gamemode, Level loglevel, int x_max, int y_max) {
 		logger.entry(gamemode, loglevel, x_max, y_max);
-		synchronized(lock){
+		if(loglevel != null)
 			Configurator.setLevel(LogManager.getLogger(ControllerBase.class).getName(), loglevel);
+		synchronized(lock){
 			if (gamemode == E_GAME_MODE.NONE){
 				logger.error("Wrong game mode! {}",gamemode);
 			}
