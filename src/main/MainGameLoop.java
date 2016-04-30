@@ -503,9 +503,6 @@ public class MainGameLoop {
 		}
 		if(GController.insertStone(spalte) && color != null){
 			setStone(spalte,color);
-			if(staticCamera && !backgroundGame)
-				moveCam();
-
 		}else{
 			logger.error("Controller denied insert! {}", GController.getGameState());
 			logger.info(GController.getprintedGameState());
@@ -563,6 +560,8 @@ public class MainGameLoop {
 			float y = terrain.getHeightOfTerrain(x, z);
 			allentities.add(new Entity(model, random.nextInt(4), new Vector3f(x, y, z), rotX, random.nextFloat() * rotY, rotZ,
 					scale));
+			else if(GController.getGamemode() == E_GAME_MODE.MULTIPLAYER)
+				moveCam();
 		}
 	}
 	
@@ -574,7 +573,8 @@ public class MainGameLoop {
 		}else {
 			camera.increasePosition(0, 0, -150);
 			camera.increaseRotation(180, 0);
-		}				
+		}
+		flippedView = z<0;
 	}
 	
 	/**
