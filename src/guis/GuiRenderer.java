@@ -16,7 +16,6 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
@@ -44,6 +43,9 @@ public class GuiRenderer {
     private FBO fbo_b;
     private final Matrix4f background_matrix;
     private final int FBO_SIZE = 1024;
+    private List<GuiTexture> renderTextures = new ArrayList<>();
+    
+	private int buttonTexture;
     
     private Logger logger = LogManager.getLogger();
     
@@ -61,6 +63,7 @@ public class GuiRenderer {
     		};
     		quad_background = loader.loadtoVAO(positions);
     	}
+    	buttonTexture = loader.loadTexture("whiteButton");
     	shader = new GuiShader();
     	blurShader = new BlurShader();
     	fbo_a = new FBO(FBO_SIZE, FBO_SIZE, false);
@@ -70,7 +73,12 @@ public class GuiRenderer {
     	background_matrix.rotate((float)Math.PI, new Vector3f(0f,0f,1f));
     }
     
-    public void render(List<GuiTexture> guis) {
+    public void render() {
+    	render(renderTextures);
+    }
+    
+	public void render(List<GuiTexture> guis) {
+		logger.debug("GUIS: {}",guis);
         shader.start();
         glBindVertexArray(quad.getVaoID());
         glEnableVertexAttribArray(0);
@@ -183,11 +191,45 @@ public class GuiRenderer {
 //    	logger.debug(checkError());
     }
     
+    /**
+	 * @return the renderTextures
+	 */
+	public List<GuiTexture> getRenderTextures() {
+		return renderTextures;
+	}
+	
+	/**
+	 * Remove GUI Texture from rendering
+	 * @param tex
+	 * @return true on success
+	 */
+	public boolean removeRenderTexture(GuiTexture tex){
+		logger.entry();
+		return renderTextures.remove(tex);
+	}
+	
+	/**
+	 * Add GUI Texture for to rendering
+	 * @param tex
+	 * @return on success
+	 */
+	public boolean addRenderTexture(GuiTexture tex){
+		logger.entry();
+		return renderTextures.add(tex);
+	}
+    
     public void render(GuiTexture gui){
     	List<GuiTexture> list =new ArrayList<>(1);
     	list.add(gui);
     	render(list);
     }
+    
+    /**
+	 * @return the buttonTexture
+	 */
+	public int getButtonTexture() {
+		return buttonTexture;
+	}
     
     public void cleanUp() {
         shader.cleanUp();

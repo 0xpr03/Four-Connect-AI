@@ -1,9 +1,5 @@
 package buttons;
 
-import java.util.List;
-
-import guis.GuiTexture;
-
 public interface Button {
 	void onClick(Button button);
 	
@@ -13,9 +9,9 @@ public interface Button {
 	
 	void whileHovering(Button button);
 	
-	void show(List<GuiTexture> guiTextureList);
+	void show();
 	
-	void hide(List<GuiTexture> guiTextureList);
+	void hide();
 	
 	void playHoverAnimation(float scaleFactor);
 	

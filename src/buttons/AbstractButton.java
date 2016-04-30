@@ -8,6 +8,7 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector2f;
 
+import guis.GuiRenderer;
 import guis.GuiTexture;
 import renderEngine.Loader;
 
@@ -21,14 +22,23 @@ public abstract class AbstractButton implements Button{
 	
 	private Logger logger = LogManager.getLogger();
 	
-	public AbstractButton(Loader loader, String texture, Vector2f position, Vector2f scale) {
-		guiTexture = new GuiTexture(loader.loadTexture(texture), position, scale);
+	private GuiRenderer renderer;
+	
+//	public AbstractButton(Loader loader, String texture, Vector2f position, Vector2f scale) {
+//		guiTexture = new GuiTexture(loader.loadTexture(texture), position, scale);
+//		originalScale = scale;
+//	}
+	
+	public AbstractButton(int texture, Vector2f position, Vector2f scale, GuiRenderer renderer) {
+		guiTexture = new GuiTexture(texture, position, scale);
 		originalScale = scale;
+		this.renderer = renderer;
 	}
 	/***
 	 * Checks for collision of mouse and button etc.
 	 */
 	public void update(){
+		logger.entry();
 		if(!isHidden) {
 			Vector2f location = guiTexture.getPosition();
 			Vector2f scale = guiTexture.getScale();
@@ -61,18 +71,23 @@ public abstract class AbstractButton implements Button{
 		}
 	}
 	
-	public void show(List<GuiTexture> guiTextureList) {
+	public void show() {
+		logger.entry();
 		if(isHidden) {
 			wasUnpressed = false;
-			guiTextureList.add(guiTexture);
+			renderer.addRenderTexture(guiTexture);
 			isHidden = false;
 		}
 	}
 	
-	public void hide(List<GuiTexture> guiTextureList) {
+	public void hide() {
 		if(!isHidden) {
-			guiTextureList.remove(guiTexture);
 			isHidden = true;
+			logger.debug("Hiding: {} from {}",guiTexture, renderer.getRenderTextures());
+			if(!renderer.removeRenderTexture(guiTexture)){
+				logger.error("Unable to remove texture!");
+			}
+			logger.debug("Now {}",renderer.getRenderTextures());
 		}else{
 			logger.error("Unable to hide!");
 		}

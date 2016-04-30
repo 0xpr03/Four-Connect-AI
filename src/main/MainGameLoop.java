@@ -9,6 +9,7 @@ import static org.lwjgl.opengl.GL11.*;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -69,7 +70,6 @@ public class MainGameLoop {
 	private static Camera camera;
 	private static Terrain terrain;
 	private static MousePicker picker;
-	private static List<GuiTexture> menuGuis;
 	private static Entity lampTest;
 	private static Entity boden;
 	private static List<Entity> allentities;
@@ -80,7 +80,7 @@ public class MainGameLoop {
 	private static Light auswahlLicht4;
 	private static Light testLight;
 	private static GuiTexture intro;
-	private static List<List<AbstractButton>> allButtons;
+	private static List<AbstractButton> currentButtons;
 	private static List<AbstractButton> iMButtonList;
 	private static List<AbstractButton> sMButtonList;
 	private static List<AbstractButton> SP_ButtonList;
@@ -106,12 +106,12 @@ public class MainGameLoop {
 	private static TexturedModel rohr;
 	private static boolean callAI;
 	private static boolean backgroundGame = false;
+	private static boolean GUIRenderBreak = false;
 	private final static Vector3f startCamPos = new Vector3f(15, -3, 75);
 	
 	private final static Level LOG_CONTRBASE = Level.WARN;
 	private final static boolean USE_AA = true; // anti-aliasing
 	private final static boolean RENDER_LINES = false; // render vector lines
-
 	/**
 	 * @param args
 	 *            the command line arguments
@@ -161,7 +161,6 @@ public class MainGameLoop {
 		opButtonTexts.add(new GUIText("Fullscreen", 2, font, new Vector2f(0, 0.77f), 1f, true, true));
 		opButtonTexts.add(new GUIText("Back", 2, font, new Vector2f(0, 0.87f), 1f, true, true));
 		allTexts.add(opButtonTexts);
-		initButtons();
 		
 		renderer = new MasterRenderer();
 		
@@ -194,7 +193,6 @@ public class MainGameLoop {
 		
 		allentities = new ArrayList<>();
 		
-		menuGuis = new ArrayList<GuiTexture>();
 //		menuGuis.add(new GuiTexture(loader.loadTexture("null"), new Vector2f(0.0f, 0.0f),
 //				new Vector2f(1f, 1f)));
 		
@@ -227,7 +225,9 @@ public class MainGameLoop {
 		lights.add(auswahlLicht3);
 		lights.add(auswahlLicht4);
 //		lights.add(new Light(new Vector3f(10, terrain.getHeightOfTerrain(10, 10) + 20, 10), new Vector3f(5, 0, 0), new Vector3f(1, 0.01f, 0.002f)));
-				
+		
+		initButtons();
+		
 		GController.init();
 		logger.trace("entering renderer");
 		
@@ -256,23 +256,17 @@ public class MainGameLoop {
 			DisplayManager.updateDisplay();
 			break;
 		case MAIN_MENU:
-			renderMenuSzene(sMButtonList,true);
-			break;
+		case OPMENU:
 		case SPMENU:
-			renderMenuSzene(SP_ButtonList,true);
+		case OPMENU_IG:
+			renderMenuSzene(true);
 			break;
 		case GAME:
 			renderGame();
 			DisplayManager.updateDisplay();
 			break;
 		case INGAME_MENU:
-			renderMenuSzene(iMButtonList,false);
-			break;
-		case OPMENU:
-			renderMenuSzene(opButtonList, true);
-			break;
-		case OPMENU_IG:
-			renderMenuSzene(opButtonList, true);
+			renderMenuSzene(false);
 			break;
 		default:
 			logger.fatal("Unknown case: {}",state);
@@ -339,6 +333,7 @@ public class MainGameLoop {
 	}
 	
 	private static void hideAllMenus(boolean resetCam) {
+		GUIRenderBreak = true;
 		if(resetCam){
 			camera.resetMovement();
 			if(lastCamPos != null){
@@ -357,17 +352,19 @@ public class MainGameLoop {
 				g.hide();
 			}
 		}
-		for(List<AbstractButton> l : allButtons) {
-			for(AbstractButton b : l) {
-				b.hide(menuGuis);
-			}
+		logger.debug("GUI Tex: {}",guiRenderer.getRenderTextures());
+		for(AbstractButton b : currentButtons) {
+			b.hide();
+			logger.debug("hiding {}", b);
 		}
+		logger.debug("GUI Tex: {}",guiRenderer.getRenderTextures());
 	}
 	
-	private static void showMenu(List<GUIText> textlist) {
+	private static void showMenu(List<GUIText> textlist, List<AbstractButton> buttonList) {
 		for(GUIText g : textlist) {
 			g.show();
 		}
+		currentButtons = buttonList;
 	}
 	
 	/**
@@ -375,7 +372,7 @@ public class MainGameLoop {
 	 * @param buttonList
 	 * @param animateCam
 	 */
-	private static void renderMenuSzene(List<AbstractButton> buttonList, final boolean animateCam){
+	private static void renderMenuSzene(final boolean animateCam){
 		guiRenderer.startBackgroundRendering();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		if (animateCam) {
@@ -388,11 +385,13 @@ public class MainGameLoop {
 		guiRenderer.endBackgroundRendering();
 		guiRenderer.renderBackground(renderer);
 		
-		for(AbstractButton b : buttonList) {
-			b.show(menuGuis);
+		for(Iterator<AbstractButton> iterator = currentButtons.iterator(); iterator.hasNext() && !GUIRenderBreak;) {
+			AbstractButton b = iterator.next();
+			b.show();
 			b.update();
 		}
-		guiRenderer.render(menuGuis);
+		GUIRenderBreak = false;
+		guiRenderer.render();
 		TextMaster.render();
 		DisplayManager.updateDisplay();
 	}
@@ -405,7 +404,7 @@ public class MainGameLoop {
 		case INTRO:
 			while(Keyboard.next()) {
 				if(Keyboard.isKeyDown(Keyboard.KEY_RETURN)) {
-					showMenu(sMButtonTexts);
+					showMenu(sMButtonTexts, sMButtonList);
 					startBackgroundGame();
 					state = State.MAIN_MENU;
 				}
@@ -422,16 +421,15 @@ public class MainGameLoop {
 			}
 		break;
 		case SPMENU:
-			logger.entry();
+			if(Keyboard.next())
+				logger.entry();
 			break;
 		case GAME:
 			while(Keyboard.next()) {
 				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
 					lastCamPos = camera.getPosition();
 					lastCamRotY = camera.getRotY();
-		 			for(GUIText g : iMButtonTexts) {
-						g.show();
-					}
+		 			showMenu(iMButtonTexts, iMButtonList);
 		 			state = State.INGAME_MENU;
 		 		}else{
 		 			if(Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
@@ -563,9 +561,8 @@ public class MainGameLoop {
 		/**
 		 * INGAME MENU
 		 */
-		allButtons = new ArrayList<>();
 		iMButtonList = new ArrayList<>();
-		iMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.8f), new Vector2f(0.4f, 0.17f)) {			
+		iMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,0.8f), new Vector2f(0.4f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("resume");
 				hideAllMenus(false);
@@ -579,7 +576,7 @@ public class MainGameLoop {
 			}
 			public void whileHovering(Button button) {}			
 		});
-		iMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.4f), new Vector2f(0.4f, 0.17f)) {			
+		iMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,0.4f), new Vector2f(0.4f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("restart");				
 			}
@@ -589,13 +586,13 @@ public class MainGameLoop {
 			public void onStopHover(Button button) {
 				this.resetScale();
 			}
-			public void whileHovering(Button button) {}			
+			public void whileHovering(Button button) {}
 		});
-		iMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0f), new Vector2f(0.4f, 0.17f)) {			
+		iMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,0f), new Vector2f(0.4f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("Options");	
 				hideAllMenus(true);
-				showMenu(opButtonTexts);
+				showMenu(opButtonTexts, opButtonList);
 				state = State.OPMENU_IG;
 			}
 			public void onStartHover(Button button) {
@@ -604,9 +601,9 @@ public class MainGameLoop {
 			public void onStopHover(Button button) {
 				this.resetScale();
 			}
-			public void whileHovering(Button button) {}			
+			public void whileHovering(Button button) {}
 		});
-		iMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,-0.4f), new Vector2f(0.4f, 0.17f)) {			
+		iMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,-0.4f), new Vector2f(0.4f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("concede");				
 			}
@@ -616,13 +613,13 @@ public class MainGameLoop {
 			public void onStopHover(Button button) {
 				this.resetScale();
 			}
-			public void whileHovering(Button button) {}			
+			public void whileHovering(Button button) {}
 		});
-		iMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,-0.8f), new Vector2f(0.7f, 0.17f)) {			
+		iMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,-0.8f), new Vector2f(0.7f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("exit to main menu");		
 				hideAllMenus(true);
-				showMenu(sMButtonTexts);
+				showMenu(sMButtonTexts, sMButtonList);
 				cleanupGame();
 				startBackgroundGame();
 				state = State.MAIN_MENU;
@@ -633,31 +630,29 @@ public class MainGameLoop {
 			public void onStopHover(Button button) {
 				this.resetScale();
 			}
-			public void whileHovering(Button button) {}			
+			public void whileHovering(Button button) {}
 		});
-		
-		allButtons.add(iMButtonList);
 		
 		/*
 		 * START MENU
 		 */
 		sMButtonList = new ArrayList<>();
-		sMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.17f)) {			
+		sMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,0.8f), new Vector2f(0.5f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("Menu SinglePlayer");
 				hideAllMenus(false);
-				showMenu(SP_ButtonTexts);
+				showMenu(SP_ButtonTexts, SP_ButtonList);
 				state = State.SPMENU;
 			}
 			public void onStartHover(Button button) {
 				this.playHoverAnimation(0.03f);
-			}			
+			}
 			public void onStopHover(Button button) {
 				this.resetScale();
 			}
-			public void whileHovering(Button button) {}			
+			public void whileHovering(Button button) {}
 		});
-		sMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.17f)) {			
+		sMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,0.4f), new Vector2f(0.5f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("Menu Multiplayer");
 				startGame(7,6, E_GAME_MODE.MULTIPLAYER, false);
@@ -670,11 +665,11 @@ public class MainGameLoop {
 			}
 			public void whileHovering(Button button) {}			
 		});
-		sMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0f), new Vector2f(0.5f, 0.17f)) {			
+		sMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,0f), new Vector2f(0.5f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("Options");	
 				hideAllMenus(true);
-				showMenu(opButtonTexts);
+				showMenu(opButtonTexts, opButtonList);
 				state = State.OPMENU;
 			}
 			public void onStartHover(Button button) {
@@ -685,7 +680,7 @@ public class MainGameLoop {
 			}
 			public void whileHovering(Button button) {}			
 		});
-		sMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,-0.4f), new Vector2f(0.5f, 0.17f)) {			
+		sMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,-0.4f), new Vector2f(0.5f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("Exit");
 				exit();
@@ -699,14 +694,12 @@ public class MainGameLoop {
 			public void whileHovering(Button button) {}			
 		});
 		
-		allButtons.add(sMButtonList);
-		
 		/**
 		 * Singleplayer Menu
 		 */
 		
 		SP_ButtonList = new ArrayList<>();
-		SP_ButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.8f), new Vector2f(0.5f, 0.17f)) {			
+		SP_ButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,0.8f), new Vector2f(0.5f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("7x6 Default");
 				startGame(7,6, E_GAME_MODE.SINGLE_PLAYER, false);
@@ -719,7 +712,7 @@ public class MainGameLoop {
 			}
 			public void whileHovering(Button button) {}			
 		});
-		SP_ButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.17f)) {			
+		SP_ButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,0.4f), new Vector2f(0.5f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("6x5 Hard");
 				startGame(6,5, E_GAME_MODE.SINGLE_PLAYER, false);
@@ -732,7 +725,7 @@ public class MainGameLoop {
 			}
 			public void whileHovering(Button button) {}			
 		});
-		SP_ButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0f), new Vector2f(0.5f, 0.17f)) {			
+		SP_ButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,0f), new Vector2f(0.5f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("4x4 Hard");
 				startGame(4,4,E_GAME_MODE.SINGLE_PLAYER, false);
@@ -745,11 +738,11 @@ public class MainGameLoop {
 			}
 			public void whileHovering(Button button) {}			
 		});
-		SP_ButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,-0.4f), new Vector2f(0.5f, 0.17f)) {			
+		SP_ButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,-0.4f), new Vector2f(0.5f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("Back");
 				hideAllMenus(false);
-				showMenu(sMButtonTexts);
+				showMenu(sMButtonTexts, sMButtonList);
 				state=State.MAIN_MENU;
 			}
 			public void onStartHover(Button button) {
@@ -761,12 +754,10 @@ public class MainGameLoop {
 			public void whileHovering(Button button) {}			
 		});
 		
-		allButtons.add(SP_ButtonList);
-		
 		opButtonList = new ArrayList<>();
 		for(int i = DisplayManager.getDmi(); i<DisplayManager.getDms().size(); i++) {
 			int it= i;
-			opButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.83f-0.2f*i), new Vector2f(0.2f, 0.08f)) {			
+			opButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,0.83f-0.2f*i), new Vector2f(0.2f, 0.08f),guiRenderer) {			
 				public void onClick(Button button) {		
 					try {
 						Display.setDisplayMode(DisplayManager.getDms().get(it));
@@ -775,14 +766,14 @@ public class MainGameLoop {
 				}
 				public void onStartHover(Button button) {
 					this.playHoverAnimation(0.02f);
-				}			
+				}
 				public void onStopHover(Button button) {
 					this.resetScale();
 				}
 				public void whileHovering(Button button) {}			
 			});
 		}
-		opButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,-0.6f), new Vector2f(0.2f, 0.1f)) {			
+		opButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,-0.6f), new Vector2f(0.2f, 0.1f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("Fscreen");
 				try {
@@ -799,15 +790,14 @@ public class MainGameLoop {
 			}
 			public void whileHovering(Button button) {}			
 		});
-		opButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,-0.8f), new Vector2f(0.2f, 0.1f)) {			
+		opButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,-0.8f), new Vector2f(0.2f, 0.1f),guiRenderer) {			
 			public void onClick(Button button) {
-				logger.trace("Back");
 				hideAllMenus(false);
 				if(state == State.OPMENU) {
-				showMenu(sMButtonTexts);
-				state=State.MAIN_MENU;
+					showMenu(sMButtonTexts, sMButtonList);
+					state=State.MAIN_MENU;
 				}else {
-					showMenu(iMButtonTexts);
+					showMenu(iMButtonTexts, iMButtonList);
 					state = State.INGAME_MENU;
 				}
 			}
@@ -820,7 +810,6 @@ public class MainGameLoop {
 			public void whileHovering(Button button) {}			
 		});
 	
-		allButtons.add(opButtonList);
 		//Fullscreen button nicht vergessen Du hässlichkeit
 		/*opButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,1f-0.1f*i), new Vector2f(0.5f, 0.17f)) {			
 			public void onClick(Button button) {		
