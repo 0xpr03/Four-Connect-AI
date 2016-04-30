@@ -56,13 +56,13 @@ public class AITrainer {
 			}
 		}
 		
-		int X_MAX = 4;
-		int Y_MAX = 4;
+		int X_MAX = 6;
+		int Y_MAX = 5;
 		
-		int first_move = 3;
+		int first_move = -1;
 		if(args.length > 1){
 			X_MAX = 6;
-			Y_MAX = 6;
+			Y_MAX = 5;
 			first_move = -1;
 			logger.warn("Detected args, using {}*{} field!",X_MAX,Y_MAX);
 		}
@@ -88,7 +88,7 @@ public class AITrainer {
 			}
 		}
 		
-		initController("localhost", 3306, "root", "", "ai", player == E_GAME_STATE.PLAYER_A, first_move,forbiddenMoves);
+		initController("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai", player == E_GAME_STATE.PLAYER_A, first_move,forbiddenMoves);
 		try{
 			run(player,first_move,X_MAX, Y_MAX);
 		} catch(Exception e){
@@ -172,7 +172,7 @@ public class AITrainer {
 	}
 	
 	private static void initController(String address, int port, String user, String pw, String db, boolean player_a, int first_move, List<Integer> forbiddenMoves){
-		MemCache<ByteBuffer,Long> cache = new MemCache<ByteBuffer, Long>(20, 30, 50000);
+		MemCache<ByteBuffer,Long> cache = new MemCache<ByteBuffer, Long>(20, 20, 11000,10000,10900);
 		KBS_Channel channel = new KBS_Channel();
 		KBS_trainer AIA = new KBS_trainer(new mariaDB(address, port, user, pw, db,cache),player_a == true ? first_move : -1,forbiddenMoves,channel);
 		KBS_trainer AIB = new KBS_trainer(new mariaDB(address, port, user, pw, db,cache),player_a == false ? first_move : -1,forbiddenMoves,channel);

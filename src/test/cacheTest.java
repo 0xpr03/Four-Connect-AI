@@ -42,7 +42,7 @@ public class cacheTest {
 		GController.initGame(E_GAME_MODE.TESTING,7,6);
 		GController.startGame();
 		lib lib = new lib();
-		MemCache<ByteBuffer, Long> cache = new MemCache<ByteBuffer,Long>(2, 1, 10000);
+		MemCache<ByteBuffer, Long> cache = new MemCache<ByteBuffer,Long>(2, 1, 10000,100,9000);
 		
 		byte[] byte_1 = lib.field2sha(GController.getFieldState());
 		cache.put(ByteBuffer.wrap(lib.field2sha(GController.getFieldState())), 1L);
@@ -64,7 +64,7 @@ public class cacheTest {
 		Configurator.setLevel("Controller", Level.WARN);
 		GController.initGame(E_GAME_MODE.MULTIPLAYER, 7,6);
 		GController.startGame();
-		MemCache<ByteBuffer, Long> cache = new MemCache<ByteBuffer,Long>(2, 1, 10000);
+		MemCache<ByteBuffer, Long> cache = new MemCache<ByteBuffer,Long>(2, 1, 10000,1000,9000);
 		lib lib = new lib();
 		Random randomGenerator = new Random(System.nanoTime());
 		final int games = 10000;

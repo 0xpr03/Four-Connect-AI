@@ -166,7 +166,7 @@ public class gameControllerTester {
 	public void test_AI(){ // 4*4
 		GController.init("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai");
 		String[] fields_used = {"XOX-\nOXO-\nOOXX\nOXXO","X-O-\nO-XO\nO-OX\nOXXX","X-OX\nO-XO\nO-OX\nO-XX"};
-		MemCache<ByteBuffer,Long> cache = new MemCache<ByteBuffer,Long>(5, 5, 10000);
+		MemCache<ByteBuffer,Long> cache = new MemCache<ByteBuffer,Long>(5, 5, 10000,1000,9000);
 		mariaDB mdb = new mariaDB("localhost", 3306, "ai", "66z1ayi9vweIDdWa1n0Z", "ai",cache);
 		GController.initGame(E_GAME_MODE.TESTING,4,4);
 		GController.startGame();

@@ -24,7 +24,7 @@ public class GController {
 	private static Controller controller;
 	
 	public static void init(String address, int port, String user, String pw, String db){
-		MemCache<ByteBuffer,Long> cache = new MemCache<ByteBuffer, Long>(300, 300, 50000);
+		MemCache<ByteBuffer,Long> cache = new MemCache<ByteBuffer, Long>(300, 300, 12000,2000,11000);
 		controller = new Controller(new KBS_player<mariaDB>(new mariaDB(address,3306,user,pw,db,cache)), new KBS_player<mariaDB>(new mariaDB(address,3306,user,pw,db,cache)));
 	}
 	
