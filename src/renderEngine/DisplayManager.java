@@ -6,6 +6,7 @@
 package renderEngine;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -49,8 +50,7 @@ public class DisplayManager {
             
         try {
         	adm = Display.getAvailableDisplayModes();
-        	dms = new ArrayList<DisplayMode>(10);
-    
+        	HashMap<String, DisplayMode> modes = new HashMap<>();
         	for(DisplayMode dm : adm) {
         		boolean freq = dm.getFrequency() == 60;
         		boolean width = false;
@@ -78,12 +78,14 @@ public class DisplayManager {
         		default:
         		}
         		if(freq && width && height){
-        			dms.add(dm);
+        			modes.put(""+dm.getFrequency()+dm.getHeight()+dm.getWidth(),dm);
         		}
         	}
+        	
+        	dms = new ArrayList<DisplayMode>(modes.values());
    	
         	for(DisplayMode md : dms){ // statt adm ein array was obbe erzeugt wird an if(fruq && width && height)`
-        		logger.debug("Height {} Width {} Freq {} {}", md.getHeight(),md.getWidth(),md.getFrequency(), calculateRatio(md));
+        		logger.debug("Height {} Width {} Freq {} {} BPP {}", md.getHeight(),md.getWidth(),md.getFrequency(), calculateRatio(md), md.getBitsPerPixel());
         		// alternativ ein [print to screen zur auswahl]
         	}
             Display.setDisplayMode(dms.get(dmi));
