@@ -30,7 +30,7 @@ public class Camera {
     private float rotY;
                   
     public Camera(Vector3f position, float rotY, float pitch) {
-    	this.position = position;
+    	this.position = new Vector3f(position);
     	this.rotY = rotY;
     	this.pitch = pitch;
     }
@@ -91,7 +91,7 @@ public class Camera {
 	}
     
     public Vector3f getPosition() {
-        return position;
+        return new Vector3f(position);
     }
 
     public float getPitch() {

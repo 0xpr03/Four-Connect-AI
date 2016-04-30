@@ -106,7 +106,7 @@ public class MainGameLoop {
 	private static TexturedModel rohr;
 	private static boolean callAI;
 	private static boolean backgroundGame = false;
-	private static Vector3f startCamPos = new Vector3f(15, -3, 75);
+	private final static Vector3f startCamPos = new Vector3f(15, -3, 75);
 	
 	private final static Level LOG_CONTRBASE = Level.WARN;
 	private final static boolean USE_AA = true; // anti-aliasing
@@ -382,9 +382,9 @@ public class MainGameLoop {
 			camera.resetMovement();
 			camera.increaseRotation(0.078f, 0f);
 			camera.increaseSideSpeed(-3);
-//			logger.debug("CamPos b4 move(): {}", startCamPos);
+			logger.debug("CamPos b4 move(): {}", startCamPos);
 			camera.move();
-//			logger.debug("CamPos after move(): {}", startCamPos);
+			logger.debug("CamPos after move(): {}", startCamPos);
 		}
 		renderGame();
 		guiRenderer.endBackgroundRendering();
@@ -424,45 +424,45 @@ public class MainGameLoop {
 			}
 		break;
 		case SPMENU:
-			
+			logger.entry();
 			break;
-		case GAME: 	
+		case GAME:
 			while(Keyboard.next()) {
 				if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
+					lastCamPos = camera.getPosition();
+					lastCamRotY = camera.getRotY();
 		 			for(GUIText g : iMButtonTexts) {
 						g.show();
 					}
-		 			lastCamPos = camera.getPosition();
-					lastCamRotY = camera.getRotY();
-		 			logger.debug("Test");
 		 			state = State.INGAME_MENU;
+		 		}else{
+		 			if(Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
+						if(flippedView && chosenRohr != 0){
+							chosenRohr -= 1;
+							lampTest.increasePosition(-5, 0, 0);
+						}else if(!flippedView && chosenRohr != (rohre-1)){
+							chosenRohr += 1;
+							lampTest.increasePosition(5, 0, 0);
+						}
+					}
+		 			if(Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
+						if(flippedView && chosenRohr != (rohre-1)){
+							chosenRohr += 1;
+							lampTest.increasePosition(5, 0, 0);
+						}else if(!flippedView && chosenRohr != 0){
+							chosenRohr -= 1;
+							lampTest.increasePosition(-5, 0, 0);
+						}
+	
+					}
+		 			if(Keyboard.isKeyDown(Keyboard.KEY_RETURN)) {
+						if(!shallMoveBall && !callAI){
+							insertStone(chosenRohr);
+						}
+					}
+					if(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Keyboard.isKeyDown(Keyboard.KEY_F))
+						staticCamera = !staticCamera;
 		 		}
-				if(Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-					if(flippedView && chosenRohr != 0){
-					chosenRohr -= 1;
-					lampTest.increasePosition(-5, 0, 0);
-					}else if(!flippedView && chosenRohr != (rohre-1)){
-						chosenRohr += 1;
-						lampTest.increasePosition(5, 0, 0);
-					}
-				}
-				if(Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-					if(flippedView && chosenRohr != (rohre-1)){
-					chosenRohr += 1;
-					lampTest.increasePosition(5, 0, 0);
-					}else if(!flippedView && chosenRohr != 0){
-						chosenRohr -= 1;
-						lampTest.increasePosition(-5, 0, 0);
-					}
-
-				}
-				if(Keyboard.isKeyDown(Keyboard.KEY_RETURN)) {
-					if(!shallMoveBall && !callAI){
-						insertStone(chosenRohr);
-					}
-				}
-				if(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Keyboard.isKeyDown(Keyboard.KEY_F))
-					staticCamera = false;
 			}
 		break;
 		case INGAME_MENU:
@@ -570,7 +570,7 @@ public class MainGameLoop {
 		iMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.8f), new Vector2f(0.4f, 0.17f)) {			
 			public void onClick(Button button) {
 				logger.trace("resume");
-				hideAllMenus(true);
+				hideAllMenus(false);
 				state = State.GAME;
 			}
 			public void onStartHover(Button button) {
@@ -850,6 +850,8 @@ public class MainGameLoop {
 	private static void cleanupGame(){
 		GController.stopGame();
 		shallMoveBall = false;
+		lastCamPos = null;
+		lastCamRotY = 0;
 		callAI = false;
 		for(Entity[] ball_col : balls){
 			for(int i = 0; i < ball_col.length; i++){
