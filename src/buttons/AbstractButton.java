@@ -2,6 +2,8 @@ package buttons;
 
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector2f;
@@ -10,16 +12,18 @@ import guis.GuiTexture;
 import renderEngine.Loader;
 
 public abstract class AbstractButton implements Button{
-			
-	private GuiTexture guiTexture;
 	
-	private Vector2f OriginalScale;
+	private final GuiTexture guiTexture;
 	
-	private boolean isHidden= true, isHovering = false;
+	private final Vector2f originalScale;
+	
+	private boolean isHidden= true, isHovering = false, wasUnpressed = true;
+	
+	private Logger logger = LogManager.getLogger();
 	
 	public AbstractButton(Loader loader, String texture, Vector2f position, Vector2f scale) {
 		guiTexture = new GuiTexture(loader.loadTexture(texture), position, scale);
-		OriginalScale = scale;
+		originalScale = scale;
 	}
 	/***
 	 * Checks for collision of mouse and button etc.
@@ -38,14 +42,20 @@ public abstract class AbstractButton implements Button{
 					isHovering = true;
 					onStartHover(this);
 				}
-				while(Mouse.next()) 
-					if(Mouse.isButtonDown(0)) 
-						onClick(this);
+				while(Mouse.next()){
+					if(Mouse.isButtonDown(0)){
+						if(wasUnpressed){
+							onClick(this);
+							wasUnpressed = false;
+						}
+					}else{
+						wasUnpressed = true;
+					}
+				}
 			}else{
 				if(isHovering) {
-								
-				isHovering = false;
-				onStopHover(this);
+					isHovering = false;
+					onStopHover(this);
 				}
 			}
 		}
@@ -53,6 +63,7 @@ public abstract class AbstractButton implements Button{
 	
 	public void show(List<GuiTexture> guiTextureList) {
 		if(isHidden) {
+			wasUnpressed = false;
 			guiTextureList.add(guiTexture);
 			isHidden = false;
 		}
@@ -62,15 +73,17 @@ public abstract class AbstractButton implements Button{
 		if(!isHidden) {
 			guiTextureList.remove(guiTexture);
 			isHidden = true;
+		}else{
+			logger.error("Unable to hide!");
 		}
 	}
 	
 	public void resetScale() {
-		guiTexture.setScale(OriginalScale);
+		guiTexture.setScale(originalScale);
 	}
 	
 	public void playHoverAnimation(float scaleFactor) {
-		guiTexture.setScale(new Vector2f(OriginalScale.x + scaleFactor, OriginalScale.y + scaleFactor));
+		guiTexture.setScale(new Vector2f(originalScale.x + scaleFactor, originalScale.y + scaleFactor));
 	}
 	
 	public boolean isHidden() {
