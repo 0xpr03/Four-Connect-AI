@@ -7,7 +7,6 @@ package main;
 
 import static org.lwjgl.opengl.GL11.*;
 
-import java.awt.RenderingHints.Key;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,10 +19,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
@@ -39,11 +36,11 @@ import fontRendering.TextMaster;
 import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.GController;
+import gamelogic.AI.WebPlayer;
 import guis.GuiRenderer;
 import guis.GuiTexture;
 import models.TexturedModel;
 import renderEngine.DisplayManager;
-import renderEngine.FBO;
 import renderEngine.Loader;
 import renderEngine.MasterRenderer;
 import terrain.Terrain;
@@ -466,8 +463,6 @@ public class MainGameLoop {
 
 				}
 				if(Keyboard.isKeyDown(Keyboard.KEY_RETURN)) {
-					if(staticCamera)
-					moveCam();
 					if(!shallMoveBall){
 						insertStone(chosenRohr);
 					}
@@ -508,6 +503,9 @@ public class MainGameLoop {
 		}
 		if(GController.insertStone(spalte) && color != null){
 			setStone(spalte,color);
+			if(staticCamera && !backgroundGame)
+				moveCam();
+
 		}else{
 			logger.error("Controller denied insert! {}", GController.getGameState());
 			logger.info(GController.getprintedGameState());
@@ -684,10 +682,7 @@ public class MainGameLoop {
 		sMButtonList.add(new AbstractButton(loader, "whiteButton", new Vector2f(0,0.4f), new Vector2f(0.5f, 0.17f)) {			
 			public void onClick(Button button) {
 				logger.trace("Menu Multiplayer");
-				hideAllMenus(true);
 				startGame(7,6, E_GAME_MODE.MULTIPLAYER, false);
-				state = State.GAME;
-				GController.startGame();
 			}
 			public void onStartHover(Button button) {
 				this.playHoverAnimation(0.03f);
@@ -874,6 +869,8 @@ public class MainGameLoop {
 	 */
 	private static void cleanupGame(){
 		GController.stopGame();
+		shallMoveBall = false;
+		callAI = false;
 		for(Entity[] ball_col : balls){
 			for(int i = 0; i < ball_col.length; i++){
 				ball_col[i] = null;
