@@ -382,9 +382,7 @@ public class MainGameLoop {
 			camera.resetMovement();
 			camera.increaseRotation(0.078f, 0f);
 			camera.increaseSideSpeed(-3);
-			logger.debug("CamPos b4 move(): {}", startCamPos);
 			camera.move();
-			logger.debug("CamPos after move(): {}", startCamPos);
 		}
 		renderGame();
 		guiRenderer.endBackgroundRendering();

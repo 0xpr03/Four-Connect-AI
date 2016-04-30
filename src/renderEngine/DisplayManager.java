@@ -88,8 +88,8 @@ public class DisplayManager {
         	}
             Display.setDisplayMode(dms.get(dmi));
             Display.create(new PixelFormat(32, 0, 24, 0, useAA ? 4 : 0), attribs);
-            Display.setTitle("Game1ATrial");
-            Display.setFullscreen(fullscreen);            
+            Display.setTitle("Four connect, KBS demo");
+            Display.setFullscreen(fullscreen);
         } catch (LWJGLException e) {
             e.printStackTrace();    
         }
@@ -163,7 +163,7 @@ public class DisplayManager {
     }
     
     public void setDmi(int dmi) {
-    	this.dmi = dmi;
+    	DisplayManager.dmi = dmi;
     }
     
     private static long getCurrentTime() {

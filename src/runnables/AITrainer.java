@@ -61,7 +61,7 @@ public class AITrainer {
 		
 		int first_move = -1;
 		if(args.length > 1){
-			X_MAX = 6;
+			X_MAX = 5;
 			Y_MAX = 5;
 			first_move = -1;
 			logger.warn("Detected args, using {}*{} field!",X_MAX,Y_MAX);

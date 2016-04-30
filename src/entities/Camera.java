@@ -28,7 +28,7 @@ public class Camera {
     private Logger logger = LogManager.getLogger();
     private float pitch;
     private float rotY;
-                  
+    
     public Camera(Vector3f position, float rotY, float pitch) {
     	this.position = new Vector3f(position);
     	this.rotY = rotY;
