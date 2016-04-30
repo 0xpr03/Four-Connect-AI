@@ -463,7 +463,7 @@ public class MainGameLoop {
 
 				}
 				if(Keyboard.isKeyDown(Keyboard.KEY_RETURN)) {
-					if(!shallMoveBall){
+					if(!shallMoveBall && !callAI){
 						insertStone(chosenRohr);
 					}
 				}
