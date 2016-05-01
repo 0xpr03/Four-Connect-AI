@@ -37,6 +37,7 @@ import fontRendering.TextMaster;
 import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
 import gamelogic.GController;
+import gamelogic.GameStore;
 import gamelogic.AI.WebPlayer;
 import guis.GuiRenderer;
 import guis.GuiTexture;
@@ -55,7 +56,7 @@ import toolbox.MousePicker;
 public class MainGameLoop {
 
 	private static enum State {
-		INTRO, MAIN_MENU, GAME, INGAME_MENU, SPMENU, OPMENU, OPMENU_IG;
+		INTRO, MAIN_MENU, GAME, INGAME_MENU, SPMENU, OPMENU, OPMENU_IG, GAME_ENDSCREEN;
 	}
 	public static enum Color {
 		YELLOW, RED;
@@ -86,12 +87,16 @@ public class MainGameLoop {
 	private static List<AbstractButton> sMButtonList;
 	private static List<AbstractButton> SP_ButtonList;
 	private static List<AbstractButton> opButtonList;
-	private static List<List<GUIText>> allTexts;
+	private static List<AbstractButton> iEButtonList; // end screen
+	private static List<GUIText> iEButtonTexts; // end screen
+	private static List<GUIText> currentTexts;
 	private static List<GUIText> iMButtonTexts;
 	private static List<GUIText> sMButtonTexts;
 	private static List<GUIText> SP_ButtonTexts;
 	private static List<GUIText> opButtonTexts;
+	private static GUIText[] variableTexts = null;
 	private static Rohr[] pipes = new Rohr[7];
+	private static FontType font ;
 	private static Entity[][] balls = new Entity[7][6];
 	protected static Vector3f lastCamPos;
 	private static float lastCamRotY;
@@ -109,6 +114,7 @@ public class MainGameLoop {
 	private static boolean backgroundGame = false;
 	private static boolean GUIRenderBreak = false;
 	private final static Vector3f startCamPos = new Vector3f(15, -3, 75);
+	private static GameStore gameStore = null;
 	
 	private final static Level LOG_CONTRBASE = Level.WARN;
 	private final static boolean USE_AA = true; // anti-aliasing
@@ -130,30 +136,26 @@ public class MainGameLoop {
 		loader = new Loader();
 		TextMaster.init(loader);
 		
-		FontType font = new FontType(loader.loadTexture("tahoma"), new File("res/tahoma.fnt"));
+		font = new FontType(loader.loadTexture("tahoma"), new File("res/tahoma.fnt"));
 		
-		allTexts = new ArrayList<>();
 		iMButtonTexts = new ArrayList<>();
 		iMButtonTexts.add(new GUIText("Resume", 5, font, new Vector2f(0, 0.02f), 1f, true, true));
 		iMButtonTexts.add(new GUIText("Restart", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
 		iMButtonTexts.add(new GUIText("Options", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
 		iMButtonTexts.add(new GUIText("Concede", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
 		iMButtonTexts.add(new GUIText("Exit to Main Menu", 5, font, new Vector2f(0, 0.82f), 1f, true, true));
-		allTexts.add(iMButtonTexts);
 		
 		sMButtonTexts = new ArrayList<>();
 		sMButtonTexts.add(new GUIText("Singleplayer", 5, font, new Vector2f(0, 0.02f), 1f, true, true));
 		sMButtonTexts.add(new GUIText("Multiplayer", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
 		sMButtonTexts.add(new GUIText("Options", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
 		sMButtonTexts.add(new GUIText("Exit", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
-		allTexts.add(sMButtonTexts);
 		
 		SP_ButtonTexts = new ArrayList<>();
 		SP_ButtonTexts.add(new GUIText("7x6 WBS2", 5, font, new Vector2f(0, 0.02f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("6x5 Hard", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("4x4 Hard", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("Back", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
-		allTexts.add(SP_ButtonTexts);
 		
 		opButtonTexts = new ArrayList<>();
 		for(int i = DisplayManager.getDmi(); i <DisplayManager.getDms().size(); i++) {
@@ -161,7 +163,9 @@ public class MainGameLoop {
 		}
 		opButtonTexts.add(new GUIText("Fullscreen", 2, font, new Vector2f(0, 0.77f), 1f, true, true));
 		opButtonTexts.add(new GUIText("Back", 2, font, new Vector2f(0, 0.87f), 1f, true, true));
-		allTexts.add(opButtonTexts);
+		
+		iEButtonTexts = new ArrayList<>();
+		iEButtonTexts.add(new GUIText("End game", 5, font, new Vector2f(0, 0.82f), 1f, true, true));
 		
 		renderer = new MasterRenderer();
 		
@@ -256,7 +260,7 @@ public class MainGameLoop {
 		case MAIN_MENU:
 		case OPMENU:
 		case SPMENU:
-			renderMenuSzene(true);
+			renderMenuSzene(true,true);
 			break;
 		case GAME:
 			renderGame();
@@ -264,7 +268,10 @@ public class MainGameLoop {
 			break;
 		case INGAME_MENU:
 		case OPMENU_IG:
-			renderMenuSzene(false);
+			renderMenuSzene(false,true);
+			break;
+		case GAME_ENDSCREEN:
+			renderMenuSzene(false,false);
 			break;
 		default:
 			logger.fatal("Unknown case: {}",state);
@@ -345,10 +352,8 @@ public class MainGameLoop {
 				logger.debug("startCamPos {}", startCamPos);
 			}
 		}
-		for(List<GUIText> l : allTexts) {
-			for(GUIText g : l) {
-				g.hide();
-			}
+		for(GUIText g : currentTexts) {
+			g.hide();
 		}
 		logger.debug("GUI Tex: {}",guiRenderer.getRenderTextures());
 		for(AbstractButton b : currentButtons) {
@@ -363,15 +368,17 @@ public class MainGameLoop {
 			g.show();
 		}
 		currentButtons = buttonList;
+		currentTexts = textlist;
 	}
 	
 	/**
 	 * Render menu with background
-	 * @param buttonList
-	 * @param animateCam
+	 * @param animateCam true for moving animation
+	 * @param blurr set to false to disable blurring
 	 */
-	private static void renderMenuSzene(final boolean animateCam){
-		guiRenderer.startBackgroundRendering();
+	private static void renderMenuSzene(final boolean animateCam, final boolean blurr){
+		if(blurr)
+			guiRenderer.startBackgroundRendering();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		if (animateCam) {
 			camera.resetMovement();
@@ -380,8 +387,10 @@ public class MainGameLoop {
 			camera.move();
 		}
 		renderGame();
-		guiRenderer.endBackgroundRendering();
-		guiRenderer.renderBackground(renderer);
+		if(blurr){
+			guiRenderer.endBackgroundRendering();
+			guiRenderer.renderBackground(renderer);
+		}
 		
 		for(Iterator<AbstractButton> iterator = currentButtons.iterator(); iterator.hasNext() && !GUIRenderBreak;) {
 			AbstractButton b = iterator.next();
@@ -429,7 +438,7 @@ public class MainGameLoop {
 					lastCamRotY = camera.getRotY();
 		 			showMenu(iMButtonTexts, iMButtonList);
 		 			state = State.INGAME_MENU;
-		 		}else{
+		 		}else if(gameStore == null){
 		 			if(Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
 						if(flippedView && chosenRohr != 0){
 							chosenRohr -= 1;
@@ -468,6 +477,18 @@ public class MainGameLoop {
 			}
 		break;
 		case OPMENU:
+			break;
+		case GAME_ENDSCREEN:
+			while(Keyboard.next()){
+				if(Keyboard.isKeyDown(Keyboard.KEY_RETURN)) {
+					hideAllMenus(true);
+					cleanupEndScreen();
+					showMenu(sMButtonTexts, sMButtonList);
+					cleanupGame();
+					startBackgroundGame();
+					state = State.MAIN_MENU;
+				}
+			}
 			break;
 		default:
 			logger.warn("Unknown case for input!");
@@ -603,7 +624,8 @@ public class MainGameLoop {
 		});
 		iMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,-0.4f), new Vector2f(0.4f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
-				logger.trace("concede");				
+				logger.trace("concede");
+				GController.capitulate();
 			}
 			public void onStartHover(Button button) {
 				this.playHoverAnimation(0.03f);
@@ -807,6 +829,29 @@ public class MainGameLoop {
 			}
 			public void whileHovering(Button button) {}			
 		});
+		
+		
+		/**
+		 * Game end
+		 */
+		iEButtonList = new ArrayList<>();
+		iEButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,-0.8f), new Vector2f(0.7f, 0.17f),guiRenderer) {			
+			public void onClick(Button button) {
+				hideAllMenus(false);
+				cleanupEndScreen();
+				showMenu(sMButtonTexts, sMButtonList);
+				cleanupGame();
+				startBackgroundGame();
+				state = State.MAIN_MENU;
+			}
+			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.025f);
+			}
+			public void onStopHover(Button button) {
+				this.resetScale();
+			}
+			public void whileHovering(Button button) {}			
+		});
 	}
 	
 	public static boolean getStaticCamera() {
@@ -818,6 +863,7 @@ public class MainGameLoop {
 	 */
 	private static void cleanupGame(){
 		GController.stopGame();
+		gameStore = null;
 		shallMoveBall = false;
 		lastCamPos = null;
 		lastCamRotY = 0;
@@ -904,6 +950,39 @@ public class MainGameLoop {
 				System.err.println("Faulty log config!");
 			}
 		}
+	}
+	
+	private static void cleanupEndScreen(){
+		iEButtonTexts.remove(variableTexts[0]);
+	}
+
+	/**
+	 * Set the gamestore and switch to the endscreen<br>
+	 * @param gs the gs to set
+	 */
+	public static void renderGameEnd(GameStore gs) {
+		hideAllMenus(false);
+		if(backgroundGame)
+			return;
+		MainGameLoop.gameStore = gs;
+		state = State.GAME_ENDSCREEN;
+		
+		String text = "";
+		if(gs.isDraw()){
+			text = "Draw";
+		}else if(gs.isCapitulation()){
+			text = "Surrender by ";
+			text += gs.getState() == E_GAME_STATE.WIN_A ? "player b" : "player a";
+		}else{
+			text = "Win by ";
+			text += gs.getState() == E_GAME_STATE.WIN_A ? "player a" : "player b";
+		}
+		
+		variableTexts = new GUIText[1];
+		variableTexts[0] = new GUIText(text, 5, font, new Vector2f(0, 0.02f), 1f, true, true);
+		iEButtonTexts.add(variableTexts[0]);
+		
+		showMenu(iEButtonTexts, iEButtonList);
 	}
 
 }

@@ -223,6 +223,8 @@ public final class Controller extends ControllerBase {
 		
 		super.LAST_GAME = new GameStore();
 		informAIs(true);
+		
+		MainGameLoop.renderGameEnd(LAST_GAME);
 	}
 	
 	/**
@@ -246,7 +248,7 @@ public final class Controller extends ControllerBase {
 		LAST_GAME = ws;
 		informAIs(true);
 		
-		//TODO: run handle code for winner display etc
+		MainGameLoop.renderGameEnd(LAST_GAME);
 	}
 
 	/**
