@@ -75,29 +75,9 @@ public class WebPlayer implements AI {
 		logger.entry();
 		List<Move> possible_moves = new ArrayList<Move>(GController.getX_MAX());
 		if (!sel.getWins().isEmpty()) {
-			List<Move> possibilities = new ArrayList<Move>();
-			for (Move moveelem : sel.getWins()) {
-				if (!moveelem.isDraw()) {
-					possibilities.add(moveelem);
-				}
-			}
-			if (!possibilities.isEmpty()) {
-				possible_moves = possibilities;
-			} else {
-				possible_moves = sel.getWins();
-			}
+			possible_moves = sel.getWins();
 		} else if (!sel.getDraws().isEmpty()) {
-			List<Move> possibilities = new ArrayList<Move>();
-			for (Move moveelem : sel.getDraws()) {
-				if (!moveelem.isLoose()) {
-					possibilities.add(moveelem);
-				}
-			}
-			if (!possibilities.isEmpty()) {
-				possible_moves = possibilities;
-			} else {
-				possible_moves = sel.getDraws();
-			}
+			possible_moves = sel.getDraws();
 		} else {
 			if (sel.getUnused().isEmpty()) {
 				possible_moves = sel.getUnused();
