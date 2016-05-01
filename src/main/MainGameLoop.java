@@ -269,6 +269,9 @@ public class MainGameLoop {
 		exit();
 	}
 
+	/**
+	 * GUI master state switch
+	 */
 	private static void states() {
 		if (RENDER_LINES) {
 			GL11.glEnable(GL11.GL_BLEND);
@@ -303,6 +306,9 @@ public class MainGameLoop {
 		}
 	}
 
+	/**
+	 * Game master renderer
+	 */
 	private static void renderGame() {
 		camera.move(terrain);
 		picker.update();
@@ -374,6 +380,10 @@ public class MainGameLoop {
 		TextMaster.render();
 	}
 
+	/**
+	 * Hide all GUI menus
+	 * @param resetCam
+	 */
 	private static void hideAllMenus(boolean resetCam) {
 		GUIRenderBreak = true;
 		if (resetCam) {
@@ -390,6 +400,11 @@ public class MainGameLoop {
 		logger.debug("GUI Tex: {}", guiRenderer.getRenderTextures());
 	}
 
+	/**
+	 * Show specified menu
+	 * @param textlist
+	 * @param buttonList
+	 */
 	private static void showMenu(List<GUIText> textlist, List<AbstractButton> buttonList) {
 		for (GUIText g : textlist) {
 			g.show();
@@ -596,6 +611,10 @@ public class MainGameLoop {
 		}
 	}
 
+	/**
+	 * Move cam around the board, according to the current player
+	 * @param startgame
+	 */
 	private static void moveCam(final boolean startgame) {
 		logger.entry();
 		boolean player_a = GController.getGameState() == E_GAME_STATE.PLAYER_A || GController.getGamemode() == E_GAME_MODE.SINGLE_PLAYER;
@@ -1061,6 +1080,9 @@ public class MainGameLoop {
 		}
 	}
 	
+	/**
+	 * Reset cam to last pos / default pos
+	 */
 	private static void resetCam(){
 		logger.entry();
 		camera.resetMovement();
@@ -1075,18 +1097,28 @@ public class MainGameLoop {
 		}
 	}
 	
+	/**
+	 * Start background game
+	 */
 	public static void startBackgroundGame() {
 		logger.entry();
 		startGame(7, 6, E_GAME_MODE.MULTIPLAYER, true);
 		callAI = true;
 	}
 
+	/**
+	 * Stop background game, cleanup
+	 */
 	public static void stopBackgroundGame() {
 		logger.entry();
 		backgroundGame = false;
 		cleanupGame();
 	}
 
+	/**
+	 * Change display resolution
+	 * @param displayMode
+	 */
 	private static void changeRes(DisplayMode displayMode) {
 		try {
 			Display.setDisplayMode(displayMode);
@@ -1126,6 +1158,9 @@ public class MainGameLoop {
 		}
 	}
 
+	/**
+	 * Clean up end screen
+	 */
 	private static void cleanupEndScreen() {
 		iEButtonTexts.remove(variableTexts[0]);
 	}

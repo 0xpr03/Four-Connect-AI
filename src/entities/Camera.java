@@ -36,6 +36,10 @@ public class Camera {
 		return rotY;
 	}
     
+    /**
+     * Move cam according to current speed
+     * @param terrain
+     */
 	public void move(Terrain terrain) {
         if(!MainGameLoop.getStaticCamera())
 		checkInputs();        
@@ -78,7 +82,6 @@ public class Camera {
 	}
 	
 	public void setPosition(Vector3f position) {
-		logger.entry();
 		this.position = new Vector3f(position);
 	}
 	
