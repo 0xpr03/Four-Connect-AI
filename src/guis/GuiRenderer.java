@@ -16,6 +16,7 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
@@ -23,6 +24,7 @@ import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
 import models.RawModel;
+import renderEngine.DisplayManager;
 import renderEngine.FBO;
 import renderEngine.Loader;
 import renderEngine.MasterRenderer;
@@ -66,11 +68,15 @@ public class GuiRenderer {
     	buttonTexture = loader.loadTexture("whiteButton");
     	shader = new GuiShader();
     	blurShader = new BlurShader();
-    	fbo_a = new FBO(FBO_SIZE, FBO_SIZE, false);
-    	fbo_b = new FBO(FBO_SIZE, FBO_SIZE,false);
+    	initFBOs();
     	background_matrix = Maths.createTransformationMatrix(new Vector2f(0,0), new Vector2f(1f,1f));
     	background_matrix.rotate((float)Math.PI, new Vector3f(0f,1f,0f));
     	background_matrix.rotate((float)Math.PI, new Vector3f(0f,0f,1f));
+    }
+    
+    private void initFBOs(){
+    	fbo_a = new FBO(Display.getHeight(), Display.getWidth(), false);
+    	fbo_b = new FBO(Display.getHeight(), Display.getWidth(),false);
     }
     
     public void render() {
@@ -78,7 +84,6 @@ public class GuiRenderer {
     }
     
 	public void render(List<GuiTexture> guis) {
-		logger.debug("GUIS: {}",guis);
         shader.start();
         glBindVertexArray(quad.getVaoID());
         glEnableVertexAttribArray(0);
@@ -238,5 +243,11 @@ public class GuiRenderer {
         fbo_a.destroy();
         fbo_b.destroy();
     }
+
+	public void updateResolution() {
+		fbo_a.destroy();
+		fbo_b.destroy();
+		initFBOs();
+	}
     
 }

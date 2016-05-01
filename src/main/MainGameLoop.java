@@ -20,6 +20,7 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
@@ -193,9 +194,6 @@ public class MainGameLoop {
 		
 		allentities = new ArrayList<>();
 		
-//		menuGuis.add(new GuiTexture(loader.loadTexture("null"), new Vector2f(0.0f, 0.0f),
-//				new Vector2f(1f, 1f)));
-		
 		guiRenderer = new GuiRenderer(loader);
 		
 		camera = new Camera(startCamPos, 0, 20);
@@ -258,7 +256,6 @@ public class MainGameLoop {
 		case MAIN_MENU:
 		case OPMENU:
 		case SPMENU:
-		case OPMENU_IG:
 			renderMenuSzene(true);
 			break;
 		case GAME:
@@ -266,6 +263,7 @@ public class MainGameLoop {
 			DisplayManager.updateDisplay();
 			break;
 		case INGAME_MENU:
+		case OPMENU_IG:
 			renderMenuSzene(false);
 			break;
 		default:
@@ -590,8 +588,8 @@ public class MainGameLoop {
 		});
 		iMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,0f), new Vector2f(0.4f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
-				logger.trace("Options");	
-				hideAllMenus(true);
+				logger.trace("Options");
+				hideAllMenus(false);
 				showMenu(opButtonTexts, opButtonList);
 				state = State.OPMENU_IG;
 			}
@@ -668,7 +666,7 @@ public class MainGameLoop {
 		sMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,0f), new Vector2f(0.5f, 0.17f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("Options");	
-				hideAllMenus(true);
+				hideAllMenus(false);
 				showMenu(opButtonTexts, opButtonList);
 				state = State.OPMENU;
 			}
@@ -754,15 +752,15 @@ public class MainGameLoop {
 			public void whileHovering(Button button) {}			
 		});
 		
+		/**
+		 * Options
+		 */
 		opButtonList = new ArrayList<>();
 		for(int i = DisplayManager.getDmi(); i<DisplayManager.getDms().size(); i++) {
 			int it= i;
 			opButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,0.83f-0.2f*i), new Vector2f(0.2f, 0.08f),guiRenderer) {			
 				public void onClick(Button button) {		
-					try {
-						Display.setDisplayMode(DisplayManager.getDms().get(it));
-					} catch (LWJGLException e) {
-					}
+					changeRes(DisplayManager.getDms().get(it));
 				}
 				public void onStartHover(Button button) {
 					this.playHoverAnimation(0.02f);
@@ -773,24 +771,24 @@ public class MainGameLoop {
 				public void whileHovering(Button button) {}			
 			});
 		}
-		opButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,-0.6f), new Vector2f(0.2f, 0.1f),guiRenderer) {			
+		opButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,-0.6f), new Vector2f(0.2f, 0.09f),guiRenderer) {			
 			public void onClick(Button button) {
 				logger.trace("Fscreen");
 				try {
 					Display.setFullscreen(!Display.isFullscreen());
 				} catch (LWJGLException e) {
-					e.printStackTrace();
+					logger.error(e);
 				}
 			}
 			public void onStartHover(Button button) {
-				this.playHoverAnimation(0.03f);
+				this.playHoverAnimation(0.025f);
 			}			
 			public void onStopHover(Button button) {
 				this.resetScale();
 			}
 			public void whileHovering(Button button) {}			
 		});
-		opButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,-0.8f), new Vector2f(0.2f, 0.1f),guiRenderer) {			
+		opButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0,-0.8f), new Vector2f(0.2f, 0.09f),guiRenderer) {			
 			public void onClick(Button button) {
 				hideAllMenus(false);
 				if(state == State.OPMENU) {
@@ -802,29 +800,13 @@ public class MainGameLoop {
 				}
 			}
 			public void onStartHover(Button button) {
-				this.playHoverAnimation(0.03f);
+				this.playHoverAnimation(0.025f);
 			}			
 			public void onStopHover(Button button) {
 				this.resetScale();
 			}
 			public void whileHovering(Button button) {}			
 		});
-	
-		//Fullscreen button nicht vergessen Du hässlichkeit
-		/*opButtonList.add(new AbstractButton(loader, "null", new Vector2f(0,1f-0.1f*i), new Vector2f(0.5f, 0.17f)) {			
-			public void onClick(Button button) {		
-				try {
-					Display.setDisplayMode(DisplayManager.getDms().get(it));
-				} catch (LWJGLException e) {
-				}
-			}
-			public void onStartHover(Button button) {
-			}			
-			public void onStopHover(Button button) {
-			}
-			public void whileHovering(Button button) {}			
-		});*/
-		
 	}
 	
 	public static boolean getStaticCamera() {
@@ -883,6 +865,15 @@ public class MainGameLoop {
 		logger.entry();
 		backgroundGame = false;
 		cleanupGame();
+	}
+	
+	private static void changeRes(DisplayMode displayMode){
+		try {
+			Display.setDisplayMode(displayMode);
+		} catch (LWJGLException e) {
+			logger.error(e);
+		}
+		guiRenderer.updateResolution();
 	}
 	
 	/**

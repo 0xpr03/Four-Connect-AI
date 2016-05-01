@@ -38,7 +38,6 @@ public abstract class AbstractButton implements Button{
 	 * Checks for collision of mouse and button etc.
 	 */
 	public void update(){
-		logger.entry();
 		if(!isHidden) {
 			Vector2f location = guiTexture.getPosition();
 			Vector2f scale = guiTexture.getScale();
@@ -72,7 +71,6 @@ public abstract class AbstractButton implements Button{
 	}
 	
 	public void show() {
-		logger.entry();
 		if(isHidden) {
 			wasUnpressed = false;
 			renderer.addRenderTexture(guiTexture);
@@ -83,11 +81,9 @@ public abstract class AbstractButton implements Button{
 	public void hide() {
 		if(!isHidden) {
 			isHidden = true;
-			logger.debug("Hiding: {} from {}",guiTexture, renderer.getRenderTextures());
 			if(!renderer.removeRenderTexture(guiTexture)){
 				logger.error("Unable to remove texture!");
 			}
-			logger.debug("Now {}",renderer.getRenderTextures());
 		}else{
 			logger.error("Unable to hide!");
 		}
