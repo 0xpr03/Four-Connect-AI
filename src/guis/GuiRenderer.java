@@ -23,6 +23,8 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
+import fontMeshCreator.FontType;
+import fontMeshCreator.GUIText;
 import models.RawModel;
 import renderEngine.FBO;
 import renderEngine.Loader;
@@ -44,12 +46,13 @@ public class GuiRenderer {
     private FBO fbo_b;
     private final Matrix4f background_matrix;
     private List<GuiTexture> renderTextures = new ArrayList<>();
+    private FontType font;
     
 	private int buttonTexture;
     
     private Logger logger = LogManager.getLogger();
     
-    public GuiRenderer(Loader loader) {
+    public GuiRenderer(Loader loader,FontType font) {
     	{
         float[] positions = { -1, 1, -1, -1, 1, 1, 1, -1 };
 	        quad = loader.loadtoVAO(positions);
@@ -63,6 +66,7 @@ public class GuiRenderer {
     		};
     		quad_background = loader.loadtoVAO(positions);
     	}
+    	this.font = font;
     	buttonTexture = loader.loadTexture("whiteButton");
     	shader = new GuiShader();
     	blurShader = new BlurShader();
@@ -79,6 +83,10 @@ public class GuiRenderer {
     
     public void render() {
     	render(renderTextures);
+    }
+    
+    public GUIText createGameOverlayText(String text){
+    	return new GUIText(text, 2, font, new Vector2f(0f, 0f), 1f, false, true);
     }
     
 	public void render(List<GuiTexture> guis) {
@@ -127,6 +135,7 @@ public class GuiRenderer {
         glBindVertexArray(0);
         shader.stop();
     }
+    
     
     public String checkError(){
 		int errorFlag = GL11.glGetError();

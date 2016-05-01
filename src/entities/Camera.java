@@ -78,7 +78,8 @@ public class Camera {
 	}
 	
 	public void setPosition(Vector3f position) {
-		this.position = position;
+		logger.entry();
+		this.position = new Vector3f(position);
 	}
 	
 	public void setRotY(float rotY) {

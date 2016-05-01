@@ -74,7 +74,7 @@ public class MainGameLoop {
 	private static Camera camera;
 	private static Terrain terrain;
 	private static MousePicker picker;
-	private static Entity lampTest;
+	private static Entity cursorLamp;
 	private static Entity boden;
 	private static List<Entity> allentities;
 	private static List<Light> lights;
@@ -116,6 +116,13 @@ public class MainGameLoop {
 	private static boolean backgroundGame = false;
 	private static boolean GUIRenderBreak = false;
 	private final static Vector3f startCamPos = new Vector3f(15, -3, 75);
+	private static Vector3f cursor_A = null;
+	private static int posCursor_A = chosenRohr;
+	private static Vector3f cursor_B = null;
+	private static int posCursor_B = chosenRohr;
+	private static Vector3f cursor_Default;
+	private static GUIText textPlA = null;
+    private static GUIText textPlB;
 	private static GameStore gameStore = null;
 
 	private final static Level LOG_CONTRBASE = Level.WARN;
@@ -159,7 +166,7 @@ public class MainGameLoop {
 		SP_ButtonTexts.add(new GUIText("6x5 Hard", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("4x4 Hard", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("Back", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
-
+		
 		opButtonTexts = new ArrayList<>();
 		for (int i = DisplayManager.getDmi(); i < DisplayManager.getDms().size(); i++) {
 			opButtonTexts.add(new GUIText(
@@ -203,7 +210,9 @@ public class MainGameLoop {
 
 		allentities = new ArrayList<>();
 
-		guiRenderer = new GuiRenderer(loader);
+		guiRenderer = new GuiRenderer(loader, font);
+		
+		textPlA = guiRenderer.createGameOverlayText("Player A");
 
 		camera = new Camera(startCamPos, 0, 20);
 
@@ -215,9 +224,10 @@ public class MainGameLoop {
 																// count must be
 																// 2^n
 				new Vector2f(0f, 0f), new Vector2f(Display.getWidth() / Display.getHeight(), 1f));
-		lampTest = new Entity(lamp, new Vector3f(15, terrain.getHeightOfTerrain(0, 0) + 50, 0), 0, 0, 0, 1);
-		lampTest.increaseRotation(0, 0, 180);
-		allentities.add(lampTest);
+		cursor_Default = new Vector3f(15, terrain.getHeightOfTerrain(0, 0) + 50, 0);
+		cursorLamp = new Entity(lamp, new Vector3f(cursor_Default), 0, 0, 0, 1);
+		cursorLamp.increaseRotation(0, 0, 180);
+		allentities.add(cursorLamp);
 		boden = new Entity(brett, new Vector3f(15, terrain.getHeightOfTerrain(0, 0), 0), 0, 0, 0, 5);
 		allentities.add(boden);
 
@@ -317,13 +327,7 @@ public class MainGameLoop {
 				callAI = false;
 			}
 		}
-		Vector3f terrainPoint = picker.getCurrentTerrainPoint(); // Gibt den
-																	// Punkt
-																	// aus, auf
-																	// dem mouse
-																	// Ray auf
-																	// terrain
-																	// trifft.
+		Vector3f terrainPoint = picker.getCurrentTerrainPoint(); // Gibt den Punkt aus, auf dem mouse Ray auf terrain trifft.
 		if (terrainPoint != null && terrainPoint.getX() >= 50) {
 			testLight.setColour(new Vector3f(0.9f, 0, 0.3f));
 		} else {
@@ -354,22 +358,26 @@ public class MainGameLoop {
 		auswahlLicht3.setPosition(new Vector3f(chosenRohr * 5, terrain.getHeightOfTerrain(0, 0) + 18, 0));
 		auswahlLicht4.setPosition(new Vector3f(chosenRohr * 5, terrain.getHeightOfTerrain(0, 0) + 11, 0));
 		renderer.render(lights, camera);
+		if(!backgroundGame && state != State.INGAME_MENU){
+			if(GController.getGameState() == E_GAME_STATE.PLAYER_A){
+				textPlA.show();
+				textPlB.hide();
+			}else if(GController.getGameState() == E_GAME_STATE.PLAYER_B){
+				textPlA.hide();
+				textPlB.show();
+			}else{
+				textPlA.hide();
+				textPlB.hide();
+			}
+		}
+		
 		TextMaster.render();
 	}
 
 	private static void hideAllMenus(boolean resetCam) {
 		GUIRenderBreak = true;
 		if (resetCam) {
-			camera.resetMovement();
-			if (lastCamPos != null) {
-				camera.setPosition(lastCamPos);
-				camera.setRotY(lastCamRotY);
-				logger.debug("lastCamPos {}", lastCamPos);
-			} else {
-				camera.setPosition(startCamPos);
-				camera.setRotY(0);
-				logger.debug("startCamPos {}", startCamPos);
-			}
+			resetCam();
 		}
 		for (GUIText g : currentTexts) {
 			g.hide();
@@ -458,25 +466,27 @@ public class MainGameLoop {
 				if (Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
 					lastCamPos = camera.getPosition();
 					lastCamRotY = camera.getRotY();
+					textPlA.hide();
+					textPlB.hide();
 					showMenu(iMButtonTexts, iMButtonList);
 					state = State.INGAME_MENU;
 				} else if (gameStore == null) {
 					if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
 						if (flippedView && chosenRohr != 0) {
 							chosenRohr -= 1;
-							lampTest.increasePosition(-5, 0, 0);
+							cursorLamp.increasePosition(-5, 0, 0);
 						} else if (!flippedView && chosenRohr != (rohre - 1)) {
 							chosenRohr += 1;
-							lampTest.increasePosition(5, 0, 0);
+							cursorLamp.increasePosition(5, 0, 0);
 						}
 					}
 					if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
 						if (flippedView && chosenRohr != (rohre - 1)) {
 							chosenRohr += 1;
-							lampTest.increasePosition(5, 0, 0);
+							cursorLamp.increasePosition(5, 0, 0);
 						} else if (!flippedView && chosenRohr != 0) {
 							chosenRohr -= 1;
-							lampTest.increasePosition(-5, 0, 0);
+							cursorLamp.increasePosition(-5, 0, 0);
 						}
 
 					}
@@ -524,7 +534,7 @@ public class MainGameLoop {
 	 * @param spalte
 	 */
 	private static void insertStone(int spalte) {
-		logger.entry(spalte);
+//		logger.entry(spalte);
 		if (pipes[spalte] == null)
 			return;
 		Color color = null;
@@ -550,7 +560,7 @@ public class MainGameLoop {
 	 * @param color
 	 */
 	public static void setStone(int spalte, Color color) {
-		logger.entry(spalte, color);
+//		logger.entry(spalte, color);
 		int zeile = (pipes[spalte]).getBalls();
 		if (zeile == 6)
 			return;
@@ -582,20 +592,34 @@ public class MainGameLoop {
 					&& GController.getGameState() == E_GAME_STATE.PLAYER_B)
 				callAI = true; // call AI in next frame
 			else if (GController.getGamemode() == E_GAME_MODE.MULTIPLAYER && !backgroundGame)
-				moveCam();
+				moveCam(false);
 		}
 	}
 
-	private static void moveCam() {
-		int z = (int) camera.getPosition().getZ();
-		if (z < 0) {
-			camera.increasePosition(0, 0, 150);
-			camera.increaseRotation(180, 0);
+	private static void moveCam(final boolean startgame) {
+		logger.entry();
+		boolean player_a = GController.getGameState() == E_GAME_STATE.PLAYER_A || GController.getGamemode() == E_GAME_MODE.SINGLE_PLAYER;
+		logger.debug("Player_A: {}",player_a);
+		if (player_a) {
+			logger.entry();
+			if(!startgame){
+				camera.increasePosition(0, 0, 150);
+				camera.increaseRotation(180, 0);
+				cursor_B = cursorLamp.getPosition();
+				posCursor_B = chosenRohr;
+				cursorLamp.setPosition(cursor_A);
+				chosenRohr = posCursor_A;
+			}
 		} else {
+			logger.entry();
 			camera.increasePosition(0, 0, -150);
 			camera.increaseRotation(180, 0);
+			cursor_A = cursorLamp.getPosition();
+			posCursor_A = chosenRohr;
+			cursorLamp.setPosition(cursor_B);
+			chosenRohr = posCursor_B;
 		}
-		flippedView = z < 0;
+		flippedView = player_a;
 	}
 
 	/**
@@ -811,8 +835,8 @@ public class MainGameLoop {
 		SP_ButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0, 0.4f),
 				new Vector2f(0.5f, 0.17f), guiRenderer) {
 			public void onClick(Button button) {
-				logger.trace("6x5 Hard");
-				startGame(6, 5, E_GAME_MODE.SINGLE_PLAYER, false);
+				logger.trace("5x5 Hard");
+				startGame(5, 5, E_GAME_MODE.SINGLE_PLAYER, false);
 			}
 
 			public void onStartHover(Button button) {
@@ -972,12 +996,16 @@ public class MainGameLoop {
 	 * End game, inform controller, cleanup GUI
 	 */
 	private static void cleanupGame() {
+		logger.entry();
 		GController.stopGame();
 		gameStore = null;
 		shallMoveBall = false;
 		lastCamPos = null;
 		lastCamRotY = 0;
 		callAI = false;
+		if(textPlB != null)
+			textPlB.hide();
+		textPlA.hide();
 		for (Entity[] ball_col : balls) {
 			for (int i = 0; i < ball_col.length; i++) {
 				ball_col[i] = null;
@@ -1002,9 +1030,22 @@ public class MainGameLoop {
 			hideAllMenus(true);
 			state = State.GAME;
 		}
+		backgroundGame = background;
+		if(textPlB != null)
+			textPlB.remove();
 		if(gameMode == E_GAME_MODE.SINGLE_PLAYER){
 			GController.changeAI_a(anzahl_spalten != 7 && anzahl_zeilen != 6);
+			textPlB = guiRenderer.createGameOverlayText("AI");
+		}else if(!background){
+			textPlB = guiRenderer.createGameOverlayText("Player B");
 		}
+		cursorLamp.setPosition(new Vector3f(cursor_Default));
+		cursor_A = new Vector3f(cursor_Default);
+		flippedView = false;
+		chosenRohr = 3;
+		posCursor_A = chosenRohr;
+		posCursor_B = chosenRohr;
+		cursor_B = new Vector3f(cursor_Default);
 		rohre = anzahl_spalten;
 		for (int i = 0; i < rohre; i++) {
 			pipes[i] = new Rohr(rohr, new Vector3f(i * 5, terrain.getHeightOfTerrain(0, 0) + 1, 0), 0, 0, 0, 2);
@@ -1013,11 +1054,29 @@ public class MainGameLoop {
 		callAI = false;
 		GController.initGame(gameMode, LOG_CONTRBASE, anzahl_spalten, anzahl_zeilen);
 		GController.startGame();
+		
+		if(!background){
+			resetCam();
+			moveCam(true);
+		}
 	}
-
+	
+	private static void resetCam(){
+		logger.entry();
+		camera.resetMovement();
+		if (lastCamPos != null) {
+			camera.setPosition(lastCamPos);
+			camera.setRotY(lastCamRotY);
+			logger.debug("lastCamPos {}", lastCamPos);
+		} else {
+			camera.setPosition(startCamPos);
+			camera.setRotY(0);
+			logger.debug("startCamPos {}", startCamPos);
+		}
+	}
+	
 	public static void startBackgroundGame() {
 		logger.entry();
-		backgroundGame = true;
 		startGame(7, 6, E_GAME_MODE.MULTIPLAYER, true);
 		callAI = true;
 	}
