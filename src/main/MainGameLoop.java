@@ -1078,9 +1078,9 @@ public class MainGameLoop {
 	 *            the gs to set
 	 */
 	public static void renderGameEnd(GameStore gs) {
-		hideAllMenus(false);
 		if (backgroundGame)
 			return;
+		hideAllMenus(false);
 		MainGameLoop.gameStore = gs;
 		state = State.GAME_ENDSCREEN;
 
