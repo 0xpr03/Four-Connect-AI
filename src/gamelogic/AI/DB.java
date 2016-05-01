@@ -13,6 +13,7 @@ public interface DB {
 	/**
 	 * Get all moves for field
 	 * @param field
+	 * @param player_a
 	 * @return
 	 */
 	public abstract SelectResult getMoves(E_FIELD_STATE[][] field,boolean player_a);
@@ -20,7 +21,7 @@ public interface DB {
 	 * Insert moves
 	 * @param field
 	 * @param moves
-	 * @return returns first move
+	 * @return returns SelectResult with all moves or null on failure
 	 */
 	public abstract SelectResult insertMoves(E_FIELD_STATE[][] field, List<Integer> moves,boolean player_a);
 	/**

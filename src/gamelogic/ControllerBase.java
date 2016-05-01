@@ -63,6 +63,15 @@ public class ControllerBase {
 		checkBasics();
 	}
 	
+	/**
+	 * Change AI, shut down the previous
+	 * @param ai_a new AI to be used
+	 */
+	public void changeAI_a(AI ai_a){
+		this.AI_a.shutdown();
+		this.AI_a = ai_a;
+	}
+	
 	private void checkBasics(){
 		if(X_MAX != 7)
 			logger.warn("X_MAX = {}",X_MAX);

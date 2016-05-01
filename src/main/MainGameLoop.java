@@ -1002,6 +1002,9 @@ public class MainGameLoop {
 			hideAllMenus(true);
 			state = State.GAME;
 		}
+		if(gameMode == E_GAME_MODE.SINGLE_PLAYER){
+			GController.changeAI_a(anzahl_spalten != 7 && anzahl_zeilen != 6);
+		}
 		rohre = anzahl_spalten;
 		for (int i = 0; i < rohre; i++) {
 			pipes[i] = new Rohr(rohr, new Vector3f(i * 5, terrain.getHeightOfTerrain(0, 0) + 1, 0), 0, 0, 0, 2);
@@ -1069,7 +1072,7 @@ public class MainGameLoop {
 	}
 
 	/**
-	 * Set the gamestore and switch to the endscreen<br>
+	 * Set a gamestore and switch to endscreen<br>
 	 * 
 	 * @param gs
 	 *            the gs to set

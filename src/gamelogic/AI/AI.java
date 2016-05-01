@@ -34,16 +34,19 @@ public interface AI {
 	public abstract void preProcess();
 	
 	/**
+	 * <I>AI Learning move</i><br>
 	 * Go back one in the move history and update this as the current-last move
 	 * @param allowEmpty if true, a turn to an empty list is allowed
 	 */
 	public abstract void goBackHistory(boolean allowEmpty);
 	/**
+	 * <I>AI Learning move</i><br>
 	 * Returns true if more moves are availale for the current field
 	 * @return
 	 */
 	public abstract boolean hasMoreMoves();
 	/**
+	 * <I>AI Learning move</i><br>
 	 * Request AI to set the possible outcomes of the current Field
 	 * via setWIN_A setWIN_B, setDRAW used for rollback gamevents
 	 */

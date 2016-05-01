@@ -8,6 +8,8 @@ import org.apache.logging.log4j.Level;
 import gamelogic.ControllerBase.E_FIELD_STATE;
 import gamelogic.ControllerBase.E_GAME_MODE;
 import gamelogic.ControllerBase.E_GAME_STATE;
+import gamelogic.AI.AI;
+import gamelogic.AI.KBS2;
 import gamelogic.AI.KBS_player;
 import gamelogic.AI.MemCache;
 import gamelogic.AI.WebPlayer;
@@ -22,6 +24,12 @@ import gamelogic.AI.mariaDB;
 public class GController {
 	
 	private static Controller controller;
+	
+	private static String address = "localhost";
+	private static String user = "ai";
+	private static String pw = "";
+	private static int port = 3306;
+	private static String db = "ai";
 	
 	public static void init(String address, int port, String user, String pw, String db){
 		MemCache<ByteBuffer,Long> cache = new MemCache<ByteBuffer, Long>(300, 300, 12000,2000,11000);
@@ -237,5 +245,18 @@ public class GController {
 	 */
 	public static GameStore getLAST_GAME() {
 		return controller.getLAST_GAME();
+	}
+
+	/**
+	 * @param ai_a
+	 * @see gamelogic.ControllerBase#changeAI_a(gamelogic.AI.AI)
+	 */
+	public static synchronized void changeAI_a(boolean web) {
+		AI a;
+		if(web)
+			a = new WebPlayer();
+		else
+			a = new KBS2<mariaDB>(new mariaDB(address, port, user, pw, db, new MemCache<ByteBuffer, Long>(300, 300, 12000,2000,11000)), true);
+		controller.changeAI_a(a);
 	}
 }

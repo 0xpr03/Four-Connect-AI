@@ -168,6 +168,11 @@ public class WebPlayer implements AI {
 		t.setName("prefetch");
 	}
 
+	/**
+	 * Get move object from json map
+	 * @param map
+	 * @return
+	 */
 	private Move getMove(HashMap<String, Object> map) {
 		boolean loose = ((long) map.get("loose")) != 0;
 		boolean draw = ((long) map.get("draw")) != 0;
@@ -217,12 +222,15 @@ public class WebPlayer implements AI {
 	@Override
 	public void shutdown() {
 		logger.entry();
-		taskDoMove.cancel();
+		if(taskDoMove != null)
+			taskDoMove.cancel();
 		if(t != null)
 		if(t.isAlive())
 			t.interrupt();
-		maintimer.cancel();
-		connManager.shutdown();
+		if(maintimer != null)
+			maintimer.cancel();
+		if(connManager != null)
+			connManager.shutdown();
 	}
 
 	@Override
@@ -256,8 +264,6 @@ public class WebPlayer implements AI {
 
 	@Override
 	public void goBackHistory(boolean allowEmpty) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -267,10 +273,14 @@ public class WebPlayer implements AI {
 
 	@Override
 	public void getOutcome() {
-		// TODO Auto-generated method stub
-
 	}
 
+	/**
+	 * Http1/2.0 post
+	 * @param url post url
+	 * @param host header specified host
+	 * @param urlParameters params to post
+	 */
 	private String doPost(String url, String host, List<NameValuePair> urlParameters) throws IOException {
 		// create client & post
 		HttpPost post = new HttpPost(url);
