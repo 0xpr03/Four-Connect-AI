@@ -1,7 +1,5 @@
 package buttons;
 
-import java.util.List;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Mouse;
@@ -24,10 +22,11 @@ public abstract class AbstractButton implements Button{
 	
 	private GuiRenderer renderer;
 	
-//	public AbstractButton(Loader loader, String texture, Vector2f position, Vector2f scale) {
-//		guiTexture = new GuiTexture(loader.loadTexture(texture), position, scale);
-//		originalScale = scale;
-//	}
+	public AbstractButton(Loader loader, String texture, Vector2f position, Vector2f scale,GuiRenderer renderer) {
+		guiTexture = new GuiTexture(loader.loadTexture(texture), position, scale);
+		originalScale = scale;
+		this.renderer = renderer;
+	}
 	
 	public AbstractButton(int texture, Vector2f position, Vector2f scale, GuiRenderer renderer) {
 		guiTexture = new GuiTexture(texture, position, scale);
@@ -82,10 +81,10 @@ public abstract class AbstractButton implements Button{
 		if(!isHidden) {
 			isHidden = true;
 			if(!renderer.removeRenderTexture(guiTexture)){
-				logger.error("Unable to remove texture!");
+				logger.debug("Unable to remove texture!");
 			}
 		}else{
-			logger.error("Unable to hide!");
+			logger.debug("Unable to hide!");
 		}
 	}
 	

@@ -5,8 +5,6 @@
  */
 package entities;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.vector.Vector3f;
@@ -25,7 +23,6 @@ public class Camera {
     private float HEIGHT_SPEED;//    shift/space keys
 
     private Vector3f position;
-    private Logger logger = LogManager.getLogger();
     private float pitch;
     private float rotY;
     
@@ -49,7 +46,6 @@ public class Camera {
         dz += (SIDEWARD_SPEED * (float)Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
         position.x += dx;
         position.z += dz;
-//        logger.debug("S:{}|F:{}",COORDS_SIDEWARD, COORDS_FORWARD);
         position.y += HEIGHT_SPEED * DisplayManager.getFrameTimeSeconds();
         increasePosition(0, HEIGHT_SPEED * DisplayManager.getFrameTimeSeconds(), 0);
         float terrainHeight = terrain.getHeightOfTerrain(position.x, position.z);
@@ -79,7 +75,6 @@ public class Camera {
         dz += (SIDEWARD_SPEED * (float)Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
         position.x += dx;
         position.z += dz;
-//        logger.debug("posX {} posZ {}",position.x,position.z);
 	}
 	
 	public void setPosition(Vector3f position) {

@@ -58,7 +58,7 @@ public class webPlayerTest {
 	}
 	
 	@Test
-	public void webPlayerTest(){
+	public void WPTest(){
 		WebPlayer wb = new WebPlayer();
 		GController.initGame(E_GAME_MODE.TESTING, Level.WARN, 4, 4);
 		GController.startGame();

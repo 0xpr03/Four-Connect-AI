@@ -33,6 +33,7 @@ import terrain.Terrain;
 /**
  * @author Trist
  */
+@SuppressWarnings("unused")
 public class MasterRenderer {
     private static final float FOV = 70;
     private static final float NEAR_PLANE = 0.1f;

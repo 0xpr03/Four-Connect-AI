@@ -24,7 +24,6 @@ import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
 import models.RawModel;
-import renderEngine.DisplayManager;
 import renderEngine.FBO;
 import renderEngine.Loader;
 import renderEngine.MasterRenderer;
@@ -44,7 +43,6 @@ public class GuiRenderer {
     private FBO fbo_a;
     private FBO fbo_b;
     private final Matrix4f background_matrix;
-    private final int FBO_SIZE = 1024;
     private List<GuiTexture> renderTextures = new ArrayList<>();
     
 	private int buttonTexture;

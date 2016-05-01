@@ -31,7 +31,6 @@ import gamelogic.AI.Move;
 import gamelogic.AI.SelectResult;
 import gamelogic.AI.lib;
 import gamelogic.AI.mariaDB;
-import gamelogic.AI.learning.mariaDB_simple;
 
 public class gameControllerTester {
 	
