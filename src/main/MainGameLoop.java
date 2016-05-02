@@ -392,12 +392,9 @@ public class MainGameLoop {
 		for (GUIText g : currentTexts) {
 			g.hide();
 		}
-		logger.debug("GUI Tex: {}", guiRenderer.getRenderTextures());
 		for (AbstractButton b : currentButtons) {
 			b.hide();
-			logger.debug("hiding {}", b);
 		}
-		logger.debug("GUI Tex: {}", guiRenderer.getRenderTextures());
 	}
 
 	/**
@@ -486,6 +483,9 @@ public class MainGameLoop {
 					showMenu(iMButtonTexts, iMButtonList);
 					state = State.INGAME_MENU;
 				} else if (gameStore == null) {
+					if(GController.getGamemode() == E_GAME_MODE.SINGLE_PLAYER && GController.getGameState() == E_GAME_STATE.PLAYER_B){
+						return;
+					}
 					if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
 						if (flippedView && chosenRohr != 0) {
 							chosenRohr -= 1;
@@ -1177,16 +1177,19 @@ public class MainGameLoop {
 		hideAllMenus(false);
 		MainGameLoop.gameStore = gs;
 		state = State.GAME_ENDSCREEN;
-
+		
+		String player_b = "player b";
+		if(GController.getGamemode() == E_GAME_MODE.SINGLE_PLAYER)
+			player_b = "AI";
 		String text = "";
 		if (gs.isDraw()) {
 			text = "Draw";
 		} else if (gs.isCapitulation()) {
 			text = "Surrender by ";
-			text += gs.getState() == E_GAME_STATE.WIN_A ? "player b" : "player a";
+			text += gs.getState() == E_GAME_STATE.WIN_A ? player_b : "player a";
 		} else {
 			text = "Win by ";
-			text += gs.getState() == E_GAME_STATE.WIN_A ? "player a" : "player b";
+			text += gs.getState() == E_GAME_STATE.WIN_A ? "player a" : player_b;
 		}
 
 		variableTexts = new GUIText[1];

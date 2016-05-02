@@ -40,8 +40,8 @@ import gamelogic.GController;
  */
 public class WebPlayer implements AI {
 	private static String UA = "KBS WebPlayer";
-	private static String HOST = "proctet.net";
-	private static String URL = "http://localhost/q4_ai/ai.php";
+	private static String HOST = "prog.db.proctet.net";
+	private static String URL = "http://prog.db.proctet.net/ai.php";
 
 	private static int SCHEDULE_TIME = 1000;
 

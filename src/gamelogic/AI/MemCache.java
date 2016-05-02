@@ -38,6 +38,7 @@ public class MemCache<K, T> {
 	 * @param maxItems max items to be stored till the first one will be overridden<br>
 	 * additionally the adjustment time will decrease, creating earlier flushes
 	 * @param minItems minimal items, under this value the cleanup interval will increase<br>
+	 * @param max_target max items for interval decrease
 	 */
 	public MemCache(long lifetimeSec, final long timerIntervall, int maxItems, int minItems, int max_target) {
 		this.timeToLive = lifetimeSec * 1000;
