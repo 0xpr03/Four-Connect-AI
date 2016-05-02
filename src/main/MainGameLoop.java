@@ -112,6 +112,8 @@ public class MainGameLoop {
 	private static int chosenRohr = 3;
 	private static int rohre = 0;
 	private static TexturedModel rohr;
+	private static TexturedModel rohr_4;
+	private static TexturedModel rohr_5;
 	private static boolean callAI;
 	private static boolean backgroundGame = false;
 	private static boolean GUIRenderBreak = false;
@@ -163,7 +165,7 @@ public class MainGameLoop {
 
 		SP_ButtonTexts = new ArrayList<>();
 		SP_ButtonTexts.add(new GUIText("7x6 WBS2", 5, font, new Vector2f(0, 0.02f), 1f, true, true));
-		SP_ButtonTexts.add(new GUIText("6x5 Hard", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
+		SP_ButtonTexts.add(new GUIText("5x5 Hard", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("4x4 Hard", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("Back", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
 		
@@ -204,6 +206,8 @@ public class MainGameLoop {
 		ballG = loader.loadtoVAO("kugel", "kugelG");
 
 		rohr = loader.loadtoVAO("rohr2", "rohrTexture");
+		rohr_4 = loader.loadtoVAO("rohr4", "rohrTexture");
+		rohr_5 = loader.loadtoVAO("rohr5", "rohrTexture");
 
 		logger.trace("creating entities");
 		terrain = new Terrain(-0.5f, -0.5f, loader, texturePack, blendMap, "black");
@@ -1066,8 +1070,15 @@ public class MainGameLoop {
 		posCursor_B = chosenRohr;
 		cursor_B = new Vector3f(cursor_Default);
 		rohre = anzahl_spalten;
+		TexturedModel model = rohr;;
+		if(gameMode == E_GAME_MODE.SINGLE_PLAYER){
+			if(anzahl_zeilen == 4)
+				model = rohr_4;
+			else if (anzahl_zeilen == 5)
+				model = rohr_5;
+		}
 		for (int i = 0; i < rohre; i++) {
-			pipes[i] = new Rohr(rohr, new Vector3f(i * 5, terrain.getHeightOfTerrain(0, 0) + 1, 0), 0, 0, 0, 2);
+			pipes[i] = new Rohr(model, new Vector3f(i * 5, terrain.getHeightOfTerrain(0, 0) + 1, 0), 0, 0, 0, 2);
 			pipes[i].getModel().getTexture().setUseFakeLighting(true);
 		}
 		callAI = false;
