@@ -84,6 +84,8 @@ public class MainGameLoop {
 	private static Light auswahlLicht4;
 	private static Light testLight;
 	private static GuiTexture intro;
+	private static GuiTexture yellowSquare;
+	private static GuiTexture redSquare;
 	private static List<AbstractButton> currentButtons;
 	private static List<AbstractButton> iMButtonList;
 	private static List<AbstractButton> sMButtonList;
@@ -152,9 +154,8 @@ public class MainGameLoop {
 
 		iMButtonTexts = new ArrayList<>();
 		iMButtonTexts.add(new GUIText("Resume", 5, font, new Vector2f(0, 0.02f), 1f, true, true));
-		iMButtonTexts.add(new GUIText("Restart", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
-		iMButtonTexts.add(new GUIText("Options", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
-		iMButtonTexts.add(new GUIText("Concede", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
+		iMButtonTexts.add(new GUIText("Options", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
+		iMButtonTexts.add(new GUIText("Concede", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
 		iMButtonTexts.add(new GUIText("Exit to Main Menu", 5, font, new Vector2f(0, 0.82f), 1f, true, true));
 
 		sMButtonTexts = new ArrayList<>();
@@ -228,6 +229,11 @@ public class MainGameLoop {
 																// count must be
 																// 2^n
 				new Vector2f(0f, 0f), new Vector2f(Display.getWidth() / Display.getHeight(), 1f));
+		
+		yellowSquare = new GuiTexture(loader.loadTexture("kugelG"), new Vector2f(-0.73f, 0.93f), new Vector2f(0.03f,0.05f));
+		
+		redSquare = new GuiTexture(loader.loadTexture("kugelR"), new Vector2f(-0.73f, 0.93f), new Vector2f(0.03f,0.05f));
+		
 		cursor_Default = new Vector3f(15, terrain.getHeightOfTerrain(0, 0) + 50, 0);
 		cursorLamp = new Entity(lamp, new Vector3f(cursor_Default), 0, 0, 0, 1);
 		cursorLamp.increaseRotation(0, 0, 180);
@@ -372,9 +378,11 @@ public class MainGameLoop {
 			if(GController.getGameState() == E_GAME_STATE.PLAYER_A){
 				textPlA.show();
 				textPlB.hide();
+				guiRenderer.render(redSquare);
 			}else if(GController.getGameState() == E_GAME_STATE.PLAYER_B){
 				textPlA.hide();
 				textPlB.show();
+				guiRenderer.render(yellowSquare);
 			}else{
 				textPlA.hide();
 				textPlB.hide();
@@ -676,23 +684,6 @@ public class MainGameLoop {
 		iMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0, 0.4f),
 				new Vector2f(0.4f, 0.17f), guiRenderer) {
 			public void onClick(Button button) {
-				logger.trace("restart");
-			}
-
-			public void onStartHover(Button button) {
-				this.playHoverAnimation(0.03f);
-			}
-
-			public void onStopHover(Button button) {
-				this.resetScale();
-			}
-
-			public void whileHovering(Button button) {
-			}
-		});
-		iMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0, 0f),
-				new Vector2f(0.4f, 0.17f), guiRenderer) {
-			public void onClick(Button button) {
 				logger.trace("Options");
 				hideAllMenus(false);
 				showMenu(opButtonTexts, opButtonList);
@@ -710,7 +701,7 @@ public class MainGameLoop {
 			public void whileHovering(Button button) {
 			}
 		});
-		iMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0, -0.4f),
+		iMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0, 0.0f),
 				new Vector2f(0.4f, 0.17f), guiRenderer) {
 			public void onClick(Button button) {
 				logger.trace("concede");

@@ -45,7 +45,7 @@ public class DisplayManager {
     public static void createDisplay(boolean useAA) {
         
         ContextAttribs attribs = new ContextAttribs(3,2)
-        .withForwardCompatible(true)
+        .withForwardCompatible(false)
         .withProfileCore(true);
             
         try {
@@ -77,7 +77,7 @@ public class DisplayManager {
         			break;
         		default:
         		}
-        		if(freq && width && height){
+        		if(freq && width && height && modes.size()<7){
         			modes.put(""+dm.getFrequency()+dm.getHeight()+dm.getWidth(),dm);
         		}
         	}
@@ -93,7 +93,7 @@ public class DisplayManager {
             Display.setTitle("Four connect, KBS demo");
             Display.setFullscreen(fullscreen);
         } catch (LWJGLException e) {
-            e.printStackTrace();    
+            logger.debug("Error with the Display-Modes {}", e);  
         }
         
         GL11.glViewport(0, 0, dms.get(dmi).getWidth(), dms.get(dmi).getHeight());

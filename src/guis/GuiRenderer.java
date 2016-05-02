@@ -67,7 +67,7 @@ public class GuiRenderer {
     		quad_background = loader.loadtoVAO(positions);
     	}
     	this.font = font;
-    	buttonTexture = loader.loadTexture("whiteButton");
+    	buttonTexture = loader.loadTexture("whiteButton2");
     	shader = new GuiShader();
     	blurShader = new BlurShader();
     	initFBOs();
