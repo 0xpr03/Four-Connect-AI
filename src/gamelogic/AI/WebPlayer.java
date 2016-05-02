@@ -73,19 +73,23 @@ public class WebPlayer implements AI {
 	 */
 	private void selectMove(SelectResult sel) {
 		logger.entry();
-		List<Move> possible_moves = new ArrayList<Move>(GController.getX_MAX());
+		List<Move> possible_moves = null;
 		if (!sel.getWins().isEmpty()) {
 			possible_moves = sel.getWins();
 		} else if (!sel.getDraws().isEmpty()) {
 			possible_moves = sel.getDraws();
 		} else {
-			if (sel.getUnused().isEmpty()) {
+			if (!sel.getUnused().isEmpty()) {
 				possible_moves = sel.getUnused();
 				logger.debug("No known sel");
 			} else {
 				logger.error("Only looses left!");
 				possible_moves = sel.getLooses();
 			}
+		}
+		if(possible_moves == null){
+			logger.error("No moves!");
+			return;
 		}
 		logger.debug("possible moves: {}", possible_moves.size());
 		prefetched_move = possible_moves.get(ThreadLocalRandom.current().nextInt(0, possible_moves.size()));
@@ -161,7 +165,7 @@ public class WebPlayer implements AI {
 					no_move = true;
 					got_answer = false;
 				}catch(Exception e){
-					logger.fatal(e);
+					logger.fatal("{}",e);
 				}
 			}
 		};

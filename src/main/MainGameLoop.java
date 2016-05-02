@@ -252,8 +252,8 @@ public class MainGameLoop {
 				new Vector3f(0, 0.04f, 1.5f));
 		lights = new ArrayList<>();
 		lights.add(sun);
-		testLight = new Light(new Vector3f(-30, -30, 0), new Vector3f(0.9f, 0, 0.3f), new Vector3f(0.5f, 0, 0));
-		lights.add(testLight);
+//		testLight = new Light(new Vector3f(-30, -30, 0), new Vector3f(0f, 0, 0.3f), new Vector3f(1f, 0, 0));
+//		lights.add(testLight);
 		lights.add(auswahlLicht);
 		lights.add(auswahlLicht2);
 		lights.add(auswahlLicht3);
@@ -342,12 +342,6 @@ public class MainGameLoop {
 				GController.moveAI_A();
 				callAI = false;
 			}
-		}
-		Vector3f terrainPoint = picker.getCurrentTerrainPoint(); // Gibt den Punkt aus, auf dem mouse Ray auf terrain trifft.
-		if (terrainPoint != null && terrainPoint.getX() >= 50) {
-			testLight.setColour(new Vector3f(0.9f, 0, 0.3f));
-		} else {
-			testLight.setColour(new Vector3f(0, 0, 0));
 		}
 		renderer.processTerrain(terrain);
 		for (Entity entity : allentities) {
