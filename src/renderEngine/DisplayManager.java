@@ -151,7 +151,7 @@ public class DisplayManager {
     public static float getFrameTimeSeconds() {
         return delta;
     }
-        
+    
     public static void closeDisplay() {
         Display.destroy();
     }

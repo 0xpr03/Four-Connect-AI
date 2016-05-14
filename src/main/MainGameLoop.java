@@ -65,7 +65,7 @@ public class MainGameLoop {
 
 	private static State state = State.INTRO;
 	private static final Logger logger = LogManager.getLogger(MainGameLoop.class);
-	private static String VERSION = "0.1";
+	private static String VERSION = "1.0";
 
 	// GLOBAL VARS, GAME LOOP
 	private static GuiRenderer guiRenderer;
@@ -82,7 +82,6 @@ public class MainGameLoop {
 	private static Light auswahlLicht2;
 	private static Light auswahlLicht3;
 	private static Light auswahlLicht4;
-	private static Light testLight;
 	private static GuiTexture intro;
 	private static GuiTexture yellowSquare;
 	private static GuiTexture redSquare;
@@ -622,11 +621,13 @@ public class MainGameLoop {
 	 * @param startgame
 	 */
 	private static void moveCam(final boolean startgame) {
+		E_GAME_STATE state = GController.getGameState();
+		if(state != E_GAME_STATE.PLAYER_A && state != E_GAME_STATE.PLAYER_B)
+			return;
 		logger.entry();
-		boolean player_a = GController.getGameState() == E_GAME_STATE.PLAYER_A || GController.getGamemode() == E_GAME_MODE.SINGLE_PLAYER;
+		boolean player_a = state == E_GAME_STATE.PLAYER_A || GController.getGamemode() == E_GAME_MODE.SINGLE_PLAYER;
 		logger.debug("Player_A: {}",player_a);
 		if (player_a) {
-			logger.entry();
 			if(!startgame){
 				camera.increasePosition(0, 0, 150);
 				camera.increaseRotation(180, 0);
@@ -636,7 +637,6 @@ public class MainGameLoop {
 				chosenRohr = posCursor_A;
 			}
 		} else {
-			logger.entry();
 			camera.increasePosition(0, 0, -150);
 			camera.increaseRotation(180, 0);
 			cursor_A = cursorLamp.getPosition();

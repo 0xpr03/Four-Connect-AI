@@ -256,7 +256,7 @@ public class GController {
 		if(web)
 			a = new WebPlayer();
 		else
-			a = new KBS2<mariaDB>(new mariaDB(address, port, user, pw, db, new MemCache<ByteBuffer, Long>(300, 300, 12000,2000,11000)), true);
+			a = new KBS2<mariaDB>(new mariaDB(address, port, user, pw, db, new MemCache<ByteBuffer, Long>(300, 300, 12000,2000,11000)));
 		controller.changeAI_a(a);
 	}
 }

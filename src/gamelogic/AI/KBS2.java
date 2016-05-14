@@ -24,15 +24,13 @@ public class KBS2<E extends DB> implements AI {
 	private E db;
 	private Move MOVE_CURRENT;
 	private E_PLAYER player;
-	private boolean LEARNING;
 	private boolean SHUTDOWN = false;
 	
 	private boolean follow_unused = false;
 	private List<Move> follow = new ArrayList<Move>();
 	
-	public KBS2(E db, boolean learning){
+	public KBS2(E db){
 		this.db = db;
-		this.LEARNING = learning;
 		logger.info("Knowledge based system initializing..");
 	}
 	
