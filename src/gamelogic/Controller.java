@@ -224,7 +224,8 @@ public final class Controller extends ControllerBase {
 		super.LAST_GAME = new GameStore();
 		informAIs(true);
 		
-		MainGameLoop.renderGameEnd(LAST_GAME);
+		if(GAMEMODE == E_GAME_MODE.MULTIPLAYER || GAMEMODE == E_GAME_MODE.SINGLE_PLAYER)
+			MainGameLoop.renderGameEnd(LAST_GAME);
 	}
 	
 	/**
@@ -248,7 +249,8 @@ public final class Controller extends ControllerBase {
 		LAST_GAME = ws;
 		informAIs(true);
 		
-		MainGameLoop.renderGameEnd(LAST_GAME);
+		if(GAMEMODE == E_GAME_MODE.MULTIPLAYER || GAMEMODE == E_GAME_MODE.SINGLE_PLAYER)
+			MainGameLoop.renderGameEnd(LAST_GAME);
 	}
 
 	/**
