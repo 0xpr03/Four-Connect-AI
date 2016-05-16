@@ -72,12 +72,10 @@ public class ControllerBase {
 		this.AI_a = ai_a;
 	}
 	
+	/**
+	 * Validate that the ENUM values haven't changed
+	 */
 	private void checkBasics(){
-		if(X_MAX != 7)
-			logger.warn("X_MAX = {}",X_MAX);
-		if(Y_MAX != 6)
-			logger.warn("Y_MAX = {}",Y_MAX);
-		
 		if(E_FIELD_STATE.NONE.ordinal() != 0 || E_FIELD_STATE.STONE_A.ordinal() != 1 || E_FIELD_STATE.STONE_B.ordinal() != 2){
 			logger.fatal("Invalid field state ordinals! FIELD{NONE:{},STONE_A:{},STONE_B:{}}",E_FIELD_STATE.NONE.ordinal(),E_FIELD_STATE.STONE_A.ordinal(),E_FIELD_STATE.STONE_B.ordinal());
 			shutdown();

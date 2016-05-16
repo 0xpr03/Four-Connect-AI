@@ -14,9 +14,15 @@ import main.MainGameLoop;
 import main.MainGameLoop.Color;
 
 /**
- * Controller for the four connect game
- * This class is NOT supposed to be created and used object.
- * Use GController as main instance!!
+ * Controller for the four connect game<br>
+ * Handles all game related things such as who is supposed to move,
+ * who won / draw etc<br>
+ * The Controller is also able to play number-crunching games for a
+ * knowledge based system in learning mode. (KBS2)
+ * This includes running through all possible game states by rolling
+ * back the game field to an earlier state.
+ * This class is NOT supposed to be created and used as object except
+ * for testing purposes. The global calls are done via GController.
  * @author Aron Heinecke
  * @param <E>
  */
@@ -24,10 +30,18 @@ public final class Controller extends ControllerBase {
 	
 	private Logger logger = LogManager.getLogger("Controller");
 	
+	/**
+	 * Create a new Controller with AI's
+	 * @param kbs_trainer default AI for singleplayer
+	 * @param kbs_trainer2 AI for training & tests of AI vs AI
+	 */
 	public Controller(AI kbs_trainer, AI kbs_trainer2) {
 		super(kbs_trainer, kbs_trainer2);
 	}
 	
+	/**
+	 * Create a new, AI less, Controller
+	 */
 	public Controller() {
 		super();
 	}

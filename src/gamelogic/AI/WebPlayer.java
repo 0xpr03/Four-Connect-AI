@@ -34,7 +34,7 @@ import gamelogic.GController;
 
 /**
  * KI player retrieving it's data over the web<br>
- * This player relies on the call of preProcess before each getMove
+ * This player relies on the call of preProcess before each getMove to prefetch it's next move.
  * 
  * @author Aron Heinecke
  */
