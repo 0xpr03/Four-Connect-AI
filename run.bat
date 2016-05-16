@@ -1,0 +1,1 @@
+java -Djava.library.path="natives" -jar q4_proj.jar
