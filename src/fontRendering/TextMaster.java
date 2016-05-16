@@ -12,7 +12,7 @@ import renderEngine.Loader;
 
 public class TextMaster {
 	/***
-	 * fontRendering and fontMeshCreator packages ist just some basic java to get the fonts ready to render, 
+	 * fontRendering and fontMeshCreator packages its just some basic java to get the fonts ready to render, 
 	 * uninteresting for other use than printing letters on the screen
 	 */
 	private static Loader loader;
@@ -28,6 +28,10 @@ public class TextMaster {
 		renderer.render(texts);
 	}
 	
+	/**
+	 * Load GUI Text and add it to the text batch
+	 * @param text
+	 */
 	public static void loadText(GUIText text) {
 		FontType font = text.getFont();
 		TextMeshData data = font.loadText(text);

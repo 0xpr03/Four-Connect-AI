@@ -5,40 +5,43 @@
  */
 package renderEngine;
 
-import entities.Camera;
-import entities.Entity;
-import entities.Light;
-import main.MainGameLoop;
+import static org.lwjgl.opengl.GL11.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import models.TexturedModel;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GLContext;
+import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
+
+import entities.Camera;
+import entities.Entity;
+import entities.Light;
+import models.TexturedModel;
 import shaders.StaticShader;
 import shaders.TerrainShader;
 import terrain.Terrain;
 
 /**
- *
  * @author Trist
  */
+@SuppressWarnings("unused")
 public class MasterRenderer {
-    
-	
     private static final float FOV = 70;
     private static final float NEAR_PLANE = 0.1f;
     private static final float FAR_PLANE = 1000;
     
-    private static final float RED = 0.52f; 
-    private static final float GREEN = 0.74f; 
-    private static final float BLUE = 1; 
+    public static final float RED = 0.52f; 
+    public static final float GREEN = 0.74f; 
+    public static final float BLUE = 1; 
     
     private Matrix4f projectionMatrix;
     private StaticShader shader = new StaticShader();
@@ -50,7 +53,12 @@ public class MasterRenderer {
     private Map<TexturedModel, List<Entity>> entities = new HashMap<>();
     private List<Terrain> terrains = new ArrayList<>();
     
+    private Logger logger = LogManager.getLogger();
+    
     public MasterRenderer() {
+    	if(!GLContext.getCapabilities().GL_EXT_framebuffer_object){
+    		logger.error("Unable to use FBO for render to texture !");
+    	}
         enableCulling();  
         createProjectionMatrix();
         renderer = new EntityRenderer(shader, projectionMatrix);
@@ -58,12 +66,12 @@ public class MasterRenderer {
     }
     
     public static void enableCulling() {
-        GL11.glEnable(GL11.GL_CULL_FACE);
-        GL11.glCullFace(GL11.GL_BACK);  
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);  
     }
     
     public static void disableCulling() {
-        GL11.glDisable(GL11.GL_CULL_FACE);        
+        glDisable(GL_CULL_FACE);        
     }
     
     public Matrix4f getProjectionMatrix() {
@@ -88,6 +96,25 @@ public class MasterRenderer {
         entities.clear();
     }
     
+	/**
+	 * Check for error's and print em
+	 * @return string with details
+	 */
+	public String checkError(){
+		int errorFlag = GL11.glGetError();
+		if(errorFlag != GL11.GL_NO_ERROR){
+			return "OpenGL Error: "+GLU.gluErrorString(errorFlag);
+		}else{
+			return "No Error";
+		}
+	}
+    
+    public void render() {
+    	prepare();
+    	renderer.render(entities);
+    	entities.clear();
+    }
+    
     public void processTerrain(Terrain terrain) {
         terrains.add(terrain);
     }
@@ -110,9 +137,13 @@ public class MasterRenderer {
     }
     
     public void prepare(){
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
-        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT|GL11.GL_DEPTH_BUFFER_BIT);
-        GL11.glClearColor(RED, GREEN, BLUE, 1);        
+        glEnable(GL_DEPTH_TEST);
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+        glClearColor(RED, GREEN, BLUE, 1);
+    }
+    
+    public void setViewport(){
+    	glViewport(0, 0, Display.getWidth(), Display.getHeight());
     }
     
     private void createProjectionMatrix() {

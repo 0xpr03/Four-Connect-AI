@@ -1,28 +1,37 @@
 package buttons;
 
-import java.util.List;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector2f;
 
+import guis.GuiRenderer;
 import guis.GuiTexture;
 import renderEngine.Loader;
-import toolbox.MousePicker;
 
 public abstract class AbstractButton implements Button{
-		
-	private MousePicker picker;
 	
-	private GuiTexture guiTexture;
+	private final GuiTexture guiTexture;
 	
-	private Vector2f OriginalScale;
+	private final Vector2f originalScale;
 	
-	private boolean isHidden= false, isHovering = false;
+	private boolean isHidden= true, isHovering = false, wasUnpressed = true;
 	
-	public AbstractButton(Loader loader, String texture, Vector2f position, Vector2f scale) {
+	private Logger logger = LogManager.getLogger();
+	
+	private GuiRenderer renderer;
+	
+	public AbstractButton(Loader loader, String texture, Vector2f position, Vector2f scale,GuiRenderer renderer) {
 		guiTexture = new GuiTexture(loader.loadTexture(texture), position, scale);
-		OriginalScale = scale;
+		originalScale = scale;
+		this.renderer = renderer;
+	}
+	
+	public AbstractButton(int texture, Vector2f position, Vector2f scale, GuiRenderer renderer) {
+		guiTexture = new GuiTexture(texture, position, scale);
+		originalScale = scale;
+		this.renderer = renderer;
 	}
 	/***
 	 * Checks for collision of mouse and button etc.
@@ -32,8 +41,8 @@ public abstract class AbstractButton implements Button{
 			Vector2f location = guiTexture.getPosition();
 			Vector2f scale = guiTexture.getScale();
 			Vector2f mouseCoordinates = new Vector2f((2.0f * Mouse.getX()) / Display.getWidth() - 1f, (2.0f * Mouse.getY()) / Display.getHeight() - 1f);
-			if(location.y + scale.y > -mouseCoordinates.y 
-					&& location.y - scale.y < -mouseCoordinates.y 
+			if(location.y + scale.y > mouseCoordinates.y 
+					&& location.y - scale.y < mouseCoordinates.y 
 					&& location.x + scale.x > mouseCoordinates.x 
 					&& location.x - scale.x < mouseCoordinates.x) {
 				whileHovering(this);
@@ -41,39 +50,50 @@ public abstract class AbstractButton implements Button{
 					isHovering = true;
 					onStartHover(this);
 				}
-				while(Mouse.next()) 
-					if(Mouse.isButtonDown(0)) 
-						onClick(this);
+				while(Mouse.next()){
+					if(Mouse.isButtonDown(0)){
+						if(wasUnpressed){
+							onClick(this);
+							wasUnpressed = false;
+						}
+					}else{
+						wasUnpressed = true;
+					}
+				}
 			}else{
 				if(isHovering) {
-								
-				isHovering = false;
-				onStopHover(this);
+					isHovering = false;
+					onStopHover(this);
 				}
 			}
 		}
 	}
 	
-	public void show(List<GuiTexture> guiTextureList) {
+	public void show() {
 		if(isHidden) {
-			guiTextureList.add(guiTexture);
+			wasUnpressed = false;
+			renderer.addRenderTexture(guiTexture);
 			isHidden = false;
 		}
 	}
 	
-	public void hide(List<GuiTexture> guiTextureList) {
+	public void hide() {
 		if(!isHidden) {
-			guiTextureList.remove(guiTexture);
 			isHidden = true;
+			if(!renderer.removeRenderTexture(guiTexture)){
+				logger.debug("Unable to remove texture!");
+			}
+		}else{
+			logger.debug("Unable to hide!");
 		}
 	}
 	
 	public void resetScale() {
-		guiTexture.setScale(OriginalScale);
+		guiTexture.setScale(originalScale);
 	}
 	
 	public void playHoverAnimation(float scaleFactor) {
-		guiTexture.setScale(new Vector2f(OriginalScale.x + scaleFactor, OriginalScale.y + scaleFactor));
+		guiTexture.setScale(new Vector2f(originalScale.x + scaleFactor, originalScale.y + scaleFactor));
 	}
 	
 	public boolean isHidden() {

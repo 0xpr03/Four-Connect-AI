@@ -5,61 +5,92 @@
  */
 package entities;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.util.vector.Vector3f;
 
+import main.MainGameLoop;
 import renderEngine.DisplayManager;
 import terrain.Terrain;
 
 /**
- *
  * @author Trist
  */
 public class Camera {
     
-	private static float RUN_SPEED_FORWARD;
-	private static float RUN_SPEED_STRAFE;
-    private static float UP_DOWN_SPEED;
-    	
-	private Vector3f position;
-    private Logger logger = LogManager.getLogger();
+	private float FORWARD_SPEED; //  W/S keys
+	private float SIDEWARD_SPEED; // A/D keys
+    private float HEIGHT_SPEED;//    shift/space keys
+
+    private Vector3f position;
     private float pitch;
-    private float rotY = 90;
-                  
-    public Camera(Vector3f position) {
-    	this.position = position;
+    private float rotY;
+    
+    public Camera(Vector3f position, float rotY, float pitch) {
+    	this.position = new Vector3f(position);
+    	this.rotY = rotY;
+    	this.pitch = pitch;
     }
 
     public float getRotY() {
 		return rotY;
 	}
-
+    
+    /**
+     * Move cam according to current speed
+     * @param terrain
+     */
 	public void move(Terrain terrain) {
-        checkInputs();        
+        if(!MainGameLoop.getStaticCamera())
+		checkInputs();        
         
-        float dx = (RUN_SPEED_FORWARD * (float) Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
-        float dz = (-RUN_SPEED_FORWARD * (float) Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
-        dx += (RUN_SPEED_STRAFE * (float)Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
-        dz += (RUN_SPEED_STRAFE * (float)Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        float dx = (FORWARD_SPEED * (float) Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        float dz = (-FORWARD_SPEED * (float) Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        dx += (SIDEWARD_SPEED * (float)Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        dz += (SIDEWARD_SPEED * (float)Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
         position.x += dx;
-        position.z += dz;    
-        
-        
-        position.y += UP_DOWN_SPEED * DisplayManager.getFrameTimeSeconds();
-        increasePosition(0, UP_DOWN_SPEED * DisplayManager.getFrameTimeSeconds(), 0);
+        position.z += dz;
+        position.y += HEIGHT_SPEED * DisplayManager.getFrameTimeSeconds();
+        increasePosition(0, HEIGHT_SPEED * DisplayManager.getFrameTimeSeconds(), 0);
         float terrainHeight = terrain.getHeightOfTerrain(position.x, position.z);
         
         if(position.y < terrainHeight + 5) {
-        	UP_DOWN_SPEED = 0;
+        	HEIGHT_SPEED = 0;
             position.y = terrainHeight + 5;
         }
     }
+	
+	/**
+	 * Set forward & sideward movement to 0
+	 */
+	public void resetMovement(){
+		FORWARD_SPEED = 0;
+		SIDEWARD_SPEED = 0;
+		HEIGHT_SPEED = 0;
+	}
+	
+	/**
+	 * Run camera move
+	 */
+	public void move() {
+		float dx = (FORWARD_SPEED * (float) Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        float dz = (-FORWARD_SPEED * (float) Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        dx += (SIDEWARD_SPEED * (float)Math.cos(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        dz += (SIDEWARD_SPEED * (float)Math.sin(Math.toRadians(rotY))) * DisplayManager.getFrameTimeSeconds();
+        position.x += dx;
+        position.z += dz;
+	}
+	
+	public void setPosition(Vector3f position) {
+		this.position = new Vector3f(position);
+	}
+	
+	public void setRotY(float rotY) {
+		this.rotY = rotY;
+	}
     
     public Vector3f getPosition() {
-        return position;
+        return new Vector3f(position);
     }
 
     public float getPitch() {
@@ -69,41 +100,41 @@ public class Camera {
     private void checkInputs() {
         if(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
         	if(Keyboard.isKeyDown(Keyboard.KEY_W)) {
-        		RUN_SPEED_FORWARD = 200;
+        		FORWARD_SPEED = 200;
         	}else if(Keyboard.isKeyDown(Keyboard.KEY_S)) {
-        		RUN_SPEED_FORWARD = -200;
+        		FORWARD_SPEED = -200;
         	}else {
-        		RUN_SPEED_FORWARD = 0;
+        		FORWARD_SPEED = 0;
         	}        
         	if(Keyboard.isKeyDown(Keyboard.KEY_D)) {
-        		RUN_SPEED_STRAFE = 200;
+        		SIDEWARD_SPEED = 200;
         	}else if(Keyboard.isKeyDown(Keyboard.KEY_A)) {
-        		RUN_SPEED_STRAFE = -200;
+        		SIDEWARD_SPEED = -200;
         	}else {
-        		RUN_SPEED_STRAFE = 0;
+        		SIDEWARD_SPEED = 0;
         	}                
         }else{
         	if(Keyboard.isKeyDown(Keyboard.KEY_W)) {
-        		RUN_SPEED_FORWARD = 20;
+        		FORWARD_SPEED = 20;
         	}else if(Keyboard.isKeyDown(Keyboard.KEY_S)) {
-        		RUN_SPEED_FORWARD = -20;
+        		FORWARD_SPEED = -20;
         	}else {
-        		RUN_SPEED_FORWARD = 0;
+        		FORWARD_SPEED = 0;
         	}        
         	if(Keyboard.isKeyDown(Keyboard.KEY_D)) {
-        		RUN_SPEED_STRAFE = 20;
+        		SIDEWARD_SPEED = 20;
         	}else if(Keyboard.isKeyDown(Keyboard.KEY_A)) {
-        		RUN_SPEED_STRAFE = -20;
+        		SIDEWARD_SPEED = -20;
         	}else {
-        		RUN_SPEED_STRAFE = 0;
+        		SIDEWARD_SPEED = 0;
         	}        
         }
         if(Keyboard.isKeyDown(Keyboard.KEY_SPACE)) {
-        	UP_DOWN_SPEED = 30;
+        	HEIGHT_SPEED = 30;
         }else if(Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
-        	UP_DOWN_SPEED = -30;
+        	HEIGHT_SPEED = -30;
         }else {
-        	UP_DOWN_SPEED = 0;
+        	HEIGHT_SPEED = 0;
         }
         if(Mouse.isButtonDown(1)) {
             float pitchChange = Mouse.getDY() * 0.1f;
@@ -126,7 +157,11 @@ public class Camera {
     
     public void increaseRotation(float dy, float pitch) {
         this.rotY += dy;
-        this.pitch = pitch;
+        this.pitch += pitch;
+    }
+    
+    public void increaseSideSpeed(float s) {
+    	SIDEWARD_SPEED += s;
     }
 }
 

@@ -13,12 +13,13 @@ import org.apache.logging.log4j.Logger;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
+import main.MainGameLoop;
 import models.boxVerticies;
 
 public class OBJFileLoader {
 	
 	private static final String RES_LOC = "res/";
-	private static final Logger logger = LogManager.getLogger();
+	private static final Logger logger = LogManager.getLogger(MainGameLoop.class);
 
 	public static ModelData loadOBJ(String objFileName) {
 	/**
@@ -39,8 +40,8 @@ public class OBJFileLoader {
 		List<Vector3f> normals = new ArrayList<Vector3f>();
 		List<Integer> indices = new ArrayList<Integer>();
 		try {
-			while (true) {
-				line = reader.readLine();
+			line = reader.readLine();
+			while (line != null) {
 				if (line.startsWith("v ")) {
 					String[] currentLine = line.split(" ");
 					Vector3f vertex = new Vector3f((float) Float.valueOf(currentLine[1]),
@@ -60,18 +61,15 @@ public class OBJFileLoader {
 							(float) Float.valueOf(currentLine[2]),
 							(float) Float.valueOf(currentLine[3]));
 					normals.add(normal);
-				} else if (line.startsWith("f ")) {
-					break;
+				} else if(line.startsWith("f ")){
+					String[] currentLine = line.split(" ");
+					String[] vertex1 = currentLine[1].split("/");
+					String[] vertex2 = currentLine[2].split("/");
+					String[] vertex3 = currentLine[3].split("/");
+					processVertex(vertex1, vertices, indices);
+					processVertex(vertex2, vertices, indices);
+					processVertex(vertex3, vertices, indices);
 				}
-			}
-			while (line != null && line.startsWith("f ")) {
-				String[] currentLine = line.split(" ");
-				String[] vertex1 = currentLine[1].split("/");
-				String[] vertex2 = currentLine[2].split("/");
-				String[] vertex3 = currentLine[3].split("/");
-				processVertex(vertex1, vertices, indices);
-				processVertex(vertex2, vertices, indices);
-				processVertex(vertex3, vertices, indices);
 				line = reader.readLine();
 			}
 			reader.close();
