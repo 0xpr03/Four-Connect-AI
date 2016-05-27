@@ -3,7 +3,7 @@
 
 By Aron Heinecke (aron.heinecke@t-online.de)
 and Tony (awesomewoker@gmail.com)
-Models by Justin van derlinden
+Models by Justin van der Linden
 
 ## Setup
 Use the natives & res dir from the release files to run this from code
