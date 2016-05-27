@@ -51,12 +51,12 @@ import textures.TerrainTexturePack;
 import toolbox.MousePicker;
 
 /**
- * @author Trist
+ * @author Tristan, Aron Heinecke
  */
 public class MainGameLoop {
 
 	private static enum State {
-		INTRO, MAIN_MENU, GAME, INGAME_MENU, SPMENU, OPMENU, OPMENU_IG, GAME_ENDSCREEN;
+		INTRO, MAIN_MENU, GAME, INGAME_MENU, SPMENU, OPMENU, OPMENU_IG, GAME_ENDSCREEN, ABOUT;
 	}
 
 	public static enum Color {
@@ -91,6 +91,8 @@ public class MainGameLoop {
 	private static List<AbstractButton> SP_ButtonList;
 	private static List<AbstractButton> opButtonList;
 	private static List<AbstractButton> iEButtonList; // end screen
+	private static List<AbstractButton> ABButtonList;
+	private static List<GUIText> ABButtonTexts;
 	private static List<GUIText> iEButtonTexts; // end screen
 	private static List<GUIText> currentTexts;
 	private static List<GUIText> iMButtonTexts;
@@ -161,13 +163,26 @@ public class MainGameLoop {
 		sMButtonTexts.add(new GUIText("Singleplayer", 5, font, new Vector2f(0, 0.02f), 1f, true, true));
 		sMButtonTexts.add(new GUIText("Multiplayer", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
 		sMButtonTexts.add(new GUIText("Options", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
-		sMButtonTexts.add(new GUIText("Exit", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
+		sMButtonTexts.add(new GUIText("About", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
+		sMButtonTexts.add(new GUIText("Exit", 5, font, new Vector2f(0, 0.82f), 1f, true, true));
 
 		SP_ButtonTexts = new ArrayList<>();
 		SP_ButtonTexts.add(new GUIText("7x6 WBS2", 5, font, new Vector2f(0, 0.02f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("5x5 Hard", 5, font, new Vector2f(0, 0.22f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("4x4 Hard", 5, font, new Vector2f(0, 0.42f), 1f, true, true));
 		SP_ButtonTexts.add(new GUIText("Back", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
+		
+		ABButtonTexts = new ArrayList<>();
+		String aboutText = "Four Connect\nQ4 Project, IT specialized course\nA-Levels Liebigschule Giessen\nby\nAron Heinecke,Tristan,Justin Vanderlinden\nKnowledge based AI demonstration";
+		{
+			float i = 0.02f;
+			for(String segment : aboutText.split("\n")){
+				logger.debug("Segment: {}",segment);
+				ABButtonTexts.add(new GUIText(segment, 3, font, new Vector2f(0, i), 1f, true, true));
+				i += 0.1f;
+			}
+		}
+		ABButtonTexts.add(new GUIText("Back", 5, font, new Vector2f(0, 0.82f), 1f, true, true));
 		
 		opButtonTexts = new ArrayList<>();
 		for (int i = DisplayManager.getDmi(); i < DisplayManager.getDms().size(); i++) {
@@ -296,6 +311,7 @@ public class MainGameLoop {
 		case MAIN_MENU:
 		case OPMENU:
 		case SPMENU:
+		case ABOUT:
 			renderMenuSzene(true, true);
 			break;
 		case GAME:
@@ -801,6 +817,26 @@ public class MainGameLoop {
 		sMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0, -0.4f),
 				new Vector2f(0.5f, 0.17f), guiRenderer) {
 			public void onClick(Button button) {
+				logger.trace("About");
+				hideAllMenus(false);
+				showMenu(ABButtonTexts, ABButtonList);
+				state = State.ABOUT;
+			}
+
+			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.03f);
+			}
+
+			public void onStopHover(Button button) {
+				this.resetScale();
+			}
+
+			public void whileHovering(Button button) {
+			}
+		});
+		sMButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0, -0.8f),
+				new Vector2f(0.5f, 0.17f), guiRenderer) {
+			public void onClick(Button button) {
 				logger.trace("Exit");
 				exit();
 			}
@@ -980,6 +1016,30 @@ public class MainGameLoop {
 				showMenu(sMButtonTexts, sMButtonList);
 				cleanupGame();
 				startBackgroundGame();
+				state = State.MAIN_MENU;
+			}
+
+			public void onStartHover(Button button) {
+				this.playHoverAnimation(0.025f);
+			}
+
+			public void onStopHover(Button button) {
+				this.resetScale();
+			}
+
+			public void whileHovering(Button button) {
+			}
+		});
+		
+		/**
+		 * About
+		 */
+		ABButtonList = new ArrayList<>();
+		ABButtonList.add(new AbstractButton(guiRenderer.getButtonTexture(), new Vector2f(0, -0.8f),
+				new Vector2f(0.7f, 0.17f), guiRenderer) {
+			public void onClick(Button button) {
+				hideAllMenus(false);
+				showMenu(sMButtonTexts, sMButtonList);
 				state = State.MAIN_MENU;
 			}
 

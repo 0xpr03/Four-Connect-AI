@@ -197,21 +197,4 @@ public class AITrainer {
 			}
 		});
 	}
-
-	/**
-	 * Returns false if draw,win_a,win_b is the current gamestate
-	 * true otherwise
-	 * @return
-	 */
-	private static boolean gameRunning(){
-//		switch(GController.getGameState()){
-//		case DRAW:
-//		case WIN_A:
-//		case WIN_B:
-//		case RESTART:
-//			return false;
-//		default:
-			return true;
-//		}
-	}
 }
