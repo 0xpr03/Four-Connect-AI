@@ -173,7 +173,7 @@ public class MainGameLoop {
 		SP_ButtonTexts.add(new GUIText("Back", 5, font, new Vector2f(0, 0.62f), 1f, true, true));
 		
 		ABButtonTexts = new ArrayList<>();
-		String aboutText = "Four Connect\nQ4 Project, IT specialized course\nA-Levels Liebigschule Giessen\nby\nAron Heinecke,Tristan,Justin Vanderlinden\nKnowledge based AI demonstration";
+		String aboutText = "Four Connect\nQ4 Project, IT specialized course\nA-Levels Liebigschule Giessen\nby\nAron Heinecke,Tony,Justin van der Linden\nKnowledge based AI demonstration";
 		{
 			float i = 0.02f;
 			for(String segment : aboutText.split("\n")){

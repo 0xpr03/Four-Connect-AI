@@ -1,1 +1,1 @@
-java -Djava.library.path="natives" -jar q4_proj.jar
+java -Djava.library.path="natives" -jar q4_projekt.jar
